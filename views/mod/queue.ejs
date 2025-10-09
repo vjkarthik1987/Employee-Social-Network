@@ -1,0 +1,36 @@
+<% layout('layouts/_layout') %>
+
+<%- include('../partials/navbar') %>
+
+<section style="max-width:900px;margin:24px auto;">
+  <h2 style="margin:0 0 12px;">Moderation Queue</h2>
+
+  <% const items = (typeof posts !== 'undefined' && posts) ? posts : []; %>
+
+  <% if (items.length === 0) { %>
+    <div class="empty">No items pending.</div>
+  <% } else { %>
+    <% items.forEach(function(p){ %>
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">
+          <strong><%= p.authorId?.fullName || 'User' %></strong>
+          <small> • <%= new Date(p.createdAt).toLocaleString() %> • 
+            <span class="badge"><%= p.type %></span></small>
+        </div>
+        <div class="card-body">
+          <div class="post-content"><%- p.richText %></div>
+        </div>
+        <div class="card-footer" style="display:flex;gap:.5rem;justify-content:flex-end;">
+          <form method="POST" action="/<%= company.slug %>/posts/mod/reject">
+            <input type="hidden" name="postId" value="<%= p._id %>">
+            <button class="btn" type="submit">Reject</button>
+          </form>
+          <form method="POST" action="/<%= company.slug %>/posts/mod/approve">
+            <input type="hidden" name="postId" value="<%= p._id %>">
+            <button class="btn" type="submit">Approve & Publish</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  <% } %>
+</section>

@@ -1,0 +1,252 @@
+<% layout('layouts/_layout') %>
+<%- include('../partials/navbar') %>
+
+<section style="max-width:900px;margin:24px auto;">
+  <!-- Post card -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-header" style="display:flex;justify-content:space-between;">
+      <div>
+        <strong><%= post.authorId?.fullName || 'User' %></strong>
+        <small>
+          • <%= new Date(post.createdAt).toLocaleString() %>
+          <% if (post.type) { %> • <span class="badge"><%= post.type %></span><% } %>
+        </small>
+      </div>
+
+      <% if (user && (String(user._id) === String(post.authorId?._id || post.authorId) || ['ORG_ADMIN','MODERATOR'].includes(user.role))) { %>
+        <form method="POST" action="/<%= company.slug %>/posts/<%= post._id %>/delete" onsubmit="return confirm('Delete this post?')">
+          <button class="btn btn-ghost" type="submit">Delete</button>
+        </form>
+      <% } %>
+    </div>
+
+    <div class="card-body">
+      <div class="post-content"><%- post.richText %></div>
+
+      <% if (post.type === 'LINK' && post.linkPreview && post.linkPreview.url) { %>
+        <div class="card" style="margin-top:.6rem;">
+          <div class="card-body">
+            <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+              <div><strong><%= post.linkPreview.title || post.linkPreview.url %></strong></div>
+              <% if (post.linkPreview.description) { %>
+                <div style="color:#666; font-size:.9rem; margin-top:.2rem;"><%= post.linkPreview.description %></div>
+              <% } %>
+            </a>
+          </div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Reactions (single source of truth for counts + buttons) -->
+    <%- include('../partials/_reactions_bar', { company, user, post }) %>
+  </div>
+
+  <!-- Comments -->
+  <section style="margin-top:18px;">
+    <h3 style="margin:0 0 10px;">Comments</h3>
+
+    <% if (user) { %>
+      <!-- Top-level comment (AJAX) -->
+      <form method="POST"
+            action="/<%= company.slug %>/api/posts/<%= post._id %>/comments"
+            class="card" style="margin-bottom:1rem;" id="new-comment-form">
+        <div class="card-body">
+          <textarea name="content" rows="3" class="input" placeholder="Write a comment…" maxlength="3000" required></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:.6rem;">
+            <button class="btn" type="submit">Comment</button>
+          </div>
+        </div>
+      </form>
+    <% } %>
+
+    <ul id="comments-list" style="list-style:none;padding:0;margin:0;">
+      <% if (topComments && topComments.length) { %>
+        <% topComments.forEach(function(c){ %>
+          <%- include('../partials/_comment', {
+                company,
+                user,
+                post,
+                comment: c,
+                replies: (repliesByParent[String(c._id)] || [])
+              }) %>
+        <% }) %>
+      <% } %>
+    </ul>
+  </section>
+</section>
+
+<!-- Reactions JS (PUT /:org/api/reactions) -->
+<script>
+(function(){
+  const ORG = "<%= company.slug %>";
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-react]');
+    if (!btn) return;
+
+    const bar = btn.closest('[data-react-scope]');
+    if (!bar) return;
+
+    const type = btn.getAttribute('data-react');              // e.g. LIKE
+    const targetType = bar.getAttribute('data-target-type');  // 'post'
+    const targetId = bar.getAttribute('data-target-id');
+
+    const resp = await fetch(`/${ORG}/api/reactions`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ targetType, targetId, reactionType: type })
+    });
+    const data = await resp.json();
+    if (!data.ok) { alert('Could not react.'); return; }
+
+    const spans = {
+        LIKE:       bar.querySelector('[data-rc="LIKE"]'),
+        HEART:      bar.querySelector('[data-rc="HEART"]'),
+        CELEBRATE:  bar.querySelector('[data-rc="CELEBRATE"]'),
+        SUPPORT:    bar.querySelector('[data-rc="SUPPORT"]'),
+        LAUGH:      bar.querySelector('[data-rc="LAUGH"]'),
+        INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
+        THANKS:     bar.querySelector('[data-rc="THANKS"]')
+      };
+      const bump = (el, d) => { if (!el) return; el.textContent = Math.max(0, (parseInt(el.textContent||'0',10) + d)); };
+
+      if (data.added) {
+        bump(spans[data.added], +1);
+        // set active to new
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+        const newBtn = bar.querySelector(`[data-react="${data.added}"]`);
+        if (newBtn) newBtn.classList.add('active');
+      }
+
+      if (data.removed) {
+        bump(spans[data.removed], -1);
+        // clear active (no reaction now)
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+      }
+
+      if (data.changedTo) {
+        if (data.prevType && data.prevType !== data.changedTo) {
+          bump(spans[data.prevType], -1);      // ⬅️ decrement previous
+        }
+        bump(spans[data.changedTo], +1);       // ⬅️ increment new
+        // move active to new
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+        const newBtn = bar.querySelector(`[data-react="${data.changedTo}"]`);
+        if (newBtn) newBtn.classList.add('active');
+      }
+
+      // Recompute total
+      const totalEl = bar.querySelector('[data-total-reactions]');
+      if (totalEl) {
+        const sum = Array.from(bar.querySelectorAll('.rc')).reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
+        totalEl.textContent = String(sum);
+      }
+
+    // cosmetic active state
+    bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+})();
+</script>
+
+<!-- Comments JS (top-level + replies + delete via AJAX) -->
+<script>
+(function(){
+  const org = "<%= company.slug %>";
+  const postId = "<%= post._id %>";
+  const commentsCountEl = document.getElementById('comments-count'); // present inside _reactions_bar totals
+  const list = document.getElementById('comments-list');
+
+  function bumpCommentsCount(delta){
+    if (!commentsCountEl) return;
+    const n = parseInt(commentsCountEl.textContent || '0', 10) + (delta || 0);
+    commentsCountEl.textContent = Math.max(0, n);
+  }
+
+  // Submit top-level comment (AJAX)
+  const newForm = document.getElementById('new-comment-form');
+  if (newForm) {
+    newForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = new URLSearchParams(new FormData(newForm));
+
+      const resp = await fetch(newForm.action, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
+        },
+        body
+      });
+      const data = await resp.json();
+      if (!data.ok) return alert('Could not add comment.');
+      const temp = document.createElement('div');
+      temp.innerHTML = data.html.trim();
+      const li = temp.firstElementChild;
+      if (li) list.appendChild(li); // append for chronological order
+      bumpCommentsCount(data.commentsCountDelta || 0);
+      newForm.reset();
+    });
+  }
+
+  // Delegate: Reply toggle + Delete (comment/reply)
+  document.addEventListener('click', async (e) => {
+    const t = e.target;
+
+    // toggle reply form
+    if (t.matches('[data-reply-toggle]')) {
+      e.preventDefault();
+      const id = t.getAttribute('data-reply-toggle');
+      const el = document.getElementById('reply-form-' + id);
+      if (el) el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
+      return;
+    }
+
+    // AJAX delete
+    if (t.matches('[data-ajax-delete]')) {
+      e.preventDefault();
+      const commentId = t.getAttribute('data-comment-id');
+      if (!commentId) return;
+      if (!confirm('Delete this comment?')) return;
+      const url = `/${org}/api/comments/${commentId}`;
+      const resp = await fetch(url, { method: 'DELETE', headers: { 'Accept': 'application/json' } });
+      const data = await resp.json();
+      if (!data.ok) return alert('Delete failed');
+
+      const selector = data.isReply ? `[data-reply-id="${data.commentId}"]`
+                                    : `[data-comment-id="${data.commentId}"]`;
+      const node = document.querySelector(selector);
+      if (node) {
+        const content = node.querySelector('.comment-content');
+        if (content) content.innerHTML = '<em style="color:#888;">(deleted)</em>';
+        const delBtn = node.querySelector('[data-ajax-delete]');
+        if (delBtn) delBtn.remove();
+      }
+      bumpCommentsCount(data.commentsCountDelta || 0);
+    }
+  });
+
+  // Delegate: reply form submit (has data-ajax-reply)
+  document.addEventListener('submit', async (e) => {
+    const f = e.target;
+    if (!f.matches('[data-ajax-reply]')) return;
+    e.preventDefault();
+    const fd = new FormData(f);
+    const resp = await fetch(f.action, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
+    const data = await resp.json();
+    if (!data.ok) return alert('Could not add reply.');
+    const parentId = data.parentCommentId;
+    const container = document.querySelector(`[data-comment-id="${parentId}"] [data-replies]`);
+    if (container) {
+      container.style.display = 'block';
+      const temp = document.createElement('div');
+      temp.innerHTML = data.html.trim();
+      const li = temp.firstElementChild;
+      if (li) container.appendChild(li);
+    }
+    bumpCommentsCount(data.commentsCountDelta || 0);
+    f.reset();
+    f.style.display = 'none';
+  });
+})();
+</script>

@@ -1,0 +1,43 @@
+<% layout('layouts/_layout') %>
+
+<%- include('../partials/navbar') %>
+
+<section style="max-width:720px;margin:24px auto;">
+  <h2>Edit Group</h2>
+
+  <form method="POST" action="/<%= company.slug %>/groups/<%= group._id %>" style="display:grid;gap:12px;margin-top:12px;">
+    <div>
+      <label>Name</label><br/>
+      <input name="name" value="<%= group.name %>" required
+             style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;" />
+    </div>
+
+    <div>
+      <label>Description</label><br/>
+      <textarea name="description" rows="3"
+                style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;"><%= group.description || '' %></textarea>
+    </div>
+
+    <div style="display:flex;gap:16px;align-items:center;">
+      <label>
+        <input type="checkbox" name="isPrivate" <%= group.isPrivate ? 'checked' : '' %> />
+        Private group
+      </label>
+
+      <label>
+        Membership:
+        <select name="membershipPolicy">
+          <option value="open" <%= group.membershipPolicy === 'open' ? 'selected' : '' %>>Open</option>
+          <option value="by-approval" <%= group.membershipPolicy === 'by-approval' ? 'selected' : '' %>>
+            By approval
+          </option>
+        </select>
+      </label>
+    </div>
+
+    <div style="margin-top:8px;">
+      <button type="submit" class="btn">Save</button>
+      <a class="btn btn-ghost" href="/<%= company.slug %>/groups/<%= group._id %>" style="margin-left:8px;">Cancel</a>
+    </div>
+  </form>
+</section>

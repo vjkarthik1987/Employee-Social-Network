@@ -1,0 +1,30 @@
+<% layout('layouts/_layout') %>
+<h2>Users — <%= company.name %></h2>
+
+<form action="/<%= company.slug %>/admin/users/import" method="POST" enctype="multipart/form-data" style="margin: 12px 0;">
+  <label>Upload CSV:</label>
+  <input type="file" name="csv" accept=".csv" required />
+  <button type="submit">Import</button>
+  <p><small>CSV headers: fullName,email,role</small></p>
+</form>
+
+<table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+  <% users.forEach(u => { %>
+    <tr>
+      <td><%= u.fullName %></td>
+      <td><%= u.email %></td>
+      <td><%= u.role %></td>
+      <td><%= u.status %></td>
+      <td>
+        <form action="/<%= company.slug %>/admin/users/<%= u._id %>/delete" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline;">
+          <button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  <% }) %>
+  </tbody>
+</table>

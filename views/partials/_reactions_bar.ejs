@@ -1,0 +1,24 @@
+<%
+// _reactions_bar.ejs
+// Inputs: company, user, post
+const c = post.reactionsCountByType || {};
+const total = (c.LIKE||0)+(c.HEART||0)+(c.CELEBRATE||0)+(c.SUPPORT||0)+(c.LAUGH||0)+(c.INSIGHTFUL||0)+(c.THANKS||0);
+%>
+
+<div class="reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
+  <div class="reactions-buttons" style="display:flex;gap:.4rem;align-items:center;">
+    <button type="button" class="btn btn-ghost" data-react="LIKE"      title="Like">👍 <span class="rc" data-rc="LIKE"><%= c.LIKE||0 %></span></button>
+    <button type="button" class="btn btn-ghost" data-react="HEART"     title="Love">❤️ <span class="rc" data-rc="HEART"><%= c.HEART||0 %></span></button>
+    <button type="button" class="btn btn-ghost" data-react="CELEBRATE" title="Celebrate">🎉 <span class="rc" data-rc="CELEBRATE"><%= c.CELEBRATE||0 %></span></button>
+    <!-- keep the rest hidden for MVP or uncomment when you want:
+    <button type="button" class="btn btn-ghost" data-react="SUPPORT">🙌 <span class="rc" data-rc="SUPPORT"><%= c.SUPPORT||0 %></span></button>
+    <button type="button" class="btn btn-ghost" data-react="LAUGH">😄 <span class="rc" data-rc="LAUGH"><%= c.LAUGH||0 %></span></button>
+    <button type="button" class="btn btn-ghost" data-react="INSIGHTFUL">💡 <span class="rc" data-rc="INSIGHTFUL"><%= c.INSIGHTFUL||0 %></span></button>
+    <button type="button" class="btn btn-ghost" data-react="THANKS">🙏 <span class="rc" data-rc="THANKS"><%= c.THANKS||0 %></span></button>
+    -->
+  </div>
+
+  <small class="muted">
+    <span data-total-reactions><%= total %></span> reactions • <%= post.commentsCount || 0 %> comments
+  </small>
+</div>

@@ -1,0 +1,111 @@
+<% layout('layouts/_layout') %>
+
+<%- include('../partials/navbar') %>
+
+<section style="max-width:900px;margin:24px auto;">
+  <h2 style="margin:0 0 12px;">Company Feed</h2>
+
+  <% if (user) { %>
+    <%- include('../partials/_post_form', { company, groupId: null }) %>
+  <% } %>
+
+  <% if (!posts || posts.length === 0) { %>
+    <div class="empty">No posts yet. Be the first!</div>
+  <% } %>
+
+  <% (posts || []).forEach(function(post){ %>
+    <%- include('../partials/_post_card', { company, user, post }) %>
+  <% }) %>
+
+  <% if (typeof page !== 'undefined') { %>
+    <div style="display:flex;justify-content:space-between;margin-top:.75rem;">
+      <% if (page > 1) { %>
+        <a class="btn" href="?page=<%= page - 1 %>">← Newer</a>
+      <% } else { %>
+        <span></span>
+      <% } %>
+      <a class="btn" href="?page=<%= page + 1 %>">Older →</a>
+    </div>
+  <% } %>
+</section>
+
+<script>
+  (function(){
+    const ORG = "<%= company.slug %>";
+  
+    // Event delegation for all reaction bars on the page
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-react]');
+      if (!btn) return;
+  
+      const bar = btn.closest('[data-react-scope]');
+      if (!bar) return;
+  
+      // Gather info
+      const type = btn.getAttribute('data-react');
+      const targetType = bar.getAttribute('data-target-type');   // 'post'
+      const targetId = bar.getAttribute('data-target-id');
+  
+      // Call API
+      const resp = await fetch(`/${ORG}/api/reactions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ targetType, targetId, reactionType: type })
+      });
+      const data = await resp.json();
+      if (!data.ok) { alert('Could not react.'); return; }
+  
+      // Update per-type counts in the clicked bar
+      const inc = (span, d) => { if (!span) return; span.textContent = Math.max(0, (parseInt(span.textContent||'0',10) + d)); };
+      const sum = (bar) => Array.from(bar.querySelectorAll('.rc')).reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
+  
+      const spans = {
+        LIKE:       bar.querySelector('[data-rc="LIKE"]'),
+        HEART:      bar.querySelector('[data-rc="HEART"]'),
+        CELEBRATE:  bar.querySelector('[data-rc="CELEBRATE"]'),
+        SUPPORT:    bar.querySelector('[data-rc="SUPPORT"]'),
+        LAUGH:      bar.querySelector('[data-rc="LAUGH"]'),
+        INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
+        THANKS:     bar.querySelector('[data-rc="THANKS"]')
+      };
+      const bump = (el, d) => { if (!el) return; el.textContent = Math.max(0, (parseInt(el.textContent||'0',10) + d)); };
+
+      if (data.added) {
+        bump(spans[data.added], +1);
+        // set active to new
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+        const newBtn = bar.querySelector(`[data-react="${data.added}"]`);
+        if (newBtn) newBtn.classList.add('active');
+      }
+
+      if (data.removed) {
+        bump(spans[data.removed], -1);
+        // clear active (no reaction now)
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+      }
+
+      if (data.changedTo) {
+        if (data.prevType && data.prevType !== data.changedTo) {
+          bump(spans[data.prevType], -1);      // ⬅️ decrement previous
+        }
+        bump(spans[data.changedTo], +1);       // ⬅️ increment new
+        // move active to new
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+        const newBtn = bar.querySelector(`[data-react="${data.changedTo}"]`);
+        if (newBtn) newBtn.classList.add('active');
+      }
+
+      // Recompute total
+      const totalEl = bar.querySelector('[data-total-reactions]');
+      if (totalEl) {
+        const sum = Array.from(bar.querySelectorAll('.rc')).reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
+        totalEl.textContent = String(sum);
+      }
+  
+      // Toggle active state on buttons (cosmetic)
+      bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  })();
+  </script>
+  

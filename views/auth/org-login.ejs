@@ -1,0 +1,36 @@
+<% layout('layout') %>
+
+<section style="max-width:400px;margin:60px auto;padding:30px;border:1px solid #eee;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+  <div style="text-align:center;margin-bottom:20px;">
+    <% if (company?.branding?.logoUrl) { %>
+      <img src="<%= company.branding.logoUrl %>" alt="<%= company.name %>" style="height:60px;margin-bottom:10px;">
+    <% } %>
+    <h2 style="margin:0;"><%= company.name %></h2>
+    <p style="color:#777;margin:8px 0 20px;">Sign in to your organization</p>
+  </div>
+
+  <% if (error && error.length) { %>
+    <div style="background:#ffe0e0;padding:8px;border-radius:6px;margin-bottom:10px;color:#a00;">
+      <%= error %>
+    </div>
+  <% } %>
+
+  <form action="/<%= company.slug %>/auth/login" method="POST" style="display:flex;flex-direction:column;gap:15px;">
+    <div>
+      <label>Email</label>
+      <input type="email" name="email" required placeholder="you@company.com"
+             style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;">
+    </div>
+    <div>
+      <label>Password</label>
+      <input type="password" name="password" required placeholder="********"
+             style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;">
+    </div>
+
+    <button type="submit" class="btn" style="margin-top:10px;">Login</button>
+  </form>
+
+  <div style="text-align:center;margin-top:20px;">
+    <small><a href="/auth/register-org">Need to register your organization?</a></small>
+  </div>
+</section>

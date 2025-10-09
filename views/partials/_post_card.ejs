@@ -1,0 +1,38 @@
+<div class="card" style="margin-bottom:1rem;">
+  <div class="card-header" style="display:flex;justify-content:space-between;">
+    <div>
+      <strong><%= post.authorId?.fullName || 'User' %></strong>
+      <small> • <%= new Date(post.createdAt).toLocaleString() %> • <span class="badge"><%= post.type %></span></small>
+    </div>
+    <% if (user && (String(user._id) === String(post.authorId?._id || post.authorId) || ['ORG_ADMIN','MODERATOR'].includes(user.role))) { %>
+      <form method="POST" action="/<%= company.slug %>/posts/<%= post._id %>/delete" onsubmit="return confirm('Delete this post?')">
+        <button class="btn btn-ghost" type="submit">Delete</button>
+      </form>
+    <% } %>
+  </div>
+
+  <div class="card-body">
+    <div class="post-content"><%- post.richText %></div>
+
+    <% if (post.type === 'LINK' && post.linkPreview?.url) { %>
+      <div class="card" style="margin-top:.6rem;">
+        <div class="card-body">
+          <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+            <div><strong><%= post.linkPreview.title || post.linkPreview.url %></strong></div>
+            <% if (post.linkPreview.description) { %>
+              <div style="color:#666; font-size:.9rem; margin-top:.2rem;"><%= post.linkPreview.description %></div>
+            <% } %>
+          </a>
+        </div>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Reactions (single source of truth) -->
+  <%- include('./_reactions_bar', { company, user, post }) %>
+
+  <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center;">
+    <span></span>
+    <a class="btn btn-link" href="/<%= company.slug %>/posts/<%= post._id %>">Open</a>
+  </div>
+</div>

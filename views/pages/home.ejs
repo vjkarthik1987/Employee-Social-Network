@@ -1,0 +1,25 @@
+<% layout('layouts/_layout') %>
+
+<section style="max-width:700px;margin:60px auto;text-align:center;">
+  <h1>Welcome to Engage</h1>
+  <p>
+    An internal, ad-free social platform for organizations —  
+    connect, recognize, and celebrate your people.
+  </p>
+
+  <% if (user) { %>
+    <p>
+      You’re logged in as <strong><%= user.fullName %></strong>.
+      <a href="/<%= user.companySlug || companySlug %>/feed">Go to your feed</a>
+    </p>
+  <% } else { %>
+    <div style="margin-top:30px;">
+      <a href="/auth/register-org" class="btn" style="margin-right:12px;">Register Organization</a>
+      <a href="/auth/login" class="btn">Login</a>
+    </div>
+  <% } %>
+
+  <footer style="margin-top:60px;color:#888;">
+    <small>© <%= new Date().getFullYear() %> Engage Platform</small>
+  </footer>
+</section>

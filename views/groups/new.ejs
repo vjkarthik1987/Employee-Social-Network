@@ -1,0 +1,40 @@
+<% layout('layouts/_layout') %>
+
+<%- include('../partials/navbar') %>
+
+<section style="max-width:720px;margin:24px auto;">
+  <h2>Create Group</h2>
+
+  <form method="POST" action="/<%= company.slug %>/groups" style="display:grid;gap:12px;margin-top:12px;">
+    <div>
+      <label>Name</label><br/>
+      <input name="name" required placeholder="e.g., Engineering" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;" />
+    </div>
+
+    <div>
+      <label>Description</label><br/>
+      <textarea name="description" rows="3" placeholder="What is this group about?"
+                style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;"></textarea>
+    </div>
+
+    <div style="display:flex;gap:16px;align-items:center;">
+      <label>
+        <input type="checkbox" name="isPrivate" />
+        Private group
+      </label>
+
+      <label>
+        Membership:
+        <select name="membershipPolicy">
+          <option value="open" selected>Open</option>
+          <option value="by-approval">By approval</option>
+        </select>
+      </label>
+    </div>
+
+    <div style="margin-top:8px;">
+      <button type="submit" class="btn">Create</button>
+      <a class="btn btn-ghost" href="/<%= company.slug %>/groups" style="margin-left:8px;">Cancel</a>
+    </div>
+  </form>
+</section>

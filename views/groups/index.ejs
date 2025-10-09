@@ -1,0 +1,48 @@
+<% layout('layouts/_layout') %>
+
+<%- include('../partials/navbar') %>
+
+<section style="max-width:960px;margin:24px auto;">
+  <header style="display:flex;align-items:center;justify-content:space-between;">
+    <h2>Groups — <%= company.name %></h2>
+    <a class="btn" href="/<%= company.slug %>/groups/new">Create Group</a>
+  </header>
+
+  <% if (success && success.length) { %>
+    <div class="flash flash-success"><%= success %></div>
+  <% } %>
+  <% if (error && error.length) { %>
+    <div class="flash flash-error"><%= error %></div>
+  <% } %>
+
+  <% if (!groups || !groups.length) { %>
+    <p style="margin-top:16px;">No groups yet. Be the first to
+      <a href="/<%= company.slug %>/groups/new">create one</a>.
+    </p>
+  <% } else { %>
+    <ul style="list-style:none;padding:0;margin:20px 0;">
+      <% groups.forEach(g => { %>
+        <li style="border:1px solid #eee;border-radius:8px;padding:14px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <a href="/<%= company.slug %>/groups/<%= g._id %>">
+                <strong><%= g.name %></strong>
+              </a>
+              <div style="color:#666;font-size:0.9rem;">
+                <%= g.description || '—' %>
+              </div>
+              <small style="color:#888;">
+                <%= g.membersCount || 0 %> members
+                · <%= g.isPrivate ? 'Private' : 'Public' %>
+                · <%= (g.membershipPolicy || 'open').replace('-', ' ') %>
+              </small>
+            </div>
+            <div>
+              <a class="btn" href="/<%= company.slug %>/groups/<%= g._id %>">Open</a>
+            </div>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</section>

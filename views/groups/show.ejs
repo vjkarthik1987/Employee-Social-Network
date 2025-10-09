@@ -1,0 +1,73 @@
+<% layout('layouts/_layout') %>
+
+<%- include('../partials/navbar') %>
+
+<section style="max-width:900px;margin:24px auto;">
+  <% if (success && success.length) { %>
+    <div class="flash flash-success"><%= success %></div>
+  <% } %>
+  <% if (error && error.length) { %>
+    <div class="flash flash-error"><%= error %></div>
+  <% } %>
+
+  <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div>
+      <h2 style="margin:0;"><%= group.name %></h2>
+      <div style="color:#666;margin-top:6px;"><%= group.description || '' %></div>
+      <small style="color:#888;">
+        <%= group.membersCount || 0 %> members
+        · <%= group.isPrivate ? 'Private' : 'Public' %>
+        · <%= (group.membershipPolicy || 'open').replace('-', ' ') %>
+      </small>
+    </div>
+
+    <div>
+      <% if (user) { %>
+        <!-- Join -->
+        <form method="POST" action="/<%= company.slug %>/groups/<%= group._id %>/join" style="display:inline;">
+          <button class="btn" type="submit">Join</button>
+        </form>
+        <!-- Leave -->
+        <form method="POST" action="/<%= company.slug %>/groups/<%= group._id %>/leave" style="display:inline;margin-left:6px;">
+          <button class="btn btn-ghost" type="submit">Leave</button>
+        </form>
+      <% } %>
+
+      <!-- Edit (owner/mods only) – server will guard -->
+      <a class="btn" href="/<%= company.slug %>/groups/<%= group._id %>/edit" style="margin-left:6px;">Edit</a>
+    </div>
+  </header>
+
+  <hr/>
+
+  <!-- Group feed / posts -->
+  <section style="margin-top:16px;">
+    <h3>Group Posts</h3>
+
+    <!-- Create post (TEXT/LINK) -->
+    <% if (user) { %>
+      <%- include('../partials/_post_form', { company, groupId: group._id }) %>
+    <% } %>
+
+    <!-- List posts -->
+    <% if (!posts || posts.length === 0) { %>
+      <div class="empty">No posts in this group yet.</div>
+    <% } %>
+
+    <% (posts || []).forEach(function(post){ %>
+      <%- include('../partials/_post_card', { company, user, post }) %>
+    <% }) %>
+
+    <!-- Pager (if controller passes `page`) -->
+    <% if (typeof page !== 'undefined') { %>
+      <div style="display:flex;justify-content:space-between;margin-top:.75rem;">
+        <% if (page > 1) { %>
+          <a class="btn" href="?page=<%= page - 1 %>">← Newer</a>
+        <% } else { %>
+          <span></span>
+        <% } %>
+        <a class="btn" href="?page=<%= page + 1 %>">Older →</a>
+      </div>
+    <% } %>
+  </section>
+</section>

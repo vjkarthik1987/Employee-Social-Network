@@ -1,0 +1,40 @@
+<% /* _reply.ejs — renders ONE reply <li> */
+  /* Accept either `r` (AJAX path) or `comment` (server include path) */
+  const c = typeof r !== 'undefined' ? r : comment;
+  const a = c && c.authorId;
+  const name = (a && a.fullName) || 'User';
+  const initials = name.trim().split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase();
+%>
+
+<li class="comment" data-reply-id="<%= c._id %>">
+ <div class="row" style="gap:10px;">
+   <div class="avatar">
+     <% if (a && a.avatarUrl) { %>
+       <img src="<%= a.avatarUrl %>" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+     <% } else { %>
+       <%= initials %>
+     <% } %>
+   </div>
+
+   <div style="flex:1; min-width:0;">
+     <div class="row" style="justify-content:space-between; gap:12px;">
+       <div class="row" style="gap:12px; min-width:0;">
+         <strong style="color:#e9edf6;"><%= name %></strong>
+         <small class="muted"><%= new Date(c.createdAt).toLocaleString() %></small>
+       </div>
+
+       <% const isOwner = user && (String(user._id) === String(a?._id || c.authorId));
+          const isPriv = user && ['ORG_ADMIN','MODERATOR'].includes(user.role);
+          if (isOwner || isPriv) { %>
+         <a href="#" class="muted" data-ajax-delete data-comment-id="<%= c._id %>" title="Delete">Delete</a>
+       <% } %>
+     </div>
+
+     <% if (c.status === 'deleted') { %>
+       <em class="muted">(deleted)</em>
+     <% } else { %>
+       <div class="comment-content" style="margin-top:6px;"><%- c.content %></div>
+     <% } %>
+   </div>
+ </div>
+</li>

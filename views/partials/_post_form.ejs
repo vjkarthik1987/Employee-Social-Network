@@ -1,0 +1,16 @@
+<form method="POST" action="/<%= company.slug %>/posts" class="card" style="margin-bottom:1rem;">
+    <div class="card-body">
+      <textarea name="content" rows="3" class="input" placeholder="Share an update..." required></textarea>
+      <div style="display:flex;gap:.5rem;align-items:center;margin-top:.6rem;">
+        <select name="type" class="input" style="max-width:160px;">
+          <option value="TEXT" selected>Text</option>
+          <option value="LINK">Link</option>
+        </select>
+        <% if (typeof groupId !== 'undefined' && groupId) { %>
+          <input type="hidden" name="groupId" value="<%= groupId %>">
+        <% } %>
+        <button class="btn" type="submit">Post</button>
+      </div>
+    </div>
+  </form>
+  

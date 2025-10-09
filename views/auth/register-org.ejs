@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Register Organization</title></head>
+<body>
+  <%- include('../partials/flash') %>
+  <h1>Create your organization</h1>
+  <form method="POST" action="/auth/register-org">
+    <label>Company Name</label><br/>
+    <input name="companyName" required /><br/><br/>
+
+    <label>Company Slug (org handle)</label><br/>
+    <input name="companySlug" required placeholder="acme" /><br/><br/>
+
+    <label>Admin Full Name</label><br/>
+    <input name="fullName" required /><br/><br/>
+
+    <label>Admin Email</label><br/>
+    <input type="email" name="email" required /><br/><br/>
+
+    <label>Password</label><br/>
+    <input type="password" name="password" required minlength="8" /><br/><br/>
+
+    <button type="submit">Create Organization</button>
+  </form>
+
+  <p><a href="/auth/login">Already have an org? Log in</a></p>
+</body>
+</html>
