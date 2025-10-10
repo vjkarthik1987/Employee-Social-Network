@@ -1,16 +1,70 @@
-<form method="POST" action="/<%= company.slug %>/posts" class="card" style="margin-bottom:1rem;">
-    <div class="card-body">
-      <textarea name="content" rows="3" class="input" placeholder="Share an update..." required></textarea>
-      <div style="display:flex;gap:.5rem;align-items:center;margin-top:.6rem;">
-        <select name="type" class="input" style="max-width:160px;">
-          <option value="TEXT" selected>Text</option>
-          <option value="LINK">Link</option>
-        </select>
-        <% if (typeof groupId !== 'undefined' && groupId) { %>
-          <input type="hidden" name="groupId" value="<%= groupId %>">
-        <% } %>
-        <button class="btn" type="submit">Post</button>
-      </div>
+<!-- views/partials/_post_form.ejs -->
+<form method="POST"
+      action="/<%= company.slug %>/posts"
+      class="card"
+      style="margin-bottom:1rem;"
+      enctype="multipart/form-data">
+  <div class="card-body">
+
+    <!-- Post Type -->
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;">
+      <label for="postTypeSel" style="font-size:.9rem;color:#555;">Type</label>
+      <select name="type" class="input" style="max-width:180px;" id="postTypeSel" required>
+        <option value="TEXT" selected>Text</option>
+        <option value="LINK">Link</option>
+        <option value="IMAGE">Image</option>
+      </select>
+
+      <% if (typeof groupId !== 'undefined' && groupId) { %>
+        <input type="hidden" name="groupId" value="<%= groupId %>">
+      <% } %>
     </div>
-  </form>
-  
+
+    <!-- Text area (always visible — works as caption for image) -->
+    <div id="textRow">
+      <textarea name="content"
+                rows="3"
+                class="input"
+                placeholder="Share something… or add a caption if you upload an image."></textarea>
+    </div>
+
+    <!-- Link hint -->
+    <div id="linkHint" class="d-none" style="margin-top:.35rem;">
+      <small>Paste your link inside the text box above.</small>
+    </div>
+
+    <!-- Image upload (toggle visible when type=IMAGE) -->
+    <div id="imageRow" class="d-none" style="margin-top:.8rem;">
+      <input type="file" name="image" accept="image/*" />
+      <div><small>JPG/PNG/GIF • up to 2 MB</small></div>
+      <input type="text" name="imageAlt" class="input" placeholder="Describe the image (alt text, optional)" style="margin-top:.4rem;">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:.8rem;">
+      <button class="btn" type="submit">Post</button>
+    </div>
+  </div>
+</form>
+
+<script>
+  (function(){
+    const typeSel = document.getElementById('postTypeSel');
+    const textRow = document.getElementById('textRow');
+    const imageRow = document.getElementById('imageRow');
+    const linkHint = document.getElementById('linkHint');
+
+    function toggleComposerRows() {
+      const v = typeSel.value;
+      const isImage = v === 'IMAGE';
+      const isLink = v === 'LINK';
+
+      // Text always visible (caption allowed for images)
+      textRow.classList.remove('d-none');
+      imageRow.classList.toggle('d-none', !isImage);
+      linkHint.classList.toggle('d-none', !isLink);
+    }
+
+    typeSel.addEventListener('change', toggleComposerRows);
+    toggleComposerRows();
+  })();
+</script>

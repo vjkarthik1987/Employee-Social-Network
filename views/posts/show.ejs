@@ -8,8 +8,11 @@
       <div>
         <strong><%= post.authorId?.fullName || 'User' %></strong>
         <small>
-          • <%= new Date(post.createdAt).toLocaleString() %>
+          • <%= new Date(post.createdAt || post.publishedAt).toLocaleString() %>
           <% if (post.type) { %> • <span class="badge"><%= post.type %></span><% } %>
+          <% if (post.group && post.group._id) { %>
+            • in <a href="/<%= company.slug %>/g/<%= post.group._id %>"><%= post.group.name %></a>
+          <% } %>
         </small>
       </div>
 
@@ -21,8 +24,24 @@
     </div>
 
     <div class="card-body">
-      <div class="post-content"><%- post.richText %></div>
+      <!-- Text body (hidden for pure image posts if you prefer) -->
+      <% if (post.richText) { %>
+        <div class="post-content"><%- post.richText %></div>
+      <% } %>
 
+      <!-- Image (Cloudinary/local safe) -->
+      <% if (post.firstAttachmentUrl) { 
+          const _u = String(post.firstAttachmentUrl || '');
+          const isCloud = _u.includes('/upload/');
+          const imgSrc = isCloud ? _u.replace('/upload/', '/upload/w_1200,h_800,c_fill,q_auto,f_auto/') : _u;
+      %>
+        <a href="<%= post.firstAttachmentUrl %>" target="_blank" rel="noopener noreferrer">
+          <img src="<%= imgSrc %>" alt="post image"
+               style="width:100%;height:auto;border-radius:10px;margin-top:.6rem;display:block;" />
+        </a>
+      <% } %>
+
+      <!-- Link preview (if present) -->
       <% if (post.type === 'LINK' && post.linkPreview && post.linkPreview.url) { %>
         <div class="card" style="margin-top:.6rem;">
           <div class="card-body">
@@ -60,17 +79,17 @@
     <% } %>
 
     <ul id="comments-list" style="list-style:none;padding:0;margin:0;">
-      <% if (topComments && topComments.length) { %>
-        <% topComments.forEach(function(c){ %>
-          <%- include('../partials/_comment', {
-                company,
-                user,
-                post,
-                comment: c,
-                replies: (repliesByParent[String(c._id)] || [])
-              }) %>
-        <% }) %>
-      <% } %>
+      <% (comments || []).forEach(function(c){ %>
+        <%- include('../partials/_comment', {
+              company,
+              user,
+              post,
+              comment: c,
+              // if your _comment partial expects replies/repliesByParent, pass empty defaults:
+              replies: [],
+              repliesByParent: {}
+            }) %>
+      <% }) %>
     </ul>
   </section>
 </section>
@@ -100,51 +119,43 @@
     if (!data.ok) { alert('Could not react.'); return; }
 
     const spans = {
-        LIKE:       bar.querySelector('[data-rc="LIKE"]'),
-        HEART:      bar.querySelector('[data-rc="HEART"]'),
-        CELEBRATE:  bar.querySelector('[data-rc="CELEBRATE"]'),
-        SUPPORT:    bar.querySelector('[data-rc="SUPPORT"]'),
-        LAUGH:      bar.querySelector('[data-rc="LAUGH"]'),
-        INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
-        THANKS:     bar.querySelector('[data-rc="THANKS"]')
-      };
-      const bump = (el, d) => { if (!el) return; el.textContent = Math.max(0, (parseInt(el.textContent||'0',10) + d)); };
+      LIKE:       bar.querySelector('[data-rc="LIKE"]'),
+      HEART:      bar.querySelector('[data-rc="HEART"]'),
+      CELEBRATE:  bar.querySelector('[data-rc="CELEBRATE"]'),
+      SUPPORT:    bar.querySelector('[data-rc="SUPPORT"]'),
+      LAUGH:      bar.querySelector('[data-rc="LAUGH"]'),
+      INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
+      THANKS:     bar.querySelector('[data-rc="THANKS"]')
+    };
+    const bump = (el, d) => { if (!el) return; el.textContent = Math.max(0, (parseInt(el.textContent||'0',10) + d)); };
 
-      if (data.added) {
-        bump(spans[data.added], +1);
-        // set active to new
-        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-        const newBtn = bar.querySelector(`[data-react="${data.added}"]`);
-        if (newBtn) newBtn.classList.add('active');
+    if (data.added) {
+      bump(spans[data.added], +1);
+      bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+      const newBtn = bar.querySelector(`[data-react="${data.added}"]`);
+      if (newBtn) newBtn.classList.add('active');
+    }
+
+    if (data.removed) {
+      bump(spans[data.removed], -1);
+      bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+    }
+
+    if (data.changedTo) {
+      if (data.prevType && data.prevType !== data.changedTo) {
+        bump(spans[data.prevType], -1);
       }
+      bump(spans[data.changedTo], +1);
+      bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+      const newBtn = bar.querySelector(`[data-react="${data.changedTo}"]`);
+      if (newBtn) newBtn.classList.add('active');
+    }
 
-      if (data.removed) {
-        bump(spans[data.removed], -1);
-        // clear active (no reaction now)
-        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-      }
-
-      if (data.changedTo) {
-        if (data.prevType && data.prevType !== data.changedTo) {
-          bump(spans[data.prevType], -1);      // ⬅️ decrement previous
-        }
-        bump(spans[data.changedTo], +1);       // ⬅️ increment new
-        // move active to new
-        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-        const newBtn = bar.querySelector(`[data-react="${data.changedTo}"]`);
-        if (newBtn) newBtn.classList.add('active');
-      }
-
-      // Recompute total
-      const totalEl = bar.querySelector('[data-total-reactions]');
-      if (totalEl) {
-        const sum = Array.from(bar.querySelectorAll('.rc')).reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
-        totalEl.textContent = String(sum);
-      }
-
-    // cosmetic active state
-    bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    const totalEl = bar.querySelector('[data-total-reactions]');
+    if (totalEl) {
+      const sum = Array.from(bar.querySelectorAll('.rc')).reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
+      totalEl.textContent = String(sum);
+    }
   });
 })();
 </script>
@@ -183,7 +194,7 @@
       const temp = document.createElement('div');
       temp.innerHTML = data.html.trim();
       const li = temp.firstElementChild;
-      if (li) list.appendChild(li); // append for chronological order
+      if (li) list.appendChild(li);
       bumpCommentsCount(data.commentsCountDelta || 0);
       newForm.reset();
     });
@@ -193,7 +204,6 @@
   document.addEventListener('click', async (e) => {
     const t = e.target;
 
-    // toggle reply form
     if (t.matches('[data-reply-toggle]')) {
       e.preventDefault();
       const id = t.getAttribute('data-reply-toggle');
@@ -202,7 +212,6 @@
       return;
     }
 
-    // AJAX delete
     if (t.matches('[data-ajax-delete]')) {
       e.preventDefault();
       const commentId = t.getAttribute('data-comment-id');
@@ -219,8 +228,7 @@
       if (node) {
         const content = node.querySelector('.comment-content');
         if (content) content.innerHTML = '<em style="color:#888;">(deleted)</em>';
-        const delBtn = node.querySelector('[data-ajax-delete]');
-        if (delBtn) delBtn.remove();
+        const delBtn = node.querySelector('[data-ajax-delete]'); if (delBtn) delBtn.remove();
       }
       bumpCommentsCount(data.commentsCountDelta || 0);
     }

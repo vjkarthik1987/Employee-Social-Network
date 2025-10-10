@@ -20,7 +20,7 @@ const PostSchema = new mongoose.Schema(
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group', default: null, index: true },
 
-    type: { type: String, enum: ['TEXT', 'LINK'], default: 'TEXT', required: true },
+    type: { type: String, enum: ['TEXT', 'LINK', 'IMAGE'], default: 'TEXT', required: true },
     status: {
       type: String,
       enum: ['DRAFT', 'QUEUED', 'APPROVED', 'PUBLISHED', 'REJECTED'],
@@ -60,9 +60,19 @@ const PostSchema = new mongoose.Schema(
     publishedAt: { type: Date, default: null },
     deletedAt: { type: Date, default: null },
     deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    attachmentsCount: { type: Number, default: 0 },
+    coverImageUrl: { type: String, default: null },
   },
   { timestamps: true }
 );
+
+PostSchema.virtual('attachments', {
+  ref: 'Attachment',
+  localField: '_id',
+  foreignField: 'targetId',
+  justOne: false,
+  options: { match: { targetType: 'post' }, sort: { createdAt: 1 } },
+});
 
 PostSchema.index({ companyId: 1, createdAt: -1 });
 
