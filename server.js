@@ -61,6 +61,7 @@ app.use(
   })
 );
 app.use(flash());
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ---- Passport ----
 app.use(passport.initialize());

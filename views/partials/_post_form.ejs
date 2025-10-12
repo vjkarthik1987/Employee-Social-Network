@@ -1,70 +1,105 @@
 <!-- views/partials/_post_form.ejs -->
 <form method="POST"
       action="/<%= company.slug %>/posts"
-      class="card"
-      style="margin-bottom:1rem;"
+      class="composer-card"
       enctype="multipart/form-data">
-  <div class="card-body">
 
-    <!-- Post Type -->
-    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;">
-      <label for="postTypeSel" style="font-size:.9rem;color:#555;">Type</label>
-      <select name="type" class="input" style="max-width:180px;" id="postTypeSel" required>
-        <option value="TEXT" selected>Text</option>
-        <option value="LINK">Link</option>
-        <option value="IMAGE">Image</option>
-      </select>
+  <!-- top row: avatar + rounded input -->
+  <div class="composer-top">
+    <textarea name="content"
+              rows="2"
+              class="composer-input"
+              placeholder="<%= currentUser ? `What's on your mind, ${currentUser.fullName?.split(' ')[0] || ''}?` : 'Start a post' %>"></textarea>
+  </div>
 
-      <% if (typeof groupId !== 'undefined' && groupId) { %>
-        <input type="hidden" name="groupId" value="<%= groupId %>">
-      <% } %>
-    </div>
+  <hr class="composer-sep"/>
 
-    <!-- Text area (always visible — works as caption for image) -->
-    <div id="textRow">
-      <textarea name="content"
-                rows="3"
-                class="input"
-                placeholder="Share something… or add a caption if you upload an image."></textarea>
-    </div>
+  <!-- actions row: video / photo-video / link -->
+  <div class="composer-actions">
+    <button type="button" class="composer-action" data-action="VIDEO" disabled title="Video (coming soon)">
+      <span class="icon" aria-hidden="true">🎥</span><span>Live/Video</span>
+    </button>
 
-    <!-- Link hint -->
-    <div id="linkHint" class="d-none" style="margin-top:.35rem;">
-      <small>Paste your link inside the text box above.</small>
-    </div>
+    <label class="composer-action" title="Photo/Video">
+      <span class="icon" aria-hidden="true">🖼️</span><span>Photo/video</span>
+      <!-- file input stays inside label so click triggers file picker -->
+      <input id="composerFile" type="file" name="image" accept="image/*,video/*" hidden>
+    </label>
 
-    <!-- Image upload (toggle visible when type=IMAGE) -->
-    <div id="imageRow" class="d-none" style="margin-top:.8rem;">
-      <input type="file" name="image" accept="image/*" />
-      <div><small>JPG/PNG/GIF • up to 2 MB</small></div>
-      <input type="text" name="imageAlt" class="input" placeholder="Describe the image (alt text, optional)" style="margin-top:.4rem;">
-    </div>
+    <button type="button" class="composer-action" data-action="LINK" title="Share a link">
+      <span class="icon" aria-hidden="true">🔗</span><span>Link</span>
+    </button>
+  </div>
 
-    <div style="display:flex;justify-content:flex-end;margin-top:.8rem;">
-      <button class="btn" type="submit">Post</button>
-    </div>
+  <!-- hidden / toggled rows (reuse your original fields) -->
+  <div id="linkHint" class="d-none" style="margin-top:.35rem;">
+    <small>Paste your link in the text box above.</small>
+  </div>
+
+  <div id="imageRow" class="d-none" style="margin-top:.8rem;">
+    <!-- keep your original constraints -->
+    <div><small>JPG/PNG/GIF • up to 2 MB</small></div>
+    <input type="text" name="imageAlt" class="input" placeholder="Describe the image (alt text, optional)" style="margin-top:.4rem;">
+  </div>
+
+  <!-- keep the original select (now hidden) so backend stays unchanged -->
+  <select name="type" id="postTypeSel" style="display:none;" required>
+    <option value="TEXT" selected>Text</option>
+    <option value="LINK">Link</option>
+    <option value="IMAGE">Image</option>
+  </select>
+
+  <% if (typeof groupId !== 'undefined' && groupId) { %>
+    <input type="hidden" name="groupId" value="<%= groupId %>">
+  <% } %>
+
+  <div style="display:flex;justify-content:flex-end;margin-top:.8rem;">
+    <button class="btn" type="submit">Post</button>
   </div>
 </form>
 
 <script>
-  (function(){
-    const typeSel = document.getElementById('postTypeSel');
-    const textRow = document.getElementById('textRow');
-    const imageRow = document.getElementById('imageRow');
-    const linkHint = document.getElementById('linkHint');
+(function(){
+  const sel     = document.getElementById('postTypeSel');
+  const fileInp = document.getElementById('composerFile');
+  const linkHint= document.getElementById('linkHint');
+  const imageRow= document.getElementById('imageRow');
+  const textarea= document.querySelector('.composer-input');
 
-    function toggleComposerRows() {
-      const v = typeSel.value;
-      const isImage = v === 'IMAGE';
-      const isLink = v === 'LINK';
+  // default = TEXT
+  setType('TEXT');
 
-      // Text always visible (caption allowed for images)
-      textRow.classList.remove('d-none');
-      imageRow.classList.toggle('d-none', !isImage);
-      linkHint.classList.toggle('d-none', !isLink);
-    }
+  // action buttons
+  document.currentScript.previousElementSibling // the form wrapper
+  const form = document.currentScript.previousElementSibling; // <form>
+  form.querySelectorAll('.composer-action[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.getAttribute('data-action');
+      if (action === 'LINK') {
+        setType('LINK');
+        textarea?.focus();
+      } else if (action === 'VIDEO') {
+        // not implemented; you can wire later
+      }
+    });
+  });
 
-    typeSel.addEventListener('change', toggleComposerRows);
-    toggleComposerRows();
-  })();
+  // file picker -> IMAGE
+  if (fileInp) {
+    fileInp.addEventListener('click', () => setType('IMAGE'));
+    fileInp.addEventListener('change', () => {
+      if (fileInp.files && fileInp.files.length) {
+        setType('IMAGE');
+        imageRow.classList.remove('d-none');
+      }
+    });
+  }
+
+  function setType(t){
+    sel.value = t;
+    // toggle helper rows
+    linkHint?.classList.toggle('d-none', t !== 'LINK');
+    imageRow?.classList.toggle('d-none', t !== 'IMAGE');
+  }
+})();
 </script>

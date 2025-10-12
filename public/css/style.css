@@ -1,0 +1,252 @@
+/* ---------- Base ---------- */
+body {
+    margin: 0;
+    font-family: Inter, sans-serif;
+    background: #fafafa;
+    color: #333;
+  }
+  
+  /* ---------- Main Container ---------- */
+  .page-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  /* ---------- Sidebar (if included) ---------- */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 180px;
+    background-color: #fff;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px 12px;
+    gap: 10px;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  }
+  
+  .main-container {
+    margin-left: 180px; /* same as sidebar width */
+    padding: 20px;
+  }
+  
+  /* ---------- Buttons ---------- */
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  
+  button.logout {
+    background: #f44336;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
+    width: 100%;
+  }
+  
+  a {
+    color: #333;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    color: #0073b1; /* LinkedIn blue */
+  }
+
+  /* Composer (FB/LinkedIn style) */
+.composer-card{
+    background:#fff;border:1px solid #eee;border-radius:14px;padding:12px 14px;
+    box-shadow:0 2px 4px rgba(0,0,0,.04);max-width:720px;margin:0 auto 16px;
+  }
+  .composer-top{display:flex;align-items:flex-start;gap:10px}
+  .composer-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover}
+  .composer-input{
+    flex:1;background:#f3f5f7;border:1px solid #e5e7eb;border-radius:999px;
+    padding:10px 14px;color:#374151;resize:vertical;min-height:42px;
+  }
+  .composer-input::placeholder{color:#9aa3af}
+  .composer-sep{border:none;border-top:1px solid #f0f0f0;margin:10px 0}
+  .composer-actions{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .composer-action{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+    color:#444;text-decoration:none;font-weight:500;background:transparent;border:none;cursor:pointer;
+  }
+  .composer-action:hover{background:#f7f7f7}
+  .composer-action .icon{font-size:18px;line-height:1}
+  .d-none{display:none !important}
+  
+  /* ---------- Post Card ---------- */
+.post-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    padding: 14px 16px;
+    margin: 5px auto 16px;
+    max-width: 720px;
+  }
+  
+  /* Header */
+  .post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .post-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .post-meta {
+    flex: 1;
+  }
+  .post-author a {
+    color: #111;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .post-author a:hover {
+    text-decoration: underline;
+  }
+  .post-title {
+    color: #666;
+    font-weight: 400;
+  }
+  .post-time {
+    font-size: 0.84rem;
+    color: #777;
+  }
+  .post-group {
+    color: #0073b1;
+    text-decoration: none;
+  }
+  .post-group:hover {
+    text-decoration: underline;
+  }
+  
+  /* Body */
+  .post-body {
+    margin-top: 4px;
+  }
+  .post-content {
+    white-space: pre-wrap;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #333;
+  }
+  .post-image {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-top: 8px;
+    display: block;
+  }
+  .link-preview {
+    display: flex;
+    gap: 10px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .link-thumb {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+  }
+  .link-info {
+    padding: 8px;
+  }
+  .link-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .link-desc {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  .link-open {
+    color: #0073b1;
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  .link-open:hover {
+    text-decoration: underline;
+  }
+  
+  /* Footer */
+  .post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f1f1;
+    margin-top: 12px;
+    padding-top: 8px;
+  }
+  .post-counts {
+    color: #666;
+    font-size: 0.85rem;
+  }
+  .post-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .btn-link {
+    border: none;
+    background: none;
+    color: #0073b1;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0;
+  }
+  .btn-link:hover {
+    text-decoration: underline;
+  }
+  .btn-link.danger {
+    color: #c00;
+  }
+
+  /* Reactions inside card */
+.post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f1f1;
+    margin-top: 12px;
+    padding-top: 8px;
+    gap: 12px;
+  }
+  
+  .post-reactions .reactions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .reactions .btn.btn-ghost {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+  }
+  .reactions .btn.btn-ghost:hover {
+    background: #f7f7f7;
+  }
+  .reactions small.muted {
+    color: #666;
+    font-size: .85rem;
+  }
+  

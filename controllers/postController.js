@@ -59,7 +59,7 @@ function canDelete(user, post) {
 exports.companyFeed = async (req, res, next) => {
   try {
     const cid = companyIdOf(req);
-    const posts = await Post.find({ companyId: cid, deletedAt: null })
+    const posts = await Post.find({ companyId: cid, deletedAt: null, status: 'PUBLISHED' })
       .sort({ createdAt: -1 })
       .populate('authorId', 'fullName title avatarUrl')
       .lean();
@@ -86,7 +86,7 @@ exports.groupFeed = async (req, res, next) => {
     const group = await Group.findOne({ _id: groupId, companyId: cid }).lean();
     if (!group) return res.status(404).render('errors/404');
 
-    const posts = await Post.find({ companyId: cid, groupId, deletedAt: null })
+    const posts = await Post.find({ companyId: cid, groupId, deletedAt: null, status: 'PUBLISHED' })
       .sort({ createdAt: -1 })
       .populate('authorId', 'fullName title avatarUrl')
       .lean();

@@ -9,6 +9,8 @@ const postsRouter = require('./posts');
 const commentsApi = require('./api/comments');
 const reactionsApi = require('./api/reactions'); 
 const pc = require('../controllers/postController');
+const moderation = require('../controllers/moderationController');
+
 
 const router = express.Router({ mergeParams: true });
 
@@ -71,7 +73,19 @@ router.get(
   '/mod/queue',
   ensureAuth,
   requireRole('MODERATOR', 'ORG_ADMIN'),
-  (req, res) => res.render('mod/queue', { company: req.company })
+  moderation.queue
+);
+
+router.post('/posts/mod/approve',
+  ensureAuth,
+  requireRole('MODERATOR','ORG_ADMIN'),
+  moderation.approve
+);
+
+router.post('/posts/mod/reject',
+  ensureAuth,
+  requireRole('MODERATOR','ORG_ADMIN'),
+  moderation.reject
 );
 
 // Admin settings (admins only)

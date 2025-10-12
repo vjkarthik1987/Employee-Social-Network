@@ -1,106 +1,80 @@
-<!-- views/partials/_post_card.ejs -->
-<div class="card post-card" style="margin-bottom:1rem;">
+<div class="post-card">
   <!-- Header -->
-  <div class="card-header" style="display:flex;align-items:center;gap:.6rem;">
-    <img src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
-         alt="<%= post.authorId?.fullName || 'User' %>"
-         style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
-    <div>
-      <div style="font-weight:600;">
-        <a href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="text-decoration:none;color:inherit;">
+  <div class="post-header">
+    <img class="post-avatar"
+         src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
+         alt="<%= post.authorId?.fullName || 'User' %>">
+
+    <div class="post-meta">
+      <div class="post-author">
+        <a href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
           <%= post.authorId?.fullName || 'Unknown User' %>
         </a>
         <% if (post.authorId?.title) { %>
-          <span style="color:#888;font-weight:400;"> · <%= post.authorId.title %></span>
+          <span class="post-title"> · <%= post.authorId.title %></span>
         <% } %>
       </div>
-      <div style="font-size:.82rem;color:#777;">
+
+      <div class="post-time">
         <%= new Date(post.createdAt || post.publishedAt).toLocaleString() %>
         <% if (post.groupId && post.group) { %> · in
-          <a href="/<%= company.slug %>/g/<%= post.groupId %>" style="color:#666;"><%= post.group.name %></a>
+          <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group.name %></a>
         <% } %>
       </div>
     </div>
   </div>
 
   <!-- Body -->
-  <div class="card-body">
-    <!-- Text content (always show, even if image post) -->
+  <div class="post-body">
     <% if (post.richText) { %>
-      <div class="post-content" style="white-space:pre-wrap;"><%- post.richText %></div>
+      <div class="post-content"><%- post.richText %></div>
     <% } %>
 
-    <!-- Image thumbnail (Cloudinary or local) -->
-    <% if (post.firstAttachmentUrl) { 
-        const _u = String(post.firstAttachmentUrl || '');
-        const isCloudinary = _u.includes('/upload/');
-        const imgSrc = isCloudinary
-          ? _u.replace('/upload/', '/upload/w_900,h_600,c_fill,q_auto,f_auto/')
-          : _u;
+    <% if (post.firstAttachmentUrl) {
+         const _u = String(post.firstAttachmentUrl || '');
+         const isCloudinary = _u.includes('/upload/');
+         const imgSrc = isCloudinary
+           ? _u.replace('/upload/', '/upload/w_900,h_600,c_fill,q_auto,f_auto/')
+           : _u;
     %>
       <a href="<%= post.firstAttachmentUrl %>" target="_blank" rel="noopener">
-        <img
-          src="<%= imgSrc %>"
-          alt="<%= post.imageAlt || 'post image' %>"
-          style="width:100%;height:auto;border-radius:10px;margin-top:.6rem;display:block;" />
+        <img class="post-image"
+             src="<%= imgSrc %>"
+             alt="<%= post.imageAlt || 'post image' %>">
       </a>
     <% } %>
 
-    <!-- LINK preview (optional) -->
     <% if (post.type === 'LINK' && post.linkPreview && post.linkPreview.url) { %>
-      <div class="card" style="margin-top:.6rem;">
-        <div class="card-body" style="display:flex;gap:.8rem;align-items:flex-start;">
-          <% if (post.linkPreview.imageUrl) { %>
-            <img src="<%= post.linkPreview.imageUrl %>"
-                 alt=""
-                 style="width:96px;height:96px;object-fit:cover;border-radius:6px;">
-          <% } %>
-          <div>
-            <div style="font-weight:600;margin-bottom:.2rem;"><%= post.linkPreview.title || post.linkPreview.url %></div>
-            <div style="color:#666;font-size:.9rem;"><%= post.linkPreview.description || '' %></div>
-            <div style="margin-top:.3rem;">
-              <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener">Open link</a>
-            </div>
-          </div>
+      <div class="link-preview">
+        <% if (post.linkPreview.imageUrl) { %>
+          <img class="link-thumb" src="<%= post.linkPreview.imageUrl %>" alt="">
+        <% } %>
+        <div class="link-info">
+          <div class="link-title"><%= post.linkPreview.title || post.linkPreview.url %></div>
+          <div class="link-desc"><%= post.linkPreview.description || '' %></div>
+          <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener" class="link-open">Open link</a>
         </div>
       </div>
     <% } %>
   </div>
 
-  <!-- Footer: counts + actions -->
-  <div class="card-footer" style="display:flex;justify-content:space-between;align-items:center;">
-    <small style="color:#666;">
-      <span id="reactions-count">
-        <%
-          const rc = post.reactionsCountByType || {};
-          const totalReactions =
-            (rc.LIKE||0) + (rc.HEART||0) + (rc.CELEBRATE||0) +
-            (rc.SUPPORT||0) + (rc.LAUGH||0) + (rc.INSIGHTFUL||0) + (rc.THANKS||0);
-        %>
-        <%= totalReactions %>
-      </span> reactions •
-      <span id="comments-count"><%= post.commentsCount || 0 %></span> comments
-    </small>
+  <!-- Footer -->
+  <div class="post-footer">
+    <!-- Inline reactions bar inside the card -->
+    <div class="post-reactions">
+      <%- include('./_reactions_bar', { company, user, post }) %>
+    </div>
 
-    <div style="display:flex;gap:.75rem;align-items:center;">
-      <!-- Open -->
-      <a class="btn btn-link" href="/<%= company.slug %>/posts/<%= post._id %>">Open</a>
+    <!-- Right-side actions -->
+    <div class="post-actions">
+      <a class="btn-link" href="/<%= company.slug %>/posts/<%= post._id %>">Open</a>
 
-      <!-- Delete -->
-      <% if (user && (String(user._id) === String(post.authorId?._id) || user.role === 'MODERATOR' || user.role === 'ORG_ADMIN')) { %>
+      <% if (user && (String(user._id) === String(post.authorId?._id)
+           || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
         <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" style="margin:0;">
-          <button class="btn btn-link" style="color:#c00;" onclick="return confirm('Delete this post?')">Delete</button>
+          <button class="btn-link danger" onclick="return confirm('Delete this post?')">Delete</button>
         </form>
       <% } %>
     </div>
-  </div>
-
-  <!-- Reactions bar -->
-  <div class="card-footer" style="display:flex;gap:.5rem;">
-    <form action="/<%= company.slug %>/posts/<%= post._id %>/react" method="POST" class="inline">
-      <button data-react="LIKE" type="button">👍</button>
-      <button data-react="HEART" type="button">❤️</button>
-      <button data-react="CELEBRATE" type="button">🎉</button>
-    </form>
   </div>
 </div>

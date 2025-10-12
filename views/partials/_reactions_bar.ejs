@@ -1,11 +1,12 @@
-<%
-// _reactions_bar.ejs
-// Inputs: company, user, post
-const c = post.reactionsCountByType || {};
-const total = (c.LIKE||0)+(c.HEART||0)+(c.CELEBRATE||0)+(c.SUPPORT||0)+(c.LAUGH||0)+(c.INSIGHTFUL||0)+(c.THANKS||0);
-%>
+
 
 <div class="reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
+  <%
+  // _reactions_bar.ejs
+  // Inputs: company, user, post
+  const c = post.reactionsCountByType || {};
+  const total = (c.LIKE||0)+(c.HEART||0)+(c.CELEBRATE||0)+(c.SUPPORT||0)+(c.LAUGH||0)+(c.INSIGHTFUL||0)+(c.THANKS||0);
+  %>
   <div class="reactions-buttons" style="display:flex;gap:.4rem;align-items:center;">
     <button type="button" class="btn btn-ghost" data-react="LIKE"      title="Like">👍 <span class="rc" data-rc="LIKE"><%= c.LIKE||0 %></span></button>
     <button type="button" class="btn btn-ghost" data-react="HEART"     title="Love">❤️ <span class="rc" data-rc="HEART"><%= c.HEART||0 %></span></button>

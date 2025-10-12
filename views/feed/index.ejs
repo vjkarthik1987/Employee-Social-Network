@@ -1,6 +1,5 @@
 <% layout('layouts/_layout') %>
 
-<%- include('../partials/navbar') %>
 
 <section style="max-width:900px;margin:24px auto;">
   <h2 style="margin:0 0 12px;">Company Feed</h2>
@@ -14,9 +13,9 @@
   <% } %>
 
   <% (posts || []).forEach(function(post){ %>
-    <%- include('../partials/_post_card', { company, user, post }) %>
+    <%- include('../partials/_post_card', { company, user, post }) %> 
   <% }) %>
-
+  
   <% if (typeof page !== 'undefined') { %>
     <div style="display:flex;justify-content:space-between;margin-top:.75rem;">
       <% if (page > 1) { %>
@@ -30,7 +29,7 @@
 </section>
 
 <script>
-  (function(){
+  (function () {
     const ORG = "<%= company.slug %>";
   
     // Event delegation for all reaction bars on the page
@@ -39,12 +38,19 @@
       if (!btn) return;
   
       const bar = btn.closest('[data-react-scope]');
-      if (!bar) return;
+      if (!bar) {
+        console.warn('No data-react-scope on this post');
+        return;
+      }
   
       // Gather info
       const type = btn.getAttribute('data-react');
       const targetType = bar.getAttribute('data-target-type');   // 'post'
       const targetId = bar.getAttribute('data-target-id');
+      if (!targetType || !targetId) {
+        console.warn('Missing targetType/targetId on reactions bar', { targetType, targetId });
+        return;
+      }
   
       // Call API
       const resp = await fetch(`/${ORG}/api/reactions`, {
@@ -56,9 +62,6 @@
       if (!data.ok) { alert('Could not react.'); return; }
   
       // Update per-type counts in the clicked bar
-      const inc = (span, d) => { if (!span) return; span.textContent = Math.max(0, (parseInt(span.textContent||'0',10) + d)); };
-      const sum = (bar) => Array.from(bar.querySelectorAll('.rc')).reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
-  
       const spans = {
         LIKE:       bar.querySelector('[data-rc="LIKE"]'),
         HEART:      bar.querySelector('[data-rc="HEART"]'),
@@ -69,43 +72,34 @@
         THANKS:     bar.querySelector('[data-rc="THANKS"]')
       };
       const bump = (el, d) => { if (!el) return; el.textContent = Math.max(0, (parseInt(el.textContent||'0',10) + d)); };
-
+  
       if (data.added) {
         bump(spans[data.added], +1);
-        // set active to new
         bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-        const newBtn = bar.querySelector(`[data-react="${data.added}"]`);
-        if (newBtn) newBtn.classList.add('active');
+        bar.querySelector(`[data-react="${data.added}"]`)?.classList.add('active');
       }
-
+  
       if (data.removed) {
         bump(spans[data.removed], -1);
-        // clear active (no reaction now)
         bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
       }
-
+  
       if (data.changedTo) {
-        if (data.prevType && data.prevType !== data.changedTo) {
-          bump(spans[data.prevType], -1);      // ⬅️ decrement previous
-        }
-        bump(spans[data.changedTo], +1);       // ⬅️ increment new
-        // move active to new
+        if (data.prevType && data.prevType !== data.changedTo) bump(spans[data.prevType], -1);
+        bump(spans[data.changedTo], +1);
         bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-        const newBtn = bar.querySelector(`[data-react="${data.changedTo}"]`);
-        if (newBtn) newBtn.classList.add('active');
+        bar.querySelector(`[data-react="${data.changedTo}"]`)?.classList.add('active');
       }
-
+  
       // Recompute total
       const totalEl = bar.querySelector('[data-total-reactions]');
       if (totalEl) {
-        const sum = Array.from(bar.querySelectorAll('.rc')).reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
-        totalEl.textContent = String(sum);
+        const total = Array.from(bar.querySelectorAll('.rc'))
+          .reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
+        totalEl.textContent = String(total);
       }
-  
-      // Toggle active state on buttons (cosmetic)
-      bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
     });
   })();
   </script>
+  
   

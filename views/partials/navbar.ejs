@@ -1,36 +1,68 @@
-<nav style="display:flex;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid #eee;">
-    <!-- Left: org-aware links when org exists -->
-    <% if (org) { %>
-      <a href="/<%= org.slug %>/feed">Feed</a>
-      <a href="/<%= org.slug %>/groups">Groups</a>
-  
-      <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
-        <a href="/<%= org.slug %>/mod/queue">Moderation</a>
-      <% } %>
-  
-      <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
-        <a href="/<%= org.slug %>/admin/settings">Admin</a>
-        <a href="/<%= org.slug %>/admin/users">Users</a>
-      <% } %>
-  
-      <!-- Right: auth -->
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-        <% if (currentUser) { %>
-          <form method="POST" action="/<%= org.slug %>/auth/logout" style="display:inline;">
-            <button type="submit">Logout</button>
-          </form>
-        <% } else { %>
-          <a href="/<%= org.slug %>/auth/login">Login</a>
-        <% } %>
-      </div>
-  
-    <% } else { %>
-      <!-- No org (public pages) -->
-      <a href="/">Home</a>
-      <div style="margin-left:auto;">
-        <a href="/auth/register-org">Register Org</a>
-        <a href="/auth/login" style="margin-left:10px;">Login</a>
-      </div>
+<!-- Fixed Left Sidebar -->
+<nav style="
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 95vh;
+  width: 240px;
+  background-color: #fff;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px 12px;
+  gap: 10px;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+  z-index: 1000;
+">
+  <% if (org) { %>
+
+    <!-- Branding -->
+    <div style="margin-bottom:16px;width:100%;padding:6px 8px;">
+      <a href="/<%= org.slug %>/feed" style="text-decoration:none;color:#333;font-weight:bold;font-size:1em;">
+        <%= org.name || 'Company' %>
+      </a>
+    </div>
+
+    <!-- Navigation Links -->
+    <a href="/<%= org.slug %>/feed" style="padding:6px 8px;width:100%;border-radius:6px;">🏠 Feed</a>
+    <a href="/<%= org.slug %>/groups" style="padding:6px 8px;width:100%;border-radius:6px;">👥 Groups</a>
+
+    <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
+      <a href="/<%= org.slug %>/mod/queue" style="padding:6px 8px;width:100%;border-radius:6px;">🛡️ Moderation</a>
     <% } %>
-  </nav>
-  
+
+    <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
+      <a href="/<%= org.slug %>/admin/settings" style="padding:6px 8px;width:100%;border-radius:6px;">⚙️ Admin</a>
+      <a href="/<%= org.slug %>/admin/users" style="padding:6px 8px;width:100%;border-radius:6px;">👤 Users</a>
+    <% } %>
+
+    <!-- Spacer -->
+    <div style="flex-grow:1;"></div>
+
+    <!-- Logout Button -->
+    <% if (currentUser) { %>
+      <form method="POST" action="/<%= org.slug %>/auth/logout" style="width:100%;text-align:center;">
+        <button type="submit" style="
+          width:100%;
+          padding:8px;
+          border:none;
+          background:#f44336;
+          color:#fff;
+          border-radius:6px;
+          cursor:pointer;
+        ">🚪 Logout</button>
+      </form>
+    <% } else { %>
+      <a href="/<%= org.slug %>/auth/login" style="padding:8px;width:100%;border-radius:6px;background:#1976d2;color:#fff;text-align:center;">🔑 Login</a>
+    <% } %>
+
+  <% } else { %>
+    <!-- Public Pages -->
+    <a href="/">🏠 Home</a>
+    <a href="/auth/register-org">🏢 Register Org</a>
+    <a href="/auth/login">🔑 Login</a>
+  <% } %>
+</nav>
+
+<!-- Spacer for content -->
