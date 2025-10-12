@@ -1,12 +1,12 @@
-#List of items
+#   List of items
 - Image type should be auto-recognized
 - Multiple images with slider
-- <!-- Sidebar instead of navbar -->
-- <!-- Sidebar should be fixed -->
+- ~~Sidebar instead of navbar~~
+- ~~Sidebar should be fixed~~
 - Footer
 - Navbar should have company name
 - Admin can edit user info
-- Introduce product name for each company
+- ~~Introduce product name for each company~~
 - Have GIFs ready
 - Make AI generated summary
 - Mobile readiness
@@ -14,5 +14,6 @@
 - Save post as draft
 - Company should have a registration end date and type of registration
 - Rethink the workflow when a registration happens
-- Overall list of companies
-- Overall admin page that creates and manages companies
+- Overall list of companies page 
+- Overall admin page that creates and manages companies and get analytics
+- Flash should stay longer

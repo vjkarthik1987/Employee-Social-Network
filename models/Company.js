@@ -5,6 +5,8 @@ const companySchema = new mongoose.Schema({
   slug: { type: String, unique: true, required: true }, // e.g., "acme"
   name: { type: String, required: true },
   timezone: { type: String, default: 'Asia/Kolkata' },
+  productName: { type: String, trim: true, default: '' },
+  tagline:     { type: String, trim: true, default: '' },
   locale: { type: String, default: 'en' },
   dataRegion: { type: String, enum: ['IN','EU','US'], default: 'IN' },
   branding: {

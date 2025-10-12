@@ -53,6 +53,23 @@ function canDelete(user, post) {
   return isAuthor || isMod;
 }
 
+// --- Blocked words helper ---
+function findBlockedMatches(text, blockedWords = []) {
+  if (!text || !blockedWords?.length) return [];
+  const hay = String(text).toLowerCase();
+  const hits = [];
+  for (const raw of blockedWords) {
+    const w = String(raw || '').trim().toLowerCase();
+    if (!w) continue;
+    // word-boundary if purely word chars; else substring match
+    const isWord = /^[a-z0-9]+$/i.test(w);
+    const re = isWord ? new RegExp(`\\b${w}\\b`, 'i') : new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    if (re.test(hay)) hits.push(raw);
+  }
+  // de-dupe, cap to a few to keep flash message short
+  return Array.from(new Set(hits)).slice(0, 5);
+}
+
 // ---- Controllers ----
 
 // Company feed
@@ -166,6 +183,19 @@ exports.create = async (req, res, next) => {
     // Determine initial status (Day 11 will add approval queue UI)
     const postingMode = req.company?.policies?.postingMode || 'OPEN';
     const status = postingMode === 'MODERATED' ? 'QUEUED' : 'PUBLISHED';
+
+    // Policies: blocked words soft validation
+    const blocked = req.company?.policies?.blockedWords || [];
+    const toScan = [
+      content || '',
+      linkUrl || '',
+    ].join(' ');
+    const matches = findBlockedMatches(toScan, blocked);
+    if (matches.length) {
+      const back = req.get('Referer') || `/${req.company?.slug || ''}/feed`;
+      req.flash('error', `Your post includes blocked terms: ${matches.join(', ')}. Please edit and try again.`);
+      return res.redirect(back);
+    }
 
     const post = await Post.create({
       companyId: cid,

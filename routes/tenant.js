@@ -7,6 +7,7 @@ const adminUsers = require('./adminUsers');
 const groupsRouter = require('./groups');
 const postsRouter = require('./posts');
 const profileRoutes = require('./profile');
+const adminController = require('../controllers/adminController');
 const commentsApi = require('./api/comments');
 const reactionsApi = require('./api/reactions'); 
 const pc = require('../controllers/postController');
@@ -95,7 +96,14 @@ router.get(
   '/admin/settings',
   ensureAuth,
   requireRole('ORG_ADMIN'),
-  (req, res) => res.render('admin/settings', { company: req.company })
+  adminController.settingsForm
+);
+
+router.post(
+  '/admin/settings',
+  ensureAuth,
+  requireRole('ORG_ADMIN'),
+  adminController.updateSettings
 );
 
 
