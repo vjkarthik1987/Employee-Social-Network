@@ -13,11 +13,15 @@ const UserSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
 
     // optional profile fields (future-proof)
-    title: String,
-    department: String,
-    linkedinUrl: String,
+    title: { type: String, trim: true },
+    department: { type: String, trim: true },
+    linkedinUrl: { type: String, trim: true },
+    avatarUrl: { type: String, trim: true },
+    bio: { type: String, trim: true, maxlength: 2000 },
+    skills: [{ type: String, trim: true }],
+    interests: [{ type: String, trim: true }],
 
-    // denorm counters (optional for later)
+    // denorm counters
     postsCount: { type: Number, default: 0 },
     commentsCount: { type: Number, default: 0 },
     reactionsGivenCount: { type: Number, default: 0 },

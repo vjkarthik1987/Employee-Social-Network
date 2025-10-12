@@ -1,0 +1,62 @@
+<% layout('layouts/_layout') %>
+<%- include('../partials/navbar') %>
+
+<section style="max-width:720px;margin:24px auto;">
+  <h2>Edit Profile</h2>
+  <form method="POST" action="">
+    <div class="form-row">
+      <label>Title</label>
+      <input type="text" name="title" value="<%= profileUser.title || '' %>" maxlength="120"/>
+    </div>
+    <div class="form-row">
+      <label>Department</label>
+      <input type="text" name="department" value="<%= profileUser.department || '' %>" maxlength="120"/>
+    </div>
+    <div class="form-row">
+      <label>LinkedIn URL</label>
+      <input type="url" name="linkedinUrl" value="<%= profileUser.linkedinUrl || '' %>" placeholder="https://www.linkedin.com/in/..." />
+    </div>
+    <div class="form-row">
+      <label>Avatar URL</label>
+      <input type="url" name="avatarUrl" value="<%= profileUser.avatarUrl || '' %>" placeholder="https://.../avatar.jpg" />
+    </div>
+    <div class="form-row">
+      <label>Bio</label>
+      <textarea name="bio" rows="5" maxlength="2000"><%= profileUser.bio || '' %></textarea>
+    </div>
+    <div class="form-row">
+      <label>Skills (comma-separated)</label>
+      <input type="text" name="skillsCSV" value="<%= (profileUser.skills||[]).join(', ') %>" />
+    </div>
+    <div class="form-row">
+      <label>Interests (comma-separated)</label>
+      <input type="text" name="interestsCSV" value="<%= (profileUser.interests||[]).join(', ') %>" />
+    </div>
+
+    <% if (isAdmin) { %>
+      <hr/>
+      <h3>Admin fields</h3>
+      <div class="form-row">
+        <label>Role</label>
+        <select name="role">
+          <option value="MEMBER" <%= profileUser.role==='MEMBER'?'selected':'' %> >Member</option>
+          <option value="MODERATOR" <%= profileUser.role==='MODERATOR'?'selected':'' %> >Moderator</option>
+          <option value="ORG_ADMIN" <%= profileUser.role==='ORG_ADMIN'?'selected':'' %> >Org Admin</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Status</label>
+        <select name="status">
+          <option value="active" <%= profileUser.status==='active'?'selected':'' %> >Active</option>
+          <option value="invited" <%= profileUser.status==='invited'?'selected':'' %> >Invited</option>
+          <option value="suspended" <%= profileUser.status==='suspended'?'selected':'' %> >Suspended</option>
+        </select>
+      </div>
+    <% } %>
+
+    <div style="margin-top:16px;">
+      <button class="btn" type="submit">Save</button>
+      <a class="btn btn-secondary" href="/<%= company.slug %>/profile/<%= String(profileUser._id) %>">Cancel</a>
+    </div>
+  </form>
+</section>

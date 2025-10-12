@@ -9,11 +9,13 @@ const User = require('../models/User');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 }});
 const router = express.Router({ mergeParams: true });
 
+const profile = require('../controllers/profileController');
+
 // List users
 router.get('/', ensureAuth, requireRole('ORG_ADMIN'), async (req, res, next) => {
   try {
     const users = await User.find({ companyId: req.companyId }).sort({ createdAt: -1 }).lean();
-    res.render('admin/users/index', { company: req.company, users });
+    res.render('admin/users/index', { org: req.company, currentUser: req.user, users });
   } catch (e) { next(e); }
 });
 
@@ -82,5 +84,8 @@ router.post('/:userId/delete', ensureAuth, requireRole('ORG_ADMIN'), async (req,
     res.redirect(`/${req.params.org}/admin/users`);
   } catch (e) { next(e); }
 });
+
+router.get('/:userId/edit', ensureAuth, requireRole('ORG_ADMIN'), profile.editForm);
+router.post('/:userId', ensureAuth, requireRole('ORG_ADMIN'), profile.update);
 
 module.exports = router;

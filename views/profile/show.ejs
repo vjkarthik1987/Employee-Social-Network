@@ -1,0 +1,82 @@
+<% layout('layouts/_layout') %>
+
+<section style="max-width:900px;margin:24px auto;">
+  <div class="card" style="padding:16px;">
+    <div style="display:flex;gap:16px;align-items:center;">
+      <img src="<%= profileUser.avatarUrl || '/img/avatar.png' %>" alt="avatar" style="width:72px;height:72px;border-radius:50%;object-fit:cover;">
+      <div>
+        <h2 style="margin:0;"><%= profileUser.fullName %></h2>
+        <div style="color:#666;">
+          <%= profileUser.title || '' %><% if (profileUser.title && profileUser.department) { %> • <% } %><%= profileUser.department || '' %>
+        </div>
+        <% if (profileUser.linkedinUrl) { %>
+          <div><a href="<%= profileUser.linkedinUrl %>" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a></div>
+        <% } %>
+      </div>
+      <div style="margin-left:auto;">
+        <% if (canEdit) { %>
+          <a class="btn" href="/<%= company.slug %>/profile/<%= String(user._id) === String(profileUser._id) ? 'me' : profileUser._id %>/edit">Edit Profile</a>
+        <% } %>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;">
+      <div class="stat"><strong><%= profileUser.postsCount || 0 %></strong><br/>Posts</div>
+      <div class="stat"><strong><%= profileUser.commentsCount || 0 %></strong><br/>Comments</div>
+      <div class="stat"><strong><%= profileUser.reactionsGivenCount || 0 %></strong><br/>Reactions Given</div>
+    </div>
+
+    <% if (profileUser.bio) { %>
+      <div style="margin-top:16px;">
+        <h3>About</h3>
+        <p style="white-space:pre-wrap;"><%= profileUser.bio %></p>
+      </div>
+    <% } %>
+
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:8px;">
+      <% if ((profileUser.skills||[]).length) { %>
+        <div>
+          <h4 style="margin-bottom:6px;">Skills</h4>
+          <div>
+            <% (profileUser.skills||[]).forEach(s => { %>
+              <span class="tag"><%= s %></span>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+      <% if ((profileUser.interests||[]).length) { %>
+        <div>
+          <h4 style="margin-bottom:6px;">Interests</h4>
+          <div>
+            <% (profileUser.interests||[]).forEach(s => { %>
+              <span class="tag"><%= s %></span>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+    <div>
+      <h3 style="margin:0 0 12px;">Recent posts</h3>
+      <% if (!posts.length) { %>
+        <div class="empty">No posts yet.</div>
+      <% } %>
+      <% posts.forEach(function(post){ %>
+        <%- include('../partials/_post_card', { company, user, post }) %>
+      <% }) %>
+    </div>
+    <aside>
+      <h3 style="margin:0 0 12px;">Groups</h3>
+      <% if (!groups.length) { %>
+        <div class="empty">Not in any groups yet.</div>
+      <% } %>
+      <ul>
+        <% groups.forEach(function(g){ %>
+          <li><a href="/<%= company.slug %>/g/<%= g._id %>"><%= g.name %></a> <% if (g.isPrivate) { %><small> (private)</small><% } %></li>
+        <% }) %>
+      </ul>
+    </aside>
+  </div>
+</section>

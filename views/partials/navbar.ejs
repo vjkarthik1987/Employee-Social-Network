@@ -15,6 +15,8 @@
   box-shadow: 2px 0 4px rgba(0,0,0,0.05);
   z-index: 1000;
 ">
+
+
   <% if (org) { %>
 
     <!-- Branding -->
@@ -27,6 +29,7 @@
     <!-- Navigation Links -->
     <a href="/<%= org.slug %>/feed" style="padding:6px 8px;width:100%;border-radius:6px;">🏠 Feed</a>
     <a href="/<%= org.slug %>/groups" style="padding:6px 8px;width:100%;border-radius:6px;">👥 Groups</a>
+    <a href="/<%= org.slug %>/profile/<%= currentUser && currentUser._id %>" style="padding:6px 8px;width:100%;border-radius:6px;">🧑 My Profile</a>
 
     <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
       <a href="/<%= org.slug %>/mod/queue" style="padding:6px 8px;width:100%;border-radius:6px;">🛡️ Moderation</a>
