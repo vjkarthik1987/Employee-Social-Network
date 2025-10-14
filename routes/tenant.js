@@ -10,6 +10,7 @@ const profileRoutes = require('./profile');
 const adminController = require('../controllers/adminController');
 const commentsApi = require('./api/comments');
 const reactionsApi = require('./api/reactions'); 
+const postsApi = require('./api/posts');
 const pc = require('../controllers/postController');
 const moderation = require('../controllers/moderationController');
 
@@ -48,6 +49,7 @@ router.use('/profile', ensureAuth, profileRoutes);
 router.get('/feed', ensureAuth, pc.companyFeed);
 router.use('/api', commentsApi);
 router.use('/api', reactionsApi);
+router.use('/api', postsApi); 
 
 // Org root → feed
 router.get('/', ensureAuth, (req, res) => {
