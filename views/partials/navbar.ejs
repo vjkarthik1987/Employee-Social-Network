@@ -1,72 +1,127 @@
-<!-- Fixed Left Sidebar -->
-<nav style="
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 95vh;
-  width: 240px;
-  background-color: #fff;
-  border-right: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 16px 12px;
-  gap: 10px;
-  box-shadow: 2px 0 4px rgba(0,0,0,0.05);
-  z-index: 1000;
-">
+<!-- views/partials/navbar.ejs -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <!-- Brand -->
+    <a class="brand" href="/<%= (org||company)?.slug %>/feed">
+      <%= (org?.productName && org.productName.trim()) 
+            ? org.productName 
+            : (org?.name || company?.name || 'Engage') %>
+    </a>
 
+    <!-- Hamburger -->
+    <button class="hamburger"
+            aria-label="Menu"
+            aria-expanded="false"
+            aria-controls="nav-drawer"
+            onclick="window.toggleDrawer(this)">
+      <span></span><span></span><span></span>
+    </button>
 
-  <% if (org) { %>
+    <!-- Desktop links -->
+    <div class="nav-links">
+      <% if (org) { %>
+        <a href="/<%= org.slug %>/feed">Feed</a>
+        <a href="/<%= org.slug %>/groups">Groups</a>
 
-    <!-- Branding -->
-    <div style="margin-bottom:16px;width:100%;padding:6px 8px;">
-      <a href="/<%= org.slug %>/feed" class="brand">
-        <%= (org.productName && org.productName.trim()) ? org.productName : org.name %>
-      </a>
+        <% if (currentUser) { %>
+          <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">My Profile</a>
+        <% } %>
+
+        <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
+          <a href="/<%= org.slug %>/mod/queue">Moderation</a>
+        <% } %>
+
+        <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
+          <a href="/<%= org.slug %>/admin/settings">Admin</a>
+          <a href="/<%= org.slug %>/admin/users">Users</a>
+        <% } %>
+
+        <% if (currentUser) { %>
+          <form method="POST" action="/<%= org.slug %>/auth/logout" class="logout-form">
+            <button class="btn btn-ghost btn-sm" type="submit">Logout</button>
+          </form>
+        <% } else { %>
+          <a class="btn btn-ghost btn-sm" href="/<%= org.slug %>/auth/login">Login</a>
+        <% } %>
+      <% } %>
     </div>
+  </div>
 
-    <!-- Navigation Links -->
-    
-    <a href="/<%= org.slug %>/feed" style="padding:6px 8px;width:100%;border-radius:6px;">🏠 Feed</a>
-    <a href="/<%= org.slug %>/groups" style="padding:6px 8px;width:100%;border-radius:6px;">👥 Groups</a>
-    <a href="/<%= org.slug %>/profile/<%= currentUser && currentUser._id %>" style="padding:6px 8px;width:100%;border-radius:6px;">🧑 My Profile</a>
-
-    <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
-      <a href="/<%= org.slug %>/mod/queue" style="padding:6px 8px;width:100%;border-radius:6px;">🛡️ Moderation</a>
-    <% } %>
-
-    <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
-      <a href="/<%= org.slug %>/admin/settings" style="padding:6px 8px;width:100%;border-radius:6px;">⚙️ Admin</a>
-      <a href="/<%= org.slug %>/admin/users" style="padding:6px 8px;width:100%;border-radius:6px;">👤 Users</a>
-    <% } %>
-
-    <!-- Spacer -->
-    <div style="flex-grow:1;"></div>
-
-    <!-- Logout Button -->
-    <% if (currentUser) { %>
-      <form method="POST" action="/<%= org.slug %>/auth/logout" style="width:100%;text-align:center;">
-        <button type="submit" style="
-          width:100%;
-          padding:8px;
-          border:none;
-          background:#f44336;
-          color:#fff;
-          border-radius:6px;
-          cursor:pointer;
-        ">🚪 Logout</button>
-      </form>
+  <!-- Mobile drawer -->
+  <div id="nav-drawer" class="nav-drawer" hidden>
+    <% if (!org) { %>
+      <a href="/">Home</a>
+      <a href="/auth/register-org">Register Org</a>
+      <a href="/auth/login">Login</a>
     <% } else { %>
-      <a href="/<%= org.slug %>/auth/login" style="padding:8px;width:100%;border-radius:6px;background:#1976d2;color:#fff;text-align:center;">🔑 Login</a>
-    <% } %>
+      <a href="/<%= org.slug %>/feed">🏠 Feed</a>
+      <a href="/<%= org.slug %>/groups">👥 Groups</a>
 
-  <% } else { %>
-    <!-- Public Pages -->
-    <a href="/">🏠 Home</a>
-    <a href="/auth/register-org">🏢 Register Org</a>
-    <a href="/auth/login">🔑 Login</a>
-  <% } %>
+      <% if (currentUser) { %>
+        <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">🧑 My Profile</a>
+      <% } %>
+
+      <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
+        <a href="/<%= org.slug %>/mod/queue">🛡️ Moderation</a>
+      <% } %>
+
+      <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
+        <a href="/<%= org.slug %>/admin/settings">⚙️ Admin</a>
+        <a href="/<%= org.slug %>/admin/users">👤 Users</a>
+      <% } %>
+
+      <div class="nav-drawer-footer">
+        <% if (currentUser) { %>
+          <form method="POST" action="/<%= org.slug %>/auth/logout">
+            <button class="btn danger" type="submit">Logout</button>
+          </form>
+        <% } else { %>
+          <a class="btn" href="/<%= org.slug %>/auth/login">Login</a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Backdrop -->
+  <div id="nav-backdrop" class="nav-backdrop" hidden></div>
 </nav>
 
-<!-- Spacer for content -->
+<script>
+  (function () {
+    var drawer = document.getElementById('nav-drawer');
+    var backdrop = document.getElementById('nav-backdrop');
+
+    function syncHidden() {
+      drawer.hidden = !drawer.classList.contains('open');
+      backdrop.hidden = !drawer.classList.contains('open');
+      document.body.classList.toggle('drawer-open', drawer.classList.contains('open'));
+    }
+
+    window.toggleDrawer = function (btn) {
+      drawer.classList.toggle('open');
+      btn && btn.setAttribute('aria-expanded', drawer.classList.contains('open'));
+      syncHidden();
+    };
+
+    backdrop.addEventListener('click', function () {
+      drawer.classList.remove('open');
+      syncHidden();
+      var hb = document.querySelector('.hamburger');
+      hb && hb.setAttribute('aria-expanded', 'false');
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) {
+        drawer.classList.remove('open');
+        syncHidden();
+        var hb = document.querySelector('.hamburger');
+        hb && hb.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    new MutationObserver(syncHidden).observe(drawer, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  })();
+</script>

@@ -1,9 +1,12 @@
 <div class="post-card">
   <!-- Header -->
-  <div class="post-header">
-    <img class="post-avatar"
-         src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
-         alt="<%= post.authorId?.fullName || 'User' %>">
+  <header class="post-header">
+    <img
+      class="post-avatar"
+      src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
+      alt="<%= post.authorId?.fullName || 'User' %>"
+      loading="lazy"
+    />
 
     <div class="post-meta">
       <div class="post-author">
@@ -17,15 +20,18 @@
 
       <div class="post-time">
         <%= new Date(post.createdAt || post.publishedAt).toLocaleString() %>
-        <% if (post.groupId && post.group) { %> · in
-          <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group.name %></a>
+        <% if (post.groupId && post.group) { %>
+          · in
+          <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group">
+            <%= post.group.name %>
+          </a>
         <% } %>
       </div>
     </div>
-  </div>
+  </header>
 
   <!-- Body -->
-  <div class="post-body">
+  <section class="post-body">
     <% if (post.richText) { %>
       <div class="post-content"><%- post.richText %></div>
     <% } %>
@@ -37,72 +43,75 @@
            ? _u.replace('/upload/', '/upload/w_900,h_600,c_fill,q_auto,f_auto/')
            : _u;
     %>
-      <a href="<%= post.firstAttachmentUrl %>" target="_blank" rel="noopener">
-        <img class="post-image"
-             src="<%= imgSrc %>"
-             alt="<%= post.imageAlt || 'post image' %>">
+      <a href="<%= post.firstAttachmentUrl %>" target="_blank" rel="noopener noreferrer">
+        <img
+          class="post-image"
+          src="<%= imgSrc %>"
+          alt="<%= post.imageAlt || 'Post image' %>"
+          loading="lazy"
+        />
       </a>
     <% } %>
 
-    <% if (post.type === 'LINK' && post.linkPreview && post.linkPreview.url) { %>
+    <% if (post.type === 'LINK' && post.linkPreview?.url) { %>
       <div class="link-preview">
         <% if (post.linkPreview.imageUrl) { %>
-          <img class="link-thumb" src="<%= post.linkPreview.imageUrl %>" alt="">
+          <img class="link-thumb" src="<%= post.linkPreview.imageUrl %>" alt="" loading="lazy" />
         <% } %>
         <div class="link-info">
           <div class="link-title"><%= post.linkPreview.title || post.linkPreview.url %></div>
           <div class="link-desc"><%= post.linkPreview.description || '' %></div>
-          <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener" class="link-open">Open link</a>
+          <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener noreferrer" class="link-open">
+            Open link
+          </a>
         </div>
       </div>
     <% } %>
-  </div>
+  </section>
 
   <!-- Footer -->
-  <div class="post-footer">
-    <!-- Post view and reaction counts -->
+  <footer class="post-footer">
+    <% /* derived helpers (fallbacks if controller didn't supply) */ %>
     <%
-    // Defensive helpers in template scope (only used if controller didn't attach derived values)
-    function __sumReactions(byType){
-      try { return Object.values(byType||{}).reduce((a,b)=>a + (Number(b)||0), 0); } catch(e){ return 0; }
-    }
-    const __totalReactions = (typeof post.totalReactions === 'number')
-      ? post.totalReactions
-      : __sumReactions(post.reactionsCountByType);
-    const __engRate = (typeof post.engagementRate === 'number')
-      ? post.engagementRate
-      : ( ((__totalReactions + (post.commentsCount||0)) / Math.max((post.viewsCount||0),1)) * 100 ).toFixed(1);
-    const __viewed = (typeof viewedPostIds !== 'undefined') && viewedPostIds && viewedPostIds.has(String(post._id));
+      function __sumReactions(byType){
+        try { return Object.values(byType || {}).reduce((a,b)=> a + (Number(b)||0), 0); } catch(e){ return 0; }
+      }
+      const __totalReactions = (typeof post.totalReactions === 'number')
+        ? post.totalReactions
+        : __sumReactions(post.reactionsCountByType);
+      const __engRate = (typeof post.engagementRate === 'number')
+        ? post.engagementRate
+        : ( ((__totalReactions + (post.commentsCount||0)) / Math.max((post.viewsCount||0), 1)) * 100 );
+      const __viewed = (typeof viewedPostIds !== 'undefined') && viewedPostIds && viewedPostIds.has(String(post._id));
     %>
 
-    <div class="card-metrics" style="margin-top:.5rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; font-size:.9rem; color:#555;">
+    <!-- Metrics -->
+    <div class="card-metrics">
       <span title="Unique per session views">👁 <%= post.viewsCount || 0 %> views</span>
       <span title="All reactions (sum of types)">🎉 <%= __totalReactions %> reactions</span>
       <span title="Visible comments">💬 <%= post.commentsCount || 0 %> comments</span>
-      <span title="(Reactions + Comments) / Views">↗️ <%= __engRate %>% engagement</span>
-
+      <span title="(Reactions + Comments) / Views">↗️ <%= (__engRate).toFixed(1) %>% engagement</span>
       <% if (__viewed) { %>
-        <span style="opacity:.6; display:inline-flex; align-items:center; gap:.25rem;">
-          👁 Viewed
-        </span>
+        <span class="muted">👁 Viewed</span>
       <% } %>
     </div>
 
-    <!-- Inline reactions bar inside the card -->
-    <div class="post-reactions">
+    <!-- Reactions -->
+    <div class="post-reactions reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
       <%- include('./_reactions_bar', { company, user, post }) %>
     </div>
 
-    <!-- Right-side actions -->
-    <div class="post-actions">
+    <!-- Actions -->
+    <div class="post-actions admin-links">
       <a class="btn-link" href="/<%= company.slug %>/posts/<%= post._id %>">Open</a>
 
-      <% if (user && (String(user._id) === String(post.authorId?._id)
-           || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
-        <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" style="margin:0;">
-          <button class="btn-link danger" onclick="return confirm('Delete this post?')">Delete</button>
+      <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
+        <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST">
+          <button class="btn-link danger" onclick="return confirm('Delete this post?')" aria-label="Delete post">
+            Delete
+          </button>
         </form>
       <% } %>
     </div>
-  </div>
+  </footer>
 </div>

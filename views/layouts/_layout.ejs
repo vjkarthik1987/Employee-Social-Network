@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><%= typeof title !== 'undefined' ? title : 'Engage' %></title>
   <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    :root {
+      --primary: <%= company?.branding?.theme?.primary || '#1976d2' %>;
+      --bg: #fafafa; --text:#333;
+    }
+  </style>
 </head>
 
 <body style="margin:0; font-family:Inter, sans-serif; background:#fafafa; color:#333;">
@@ -26,7 +32,12 @@
     padding: 20px;
     box-sizing: border-box;
   ">
-    <%- body %>
+    <main class="app-shell">
+      <div class="col-center">
+        <%- include('../partials/flash') %>
+        <%- body %>
+      </div>
+    </main>
   </div>
 
 </body>

@@ -15,15 +15,7 @@
         </small>
       </div>
 
-      <div class="post-metrics" style="margin:.5rem 0; color:#666; display:flex; gap:1rem; flex-wrap:wrap; font-size:.95rem;">
-        <span>👁 <%= post.viewsCount || 0 %> views</span>
-        <span>🎉 <%= post.totalReactions || 0 %> reactions</span>
-        <span>💬 <%= post.commentsCount || 0 %> comments</span>
-        <span>↗️ <%= post.engagementRate || 0 %>% engagement</span>
-        <% if (typeof viewed !== 'undefined' && viewed) { %>
-          <span style="opacity:.6;">👁 Viewed</span>
-        <% } %>
-      </div>
+      
 
       <% if (user && (String(user._id) === String(post.authorId?._id || post.authorId) || ['ORG_ADMIN','MODERATOR'].includes(user.role))) { %>
         <form method="POST" action="/<%= company.slug %>/posts/<%= post._id %>/delete" onsubmit="return confirm('Delete this post?')">
@@ -32,7 +24,17 @@
       <% } %>
     </div>
 
-    <div class="card-body">
+    <div class="post-metrics" style="margin:.5rem 0; color:#666; display:flex; gap:1rem; flex-wrap:wrap; font-size:.95rem; margin-bottom: 20px;">
+      <span>👁 <%= post.viewsCount || 0 %> views</span>
+      <span>🎉 <%= post.totalReactions || 0 %> reactions</span>
+      <span>💬 <%= post.commentsCount || 0 %> comments</span>
+      <span>↗️ <%= post.engagementRate || 0 %>% engagement</span>
+      <% if (typeof viewed !== 'undefined' && viewed) { %>
+        <span style="opacity:.6;">👁 Viewed</span>
+      <% } %>
+    </div>
+
+    <div class="card-body" style="margin-bottom: 10px;">
       <!-- Text body (hidden for pure image posts if you prefer) -->
       <% if (post.richText) { %>
         <div class="post-content"><%- post.richText %></div>

@@ -1,74 +1,79 @@
-<li class="card" style="margin-bottom:.75rem;">
-    <div class="card-body">
-      <!-- header -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;">
-        <div>
-          <strong><%= comment.authorId?.fullName || 'User' %></strong>
-          <small style="color:#888;"> • <%= new Date(comment.createdAt).toLocaleString() %></small>
-        </div>
-        <% if (user && (String(user._id) === String(comment.authorId?._id || comment.authorId) || ['ORG_ADMIN','MODERATOR'].includes(user.role))) { %>
-          <form method="POST" action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= comment._id %>/delete" onsubmit="return confirm('Delete this comment?')">
-            <button class="btn btn-ghost" type="submit">Delete</button>
-          </form>
-        <% } %>
-      </div>
-  
-      <!-- body -->
-      <% if (comment.status === 'deleted') { %>
-        <em style="color:#888;">(deleted)</em>
-      <% } else { %>
-        <div class="comment-content"><%- comment.content %></div>
-      <% } %>
-  
-      <!-- actions -->
-      <div style="margin-top:.4rem;display:flex;gap:10px;align-items:center;">
-        <% if (user && comment.status !== 'deleted') { %>
-          <a href="#" class="btn btn-link" data-reply-toggle="<%= comment._id %>">Reply</a>
-        <% } %>
-        <small style="color:#888;"><%= (comment.repliesCount || 0) %> repl<%= (comment.repliesCount || 0) === 1 ? 'y' : 'ies' %></small>
-      </div>
-  
-      <!-- inline reply form -->
-      <% if (user && comment.status !== 'deleted') { %>
-        <form id="reply-form-<%= comment._id %>" method="POST" action="/<%= company.slug %>/posts/<%= post._id %>/comments" class="card" style="margin-top:.5rem; display:none;">
-          <div class="card-body">
-            <input type="hidden" name="parentCommentId" value="<%= comment._id %>">
-            <textarea name="content" rows="2" class="input" placeholder="Write a reply…" maxlength="3000" required></textarea>
-            <div style="display:flex;justify-content:flex-end;margin-top:.4rem;">
-              <button class="btn" type="submit">Reply</button>
-            </div>
-          </div>
-        </form>
-      <% } %>
-  
-      <!-- replies (level-1 only) -->
-      <% if (replies && replies.length) { %>
-        <ul style="list-style:none;padding-left:14px;border-left:3px solid #eee;margin-top:.6rem;">
-          <% replies.forEach(function(r){ %>
-            <li class="card" style="margin-bottom:.5rem;">
-              <div class="card-body">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;">
-                  <div>
-                    <strong><%= r.authorId?.fullName || 'User' %></strong>
-                    <small style="color:#888;"> • <%= new Date(r.createdAt).toLocaleString() %></small>
-                  </div>
-                  <% if (user && (String(user._id) === String(r.authorId?._id || r.authorId) || ['ORG_ADMIN','MODERATOR'].includes(user.role))) { %>
-                    <form method="POST" action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= r._id %>/delete" onsubmit="return confirm('Delete this reply?')">
-                      <button class="btn btn-ghost" type="submit">Delete</button>
-                    </form>
-                  <% } %>
-                </div>
-  
-                <% if (r.status === 'deleted') { %>
-                  <em style="color:#888;">(deleted)</em>
-                <% } else { %>
-                  <div class="comment-content"><%- r.content %></div>
-                <% } %>
-              </div>
-            </li>
-          <% }) %>
-        </ul>
-      <% } %>
+<li class="comment-card" data-comment-id="<%= comment._id %>">
+  <div class="comment-header">
+    <div>
+      <span class="comment-author"><%= comment.authorId?.fullName || 'User' %></span>
+      <span class="comment-time">• <%= new Date(comment.createdAt).toLocaleString() %></span>
     </div>
-  </li>
-  
+
+    <% if (
+      user && (
+        String(user._id) === String(comment.authorId?._id || comment.authorId) ||
+        ['ORG_ADMIN','MODERATOR'].includes(user.role)
+      )
+    ) { %>
+      <form method="POST"
+            action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= comment._id %>/delete"
+            onsubmit="return confirm('Delete this comment?')">
+        <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
+      </form>
+    <% } %>
+  </div>
+
+  <% if (comment.status === 'deleted') { %>
+    <div class="comment-content"><em>(deleted)</em></div>
+  <% } else { %>
+    <div class="comment-content"><%- comment.content %></div>
+  <% } %>
+
+  <div class="comment-actions">
+    <% if (user && comment.status !== 'deleted') { %>
+      <a href="#" class="btn-link" data-reply-toggle="<%= comment._id %>">Reply</a>
+    <% } %>
+    <small><%= (comment.repliesCount || 0) %> repl<%= (comment.repliesCount || 0) === 1 ? 'y' : 'ies' %></small>
+  </div>
+
+  <% if (user && comment.status !== 'deleted') { %>
+    <form id="reply-form-<%= comment._id %>"
+          method="POST"
+          action="/<%= company.slug %>/posts/<%= post._id %>/comments"
+          class="reply-form"
+          style="display:none;">
+      <input type="hidden" name="parentCommentId" value="<%= comment._id %>">
+      <textarea name="content" rows="2" placeholder="Write a reply…" maxlength="3000" required></textarea>
+      <button class="btn btn-sm" type="submit">Reply</button>
+    </form>
+  <% } %>
+
+  <% if (replies && replies.length) { %>
+    <ul class="replies" data-replies>
+      <% replies.forEach(function(r){ %>
+        <li class="comment-card" data-reply-id="<%= r._id %>">
+          <div class="comment-header">
+            <div>
+              <span class="comment-author"><%= r.authorId?.fullName || 'User' %></span>
+              <span class="comment-time">• <%= new Date(r.createdAt).toLocaleString() %></span>
+            </div>
+            <% if (
+              user && (
+                String(user._id) === String(r.authorId?._id || r.authorId) ||
+                ['ORG_ADMIN','MODERATOR'].includes(user.role)
+              )
+            ) { %>
+              <form method="POST"
+                    action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= r._id %>/delete"
+                    onsubmit="return confirm('Delete this reply?')">
+                <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
+              </form>
+            <% } %>
+          </div>
+
+          <% if (r.status === 'deleted') { %>
+            <div class="comment-content"><em>(deleted)</em></div>
+          <% } else { %>
+            <div class="comment-content"><%- r.content %></div>
+          <% } %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</li>
