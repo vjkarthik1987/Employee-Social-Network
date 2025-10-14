@@ -60,6 +60,34 @@
 
   <!-- Footer -->
   <div class="post-footer">
+    <!-- Post view and reaction counts -->
+    <%
+    // Defensive helpers in template scope (only used if controller didn't attach derived values)
+    function __sumReactions(byType){
+      try { return Object.values(byType||{}).reduce((a,b)=>a + (Number(b)||0), 0); } catch(e){ return 0; }
+    }
+    const __totalReactions = (typeof post.totalReactions === 'number')
+      ? post.totalReactions
+      : __sumReactions(post.reactionsCountByType);
+    const __engRate = (typeof post.engagementRate === 'number')
+      ? post.engagementRate
+      : ( ((__totalReactions + (post.commentsCount||0)) / Math.max((post.viewsCount||0),1)) * 100 ).toFixed(1);
+    const __viewed = (typeof viewedPostIds !== 'undefined') && viewedPostIds && viewedPostIds.has(String(post._id));
+    %>
+
+    <div class="card-metrics" style="margin-top:.5rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; font-size:.9rem; color:#555;">
+      <span title="Unique per session views">👁 <%= post.viewsCount || 0 %> views</span>
+      <span title="All reactions (sum of types)">🎉 <%= __totalReactions %> reactions</span>
+      <span title="Visible comments">💬 <%= post.commentsCount || 0 %> comments</span>
+      <span title="(Reactions + Comments) / Views">↗️ <%= __engRate %>% engagement</span>
+
+      <% if (__viewed) { %>
+        <span style="opacity:.6; display:inline-flex; align-items:center; gap:.25rem;">
+          👁 Viewed
+        </span>
+      <% } %>
+    </div>
+
     <!-- Inline reactions bar inside the card -->
     <div class="post-reactions">
       <%- include('./_reactions_bar', { company, user, post }) %>

@@ -4,7 +4,7 @@
 - ~~Sidebar instead of navbar~~
 - ~~Sidebar should be fixed~~
 - Footer
-- Navbar should have company name
+- ~~Navbar should have company name~~
 - Admin can edit user info
 - ~~Introduce product name for each company~~
 - Have GIFs ready
@@ -17,3 +17,4 @@
 - Overall list of companies page 
 - Overall admin page that creates and manages companies and get analytics
 - Flash should stay longer
+- Create newsletter

@@ -70,8 +70,29 @@ function findBlockedMatches(text, blockedWords = []) {
   return Array.from(new Set(hits)).slice(0, 5);
 }
 
+//----Showing post view and reaction counts ------//
+function sumReactions(byType = {}) {
+  const vals = Object.values(byType || {});
+  return vals.reduce((a, b) => a + (Number(b) || 0), 0);
+}
+function computeDerived(post) {
+  post.totalReactions = sumReactions(post.reactionsCountByType);
+  const denom = Math.max(post.viewsCount || 0, 1);
+  post.engagementRate = ((post.totalReactions + (post.commentsCount || 0)) / denom) * 100;
+  // keep 1 decimal place for UI
+  post.engagementRate = Math.round(post.engagementRate * 10) / 10;
+  return post;
+}
+function ensureViewedSession(req) {
+  if (!req.session) return;
+  if (!Array.isArray(req.session.viewedPosts)) req.session.viewedPosts = [];
+  // cap to prevent bloat
+  if (req.session.viewedPosts.length > 500) req.session.viewedPosts = req.session.viewedPosts.slice(-300);
+}
+
 // ---- Controllers ----
 
+// Company feed
 // Company feed
 exports.companyFeed = async (req, res, next) => {
   try {
@@ -84,14 +105,20 @@ exports.companyFeed = async (req, res, next) => {
     await attachFirstImages(posts, cid);
     await attachGroupStubs(posts, cid);
 
+    // Day 14: derived metrics for cards
+    posts.forEach(p => computeDerived(p));
+
+    // Day 14: session 'viewed' flags to show 👁 Viewed chip on feed cards
+    ensureViewedSession(req);
+    const viewedPostIds = new Set((req.session?.viewedPosts || []).map(String));
+
     return res.render('feed/index', {
       company: req.company,
       user: req.user,
       posts,
+      viewedPostIds, // <-- use in EJS to show "Viewed"
     });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };
 
 // Group feed
@@ -111,15 +138,19 @@ exports.groupFeed = async (req, res, next) => {
     await attachFirstImages(posts, cid);
     await attachGroupStubs(posts, cid);
 
+    posts.forEach(p => computeDerived(p));
+
+    ensureViewedSession(req);
+    const viewedPostIds = new Set((req.session?.viewedPosts || []).map(String));
+
     return res.render('feed/index', {
       company: req.company,
       user: req.user,
       group,
       posts,
+      viewedPostIds,
     });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };
 
 // Post detail
@@ -128,29 +159,40 @@ exports.getPost = async (req, res, next) => {
     const cid = companyIdOf(req);
     const { postId } = req.params;
 
-    const post = await Post.findOne({ _id: postId, companyId: cid, deletedAt: null })
+    let post = await Post.findOne({ _id: postId, companyId: cid, deletedAt: null })
       .populate('authorId', 'fullName title avatarUrl')
       .lean();
     if (!post) return res.status(404).render('errors/404');
+
+    // Day 14: session-unique views bump
+    ensureViewedSession(req);
+    const alreadyViewed = (req.session?.viewedPosts || []).map(String).includes(String(post._id));
+    if (!alreadyViewed) {
+      await Post.updateOne({ _id: post._id, companyId: cid }, { $inc: { viewsCount: 1 } });
+      // reflect increment in the in-memory object so the page shows the correct count
+      post.viewsCount = (post.viewsCount || 0) + 1;
+      req.session.viewedPosts.push(String(post._id));
+    }
 
     // First image
     const firstAttach = await Attachment.findOne({
       companyId: cid,
       targetType: 'post',
       targetId: post._id,
-    })
-      .select('storageUrl')
-      .lean();
-    post.firstAttachmentUrl = firstAttach?.storageUrl;
+    }).select('storageUrl').lean();
+    post.firstAttachmentUrl = firstAttach?.storageUrl || post.firstAttachmentUrl;
 
-    // Group stub (for header breadcrumb)
+    // Group stub (for breadcrumb)
     if (post.groupId) {
       post.group = await Group.findOne({ _id: post.groupId, companyId: cid })
         .select('_id name')
         .lean();
     }
 
-    // Load comments (level 0 + children, adjust to your structure)
+    // Day 14: derived metrics for detail view
+    post = computeDerived(post);
+
+    // Load comments (visible only)
     const comments = await Comment.find({ postId: post._id, status: { $ne: 'deleted' } })
       .sort({ createdAt: 1 })
       .populate('authorId', 'fullName avatarUrl title')
@@ -161,10 +203,9 @@ exports.getPost = async (req, res, next) => {
       user: req.user,
       post,
       comments,
+      viewed: true, // current session has viewed this post
     });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };
 
 // Create post (TEXT/LINK/IMAGE)

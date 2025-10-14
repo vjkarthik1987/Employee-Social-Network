@@ -10,7 +10,13 @@
 <body style="margin:0; font-family:Inter, sans-serif; background:#fafafa; color:#333;">
 
   <!-- Global Navbar -->
-  <%- include('../partials/navbar', { org, currentUser }) %>
+  <%- include('../partials/navbar', {
+    org:           (typeof org !== 'undefined' ? org : null),
+    currentUser:   (typeof currentUser !== 'undefined' ? currentUser : null),
+    company:       (typeof company !== 'undefined' ? company : null),
+    user:          (typeof user !== 'undefined' ? user : null),
+    companySlug:   (typeof companySlug !== 'undefined' ? companySlug : null)
+  }) %>
 
   <!-- Main Page Container -->
   <div class="page-container" style="
