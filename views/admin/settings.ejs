@@ -2,6 +2,11 @@
 <section>
   <h1 style="margin:0 0 8px;">Admin Settings — <%= company.name %></h1>
   <p style="margin:0 0 16px;">Only ORG_ADMIN can edit these.</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h2 style="margin:0;">Admin Settings</h2>
+    <a class="btn" href="/<%= company.slug %>/admin/audit">View Audit →</a>
+  </div>
+  
 
   <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">
 

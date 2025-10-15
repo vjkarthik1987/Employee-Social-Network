@@ -1,0 +1,46 @@
+<% layout('layouts/_layout') %>
+
+<section style="max-width:900px;margin:24px auto;">
+  <h2 style="margin:0 0 12px;">Reports Queue</h2>
+
+  <% if (!reports || reports.length === 0) { %>
+    <div class="empty">No open reports. 🎉</div>
+  <% } else { %>
+    <table class="table" style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #ddd;">Reporter</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #ddd;">Target</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #ddd;">Reason</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #ddd;">When</th>
+          <th style="text-align:left;padding:.5rem;border-bottom:1px solid #ddd;">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% reports.forEach(r => { %>
+          <tr>
+            <td style="padding:.5rem;border-bottom:1px solid #eee;">
+              <%= r.reporterUserId?.fullName || '—' %>
+            </td>
+            <td style="padding:.5rem;border-bottom:1px solid #eee;">
+              <small><code><%= r.targetType %>#<%= r.targetId %></code></small><br/>
+              <div style="max-width:460px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                <%= r.targetPreview || '' %>
+              </div>
+              <% if (r.targetType === 'post') { %>
+                <a class="btn small" href="/<%= company.slug %>/posts/<%= r.targetId %>">Open post</a>
+              <% } %>
+            </td>
+            <td style="padding:.5rem;border-bottom:1px solid #eee;"><%= r.reasonCode %></td>
+            <td style="padding:.5rem;border-bottom:1px solid #eee;"><%= new Date(r.createdAt).toLocaleString() %></td>
+            <td style="padding:.5rem;border-bottom:1px solid #eee;">
+              <form method="POST" action="/<%= company.slug %>/mod/reports/<%= r._id %>/resolve" style="display:inline;">
+                <button type="submit" class="btn small">Resolve</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</section>

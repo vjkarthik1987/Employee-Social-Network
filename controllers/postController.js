@@ -1,13 +1,25 @@
 // controllers/postController.js
 
+const User = require('../models/User');
 const Post = require('../models/Post');
 const Group = require('../models/Group');
 const Comment = require('../models/Comment');
 const Attachment = require('../models/Attachment');
+const audit = require('../services/auditService');
+
 
 // ---- Helpers ----
 function companyIdOf(req) {
   return req.companyId || (req.company && req.company._id);
+}
+
+// Utility to fetch user’s group IDs (owner/mod/member)
+async function memberGroupIds(companyId, userId) {
+  const rows = await Group.find({
+    companyId,
+    $or: [{ owners: userId }, { moderators: userId }, { members: userId }]
+  }).select('_id').lean();
+  return rows.map(r => r._id);
 }
 
 async function attachFirstImages(posts, companyId) {
@@ -75,6 +87,7 @@ function sumReactions(byType = {}) {
   const vals = Object.values(byType || {});
   return vals.reduce((a, b) => a + (Number(b) || 0), 0);
 }
+
 function computeDerived(post) {
   post.totalReactions = sumReactions(post.reactionsCountByType);
   const denom = Math.max(post.viewsCount || 0, 1);
@@ -90,38 +103,157 @@ function ensureViewedSession(req) {
   if (req.session.viewedPosts.length > 500) req.session.viewedPosts = req.session.viewedPosts.slice(-300);
 }
 
+function stripTags(html = '') { return String(html || '').replace(/<[^>]*>/g, ' '); }
+function escapeHtml(s = '') {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function makeExcerpt(text = '', q = '', win = 80) {
+  if (!q) return '';
+  const hay = stripTags(text);
+  const idx = hay.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return '';
+  const start = Math.max(0, idx - win);
+  const end   = Math.min(hay.length, idx + q.length + win);
+  const pre   = start > 0 ? '…' : '';
+  const post  = end < hay.length ? '…' : '';
+  const slice = hay.slice(start, end);
+  const esc   = escapeHtml(slice);
+  // highlight all occurrences, case-insensitive
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  return pre + esc.replace(re, (m) => `<mark>${escapeHtml(m)}</mark>`) + post;
+}
+function pushRecentSearch(req, q) {
+  if (!q) return;
+  if (!req.session) return;
+  if (!Array.isArray(req.session.recentSearches)) req.session.recentSearches = [];
+  const arr = req.session.recentSearches.filter(v => v.toLowerCase() !== q.toLowerCase());
+  arr.unshift(q);
+  req.session.recentSearches = arr.slice(0, 8);
+}
+
+
 // ---- Controllers ----
 
-// Company feed
-// Company feed
+// Company feed — paginated + Day 21 polish
 exports.companyFeed = async (req, res, next) => {
   try {
     const cid = companyIdOf(req);
-    const posts = await Post.find({ companyId: cid, deletedAt: null, status: 'PUBLISHED' })
-      .sort({ createdAt: -1 })
+
+    // Filters
+    const q        = (req.query.q || '').trim();
+    const type     = (req.query.type || '').toUpperCase();
+    const allowed  = new Set(['TEXT', 'IMAGE', 'LINK']);
+    const authorId = (req.query.authorId && String(req.query.authorId)) || '';
+    const people   = (req.query.people || '').trim();
+    const from     = (req.query.from || '').trim();   // yyyy-mm-dd
+    const to       = (req.query.to || '').trim();     // yyyy-mm-dd
+    const myGroups = String(req.query.myGroups || '') === '1'; // only for company feed
+
+    // Pagination
+    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '15', 10), 5), 50);
+    const skip  = (page - 1) * limit;
+
+    // Base match
+    const match = { companyId: cid, deletedAt: null, status: 'PUBLISHED' };
+    if (allowed.has(type)) match.type = type;
+
+    // Author filter (explicit)
+    if (authorId) match.authorId = authorId;
+
+    // People (name/title → resolve to authorId list) — only if authorId not explicitly set
+    if (!authorId && people) {
+      const rx = new RegExp(people.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const User = require('../models/User');
+      const users = await User.find({
+        companyId: cid,
+        $or: [{ fullName: rx }, { title: rx }]
+      }).select('_id').lean();
+      const ids = users.map(u => u._id);
+      match.authorId = ids.length ? { $in: ids } : { $in: [] }; // no matches if empty
+    }
+
+    // Date range
+    if (from || to) {
+      match.createdAt = {};
+      if (from) match.createdAt.$gte = new Date(from + 'T00:00:00.000Z');
+      if (to)   match.createdAt.$lte = new Date(to   + 'T23:59:59.999Z');
+    }
+
+    // "My groups" (company feed only): restrict to groups the user belongs to
+    if (myGroups) {
+      const rows = await Group.find({
+        companyId: cid,
+        $or: [{ owners: req.user._id }, { moderators: req.user._id }, { members: req.user._id }]
+      }).select('_id').lean();
+      const ids = rows.map(r => r._id);
+      match.groupId = { $in: ids }; // if ids is empty, it returns none, which is correct
+    }
+
+    // Query + relevance sort (with $text fallback to regex)
+    let cursor, total;
+    if (q) {
+      try {
+        const textQuery = { ...match, $text: { $search: q } };
+        cursor = Post.find(textQuery, { score: { $meta: 'textScore' } })
+          .sort({ score: { $meta: 'textScore' }, createdAt: -1 });
+        total  = await Post.countDocuments(textQuery);
+      } catch (_) {
+        const rxQuery = { ...match, richText: { $regex: q, $options: 'i' } };
+        cursor = Post.find(rxQuery).sort({ createdAt: -1 });
+        total  = await Post.countDocuments(rxQuery);
+      }
+    } else {
+      cursor = Post.find(match).sort({ createdAt: -1 });
+      total  = await Post.countDocuments(match);
+    }
+
+    const posts = await cursor
+      .skip(skip)
+      .limit(limit)
       .populate('authorId', 'fullName title avatarUrl')
       .lean();
 
     await attachFirstImages(posts, cid);
     await attachGroupStubs(posts, cid);
+    posts.forEach(p => {
+      computeDerived(p);
+      if (q) p._qExcerpt = makeExcerpt(p.richText || '', q, 80);
+    });
 
-    // Day 14: derived metrics for cards
-    posts.forEach(p => computeDerived(p));
-
-    // Day 14: session 'viewed' flags to show 👁 Viewed chip on feed cards
     ensureViewedSession(req);
     const viewedPostIds = new Set((req.session?.viewedPosts || []).map(String));
+
+    const totalPages   = Math.max(Math.ceil(total / limit), 1);
+    const searchAction = `/${req.company.slug}/feed`;
+
+    if (q) pushRecentSearch(req, q);
+    const recentSearches = Array.isArray(req.session?.recentSearches) ? req.session.recentSearches : [];
 
     return res.render('feed/index', {
       company: req.company,
       user: req.user,
       posts,
-      viewedPostIds, // <-- use in EJS to show "Viewed"
+      viewedPostIds,
+      filters: {
+        q,
+        type: allowed.has(type) ? type : '',
+        authorId,
+        people,
+        from,
+        to,
+        myGroups
+      },
+      searchAction,
+      page, limit, total, totalPages,
+      recentSearches,
     });
   } catch (err) { next(err); }
 };
 
-// Group feed
+// Group feed — paginated + relevance + highlights + author/people/date
 exports.groupFeed = async (req, res, next) => {
   try {
     const cid = companyIdOf(req);
@@ -130,18 +262,85 @@ exports.groupFeed = async (req, res, next) => {
     const group = await Group.findOne({ _id: groupId, companyId: cid }).lean();
     if (!group) return res.status(404).render('errors/404');
 
-    const posts = await Post.find({ companyId: cid, groupId, deletedAt: null, status: 'PUBLISHED' })
-      .sort({ createdAt: -1 })
+    // Filters
+    const q        = (req.query.q || '').trim();
+    const type     = (req.query.type || '').toUpperCase();
+    const allowed  = new Set(['TEXT', 'IMAGE', 'LINK']);
+    const authorId = (req.query.authorId && String(req.query.authorId)) || '';
+    const people   = (req.query.people || '').trim();
+    const from     = (req.query.from || '').trim();
+    const to       = (req.query.to || '').trim();
+
+    // Pagination
+    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '15', 10), 5), 50);
+    const skip  = (page - 1) * limit;
+
+    // Base match — IMPORTANT: lock to this group
+    const match = { companyId: cid, groupId, deletedAt: null, status: 'PUBLISHED' };
+    if (allowed.has(type)) match.type = type;
+
+    // Author filter (explicit)
+    if (authorId) match.authorId = authorId;
+
+    // People (name/title → resolve to authorId list) — only if authorId not explicitly set
+    if (!authorId && people) {
+      const rx = new RegExp(people.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const User = require('../models/User');
+      const users = await User.find({
+        companyId: cid,
+        $or: [{ fullName: rx }, { title: rx }]
+      }).select('_id').lean();
+      const ids = users.map(u => u._id);
+      match.authorId = ids.length ? { $in: ids } : { $in: [] };
+    }
+
+    // Date range
+    if (from || to) {
+      match.createdAt = {};
+      if (from) match.createdAt.$gte = new Date(from + 'T00:00:00.000Z');
+      if (to)   match.createdAt.$lte = new Date(to   + 'T23:59:59.999Z');
+    }
+
+    // Query + relevance sort (with $text fallback to regex)
+    let cursor, total;
+    if (q) {
+      try {
+        const textQuery = { ...match, $text: { $search: q } };
+        cursor = Post.find(textQuery, { score: { $meta: 'textScore' } })
+          .sort({ score: { $meta: 'textScore' }, createdAt: -1 });
+        total  = await Post.countDocuments(textQuery);
+      } catch (_) {
+        const rxQuery = { ...match, richText: { $regex: q, $options: 'i' } };
+        cursor = Post.find(rxQuery).sort({ createdAt: -1 });
+        total  = await Post.countDocuments(rxQuery);
+      }
+    } else {
+      cursor = Post.find(match).sort({ createdAt: -1 });
+      total  = await Post.countDocuments(match);
+    }
+
+    const posts = await cursor
+      .skip(skip)
+      .limit(limit)
       .populate('authorId', 'fullName title avatarUrl')
       .lean();
 
     await attachFirstImages(posts, cid);
     await attachGroupStubs(posts, cid);
-
-    posts.forEach(p => computeDerived(p));
+    posts.forEach(p => {
+      computeDerived(p);
+      if (q) p._qExcerpt = makeExcerpt(p.richText || '', q, 80);
+    });
 
     ensureViewedSession(req);
     const viewedPostIds = new Set((req.session?.viewedPosts || []).map(String));
+
+    const totalPages   = Math.max(Math.ceil(total / limit), 1);
+    const searchAction = `/${req.company.slug}/g/${group._id}`;
+
+    if (q) pushRecentSearch(req, q);
+    const recentSearches = Array.isArray(req.session?.recentSearches) ? req.session.recentSearches : [];
 
     return res.render('feed/index', {
       company: req.company,
@@ -149,6 +348,18 @@ exports.groupFeed = async (req, res, next) => {
       group,
       posts,
       viewedPostIds,
+      filters: {
+        q,
+        type: allowed.has(type) ? type : '',
+        authorId,
+        people,
+        from,
+        to,
+        myGroups: false // not applicable inside a specific group
+      },
+      searchAction,
+      page, limit, total, totalPages,
+      recentSearches,
     });
   } catch (err) { next(err); }
 };
@@ -266,6 +477,22 @@ exports.create = async (req, res, next) => {
         }
       );
     }
+
+    try {
+      await audit.record({
+        companyId: cid,
+        actorUserId: req.user._id,
+        action: 'POST_CREATED',
+        targetType: 'post',
+        targetId: post._id,
+        metadata: {
+          type,
+          groupId: groupId || null,
+          status,
+          hadImage: type === 'IMAGE' && !!req.file,
+        },
+      });
+    } catch (_e) {}
     
     // (Optional) LINK handling: you can later trigger a preview fetcher job using linkUrl/content.
 

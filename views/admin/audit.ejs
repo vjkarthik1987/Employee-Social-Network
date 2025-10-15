@@ -1,0 +1,58 @@
+<% layout('/layouts/_layout') %>
+
+<section style="max-width:1000px;margin:24px auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <h2 style="margin:0;">Audit Log</h2>
+    <a class="btn" href="/<%= company.slug %>/admin/settings">Admin Settings</a>
+  </div>
+
+  <% if (!rows || rows.length === 0) { %>
+    <div class="card">No audit entries yet.</div>
+  <% } else { %>
+    <div class="card" style="overflow:auto;">
+      <table class="table" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee;">When</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee;">Actor</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee;">Action</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee;">Target</th>
+            <th style="text-align:left;padding:.5rem;border-bottom:1px solid #eee;">Metadata</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(r => { %>
+            <tr>
+              <td style="padding:.5rem;border-bottom:1px solid #f3f3f3;">
+                <%= new Date(r.createdAt).toLocaleString() %>
+              </td>
+              <td style="padding:.5rem;border-bottom:1px solid #f3f3f3;">
+                <%= r.actorUserId ? (r.actorUserId.fullName || r.actorUserId.email) : 'System' %>
+              </td>
+              <td style="padding:.5rem;border-bottom:1px solid #f3f3f3;">
+                <%= r.action %>
+              </td>
+              <td style="padding:.5rem;border-bottom:1px solid #f3f3f3;">
+                <%= r.targetType %> <small style="color:#666;"><%= r.targetId %></small>
+              </td>
+              <td style="padding:.5rem;border-bottom:1px solid #f3f3f3;">
+                <% const preview = JSON.stringify(r.metadata || {}); %>
+                <code style="font-size:.875rem;white-space:nowrap;"><%= preview.length > 140 ? preview.slice(0,140) + '…' : preview %></code>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:12px;">
+      <% if (page > 1) { %>
+        <a class="btn" href="?page=<%= page - 1 %>">← Prev</a>
+      <% } %>
+      <span class="muted" style="align-self:center;">Page <%= page %> / <%= totalPages %></span>
+      <% if (page < totalPages) { %>
+        <a class="btn" href="?page=<%= page + 1 %>">Next →</a>
+      <% } %>
+    </div>
+  <% } %>
+</section>

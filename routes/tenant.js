@@ -7,10 +7,18 @@ const adminUsers = require('./adminUsers');
 const groupsRouter = require('./groups');
 const postsRouter = require('./posts');
 const profileRoutes = require('./profile');
+const savedSearches = require('./savedSearches');
+const adminAudit = require('./adminAudit');
+const exportsRouter = require('./exports');
+
 const adminController = require('../controllers/adminController');
+
 const commentsApi = require('./api/comments');
 const reactionsApi = require('./api/reactions'); 
+const reportsApi = require('./api/reports');
 const postsApi = require('./api/posts');
+const usersApi = require('./api/users');
+
 const pc = require('../controllers/postController');
 const moderation = require('../controllers/moderationController');
 
@@ -45,11 +53,17 @@ router.use('/auth', tenantAuth);
 router.use('/admin/users', adminUsers);
 router.use('/groups', groupsRouter);
 router.use('/posts', postsRouter);
+router.use('/', require('./reports'));
 router.use('/profile', ensureAuth, profileRoutes);
 router.get('/feed', ensureAuth, pc.companyFeed);
+router.use('/saved-searches', savedSearches);
+router.use('/', exportsRouter);
+router.use('/admin/audit', adminAudit);
 router.use('/api', commentsApi);
 router.use('/api', reactionsApi);
 router.use('/api', postsApi); 
+router.use('/api', reportsApi);
+router.use('/api', usersApi);
 
 // Org root → feed
 router.get('/', ensureAuth, (req, res) => {
@@ -58,20 +72,20 @@ router.get('/', ensureAuth, (req, res) => {
 
 // Feed (all members)
 // Later, when Post model exists, query with { companyId: req.companyId, status: 'PUBLISHED' }
-router.get('/feed', ensureAuth, async (req, res, next) => {
-  try {
-    const groups = await Group.find({ companyId: req.companyId })
-      .sort({ createdAt: -1 })
-      .limit(6)
-      .lean();
+// router.get('/feed', ensureAuth, async (req, res, next) => {
+//   try {
+//     const groups = await Group.find({ companyId: req.companyId })
+//       .sort({ createdAt: -1 })
+//       .limit(6)
+//       .lean();
 
-    res.render('feed/index', {
-      user: req.user,
-      company: req.company,
-      groups
-    });
-  } catch (e) { next(e); }
-});
+//     res.render('feed/index', {
+//       user: req.user,
+//       company: req.company,
+//       groups
+//     });
+//   } catch (e) { next(e); }
+// });
 
 // Moderation queue (mods + admins)
 router.get(

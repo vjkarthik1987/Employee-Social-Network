@@ -18,3 +18,5 @@
 - Overall admin page that creates and manages companies and get analytics
 - Flash should stay longer
 - Create newsletter
+- Search should go to first page, not second page or others
+- 

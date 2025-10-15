@@ -1,5 +1,7 @@
 // controllers/moderationController.js
 const Post = require('../models/Post');
+const audit = require('../services/auditService');
+
 
 function companyIdOf(req){ return req.companyId || req.company?._id; }
 
@@ -30,6 +32,17 @@ exports.approve = async (req, res, next) => {
     post.publishedAt = new Date();
     await post.save();
 
+    try {
+      await audit.record({
+        companyId: cid,
+        actorUserId: req.user._id,
+        action: 'POST_APPROVED',
+        targetType: 'post',
+        targetId: post._id,
+        metadata: { fromStatus: 'QUEUED', toStatus: 'PUBLISHED' },
+      });
+    } catch (_e) {}
+
     req.flash('success', 'Post approved & published.');
     return res.redirect(`/${req.params.org}/mod/queue`);
   } catch (e) { next(e); }
@@ -48,6 +61,17 @@ exports.reject = async (req, res, next) => {
     post.reviewerUserId = req.user._id;
     post.reviewedAt = new Date();
     await post.save();
+
+    try {
+      await audit.record({
+        companyId: cid,
+        actorUserId: req.user._id,
+        action: 'POST_REJECTED',
+        targetType: 'post',
+        targetId: post._id,
+        metadata: { fromStatus: 'QUEUED', toStatus: 'REJECTED' }, // add reason later if UI includes it
+      });
+    } catch (_e) {}
 
     req.flash('success', 'Post rejected.');
     return res.redirect(`/${req.params.org}/mod/queue`);

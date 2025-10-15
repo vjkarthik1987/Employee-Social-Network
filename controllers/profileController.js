@@ -5,6 +5,8 @@ const User = require('../models/User');
 const Post = require('../models/Post');
 const Group = require('../models/Group');
 const Attachment = require('../models/Attachment');
+const audit = require('../services/auditService');
+
 
 function cid(req) { return req.companyId || req.company?._id; }
 function isSameUser(a, b) { return String(a) === String(b); }
@@ -130,6 +132,7 @@ exports.update = async (req, res, next) => {
 
     const profileUser = await User.findOne({ _id: targetUserId, companyId });
     if (!profileUser) return res.status(404).render('errors/404');
+    const prevRole = profileUser.role;
 
     const isSelf = isSameUser(req.user._id, profileUser._id);
     const isAdmin = req.user.role === 'ORG_ADMIN';
@@ -155,6 +158,18 @@ exports.update = async (req, res, next) => {
     }
 
     await profileUser.save();
+    if (isAdmin && prevRole !== profileUser.role) {
+      try {
+        await audit.record({
+          companyId: companyId,
+          actorUserId: req.user._id,
+          action: 'USER_ROLE_CHANGED',
+          targetType: 'user',
+          targetId: profileUser._id,
+          metadata: { from: prevRole, to: profileUser.role },
+        });
+      } catch (_e) {}
+    }
     req.flash('success', 'Profile updated.');
     const backTo = isAdmin && !isSelf
       ? `/${req.company.slug}/profile/${profileUser._id}`

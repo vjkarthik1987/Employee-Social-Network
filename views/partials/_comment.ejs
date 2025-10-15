@@ -44,6 +44,13 @@
     </form>
   <% } %>
 
+  <form method="POST" action="/<%= company.slug %>/report" style="display:inline;">
+    <input type="hidden" name="targetType" value="comment">
+    <input type="hidden" name="targetId" value="<%= comment._id %>">
+    <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
+    <button type="submit" class="btn btn-link small" title="Report this comment">Report</button>
+  </form>
+  
   <% if (replies && replies.length) { %>
     <ul class="replies" data-replies>
       <% replies.forEach(function(r){ %>

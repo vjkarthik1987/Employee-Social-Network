@@ -6,6 +6,7 @@ const Post = require('../../models/Post');
 const router = express.Router({ mergeParams: true });
 
 // GET /api/:org/posts?groupId=&q=&page=1&limit=10
+// GET /api/:org/posts?groupId=&q=&type=&page=1&limit=10
 router.get('/posts', ensureAuth, async (req, res, next) => {
   try {
     const cid = req.companyId;
@@ -13,9 +14,12 @@ router.get('/posts', ensureAuth, async (req, res, next) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
     const q     = (req.query.q || '').trim();
     const groupId = req.query.groupId || null;
+    const type  = (req.query.type || '').toUpperCase();
+    const allowedTypes = new Set(['TEXT','IMAGE','LINK']);
 
     const match = { companyId: cid, deletedAt: null, status: 'PUBLISHED' };
     if (groupId) match.groupId = groupId;
+    if (allowedTypes.has(type)) match.type = type;
     if (q) match.richText = { $regex: q, $options: 'i' };
 
     const [items, total] = await Promise.all([
