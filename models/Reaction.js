@@ -15,5 +15,6 @@ const ReactionSchema = new mongoose.Schema({
 });
 
 ReactionSchema.index({ userId: 1, targetType: 1, targetId: 1 }, { unique: true });
+ReactionSchema.index({ companyId: 1, targetType: 1, targetId: 1 }); // analytics & cleanup
 
 module.exports = mongoose.model('Reaction', ReactionSchema);

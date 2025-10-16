@@ -1,25 +1,47 @@
 // controllers/postController.js
+const { performance } = require('perf_hooks');
+const { Types } = require('mongoose');
 
-const User = require('../models/User');
 const Post = require('../models/Post');
+const User = require('../models/User');
 const Group = require('../models/Group');
-const Comment = require('../models/Comment');
 const Attachment = require('../models/Attachment');
+const Comment = require('../models/Comment');
+
 const audit = require('../services/auditService');
+const perf = require('../services/perfService');
+const microcache = require('../middleware/microcache');
+const cacheStore = require('../services/cacheStore');
 
+function cid(req) { return req.companyId || req.company?._id; }
+function isObjId(v) { return Types.ObjectId.isValid(v); }
+function stripTags(html = '') { return String(html).replace(/<[^>]*>/g, ' '); }
 
-// ---- Helpers ----
-function companyIdOf(req) {
-  return req.companyId || (req.company && req.company._id);
+// ---------- filter + query helpers ----------
+function readFilters(req, { isGroup = false } = {}) {
+  const q        = (req.query.q || '').trim();
+  const type     = (req.query.type || '').toUpperCase();
+  const authorId = (req.query.authorId || '').trim();
+  const people   = (req.query.people || '').trim();
+  const from     = (req.query.from || '').trim();
+  const to       = (req.query.to || '').trim();
+  const myGroups = !isGroup && String(req.query.myGroups || '') === '1';
+
+  const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
+  const limit = Math.min(Math.max(parseInt(req.query.limit || '15', 10), 5), 50);
+  const skip  = (page - 1) * limit;
+
+  return { q, type, authorId, people, from, to, myGroups, page, limit, skip };
 }
 
-// Utility to fetch user’s group IDs (owner/mod/member)
-async function memberGroupIds(companyId, userId) {
-  const rows = await Group.find({
-    companyId,
-    $or: [{ owners: userId }, { moderators: userId }, { members: userId }]
-  }).select('_id').lean();
-  return rows.map(r => r._id);
+async function resolvePeopleToAuthorIds({ companyId, people }) {
+  if (!people) return null;
+  const rx = new RegExp(people.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+  const users = await User
+    .find({ companyId, $or: [{ fullName: rx }, { title: rx }] })
+    .select('_id')
+    .lean();
+  return users.map(u => u._id);
 }
 
 async function attachFirstImages(posts, companyId) {
@@ -34,377 +56,296 @@ async function attachFirstImages(posts, companyId) {
   return posts;
 }
 
-// Light helper to attach { group: { _id, name } } for cards
-const { Types } = require('mongoose');
 async function attachGroupStubs(posts, companyId) {
-  const groupIds = Array.from(
-    new Set(
-      posts
-        .map(p => p.groupId)
-        .filter(id => id && Types.ObjectId.isValid(id))
-        .map(id => String(id))
-    )
-  );
+  const groupIds = Array.from(new Set(
+    posts.map(p => p.groupId).filter(id => id && Types.ObjectId.isValid(id)).map(String)
+  ));
   if (!groupIds.length) return posts;
   const groups = await Group.find({ companyId, _id: { $in: groupIds } })
     .select('_id name')
     .lean();
   const byId = new Map(groups.map(g => [String(g._id), g]));
-  posts.forEach(p => {
-        if (p.groupId && Types.ObjectId.isValid(p.groupId)) {
-            p.group = byId.get(String(p.groupId));
-         }
-  });
+  posts.forEach(p => { if (p.groupId && Types.ObjectId.isValid(p.groupId)) p.group = byId.get(String(p.groupId)); });
   return posts;
 }
 
-function canDelete(user, post) {
-  if (!user) return false;
-  const isAuthor = String(user._id) === String(post.authorId?._id || post.authorId);
-  const isMod = user.role === 'MODERATOR' || user.role === 'ORG_ADMIN';
-  return isAuthor || isMod;
-}
+function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople }) {
+  const allowed = new Set(['TEXT','IMAGE','LINK']);
+  const match = { companyId, deletedAt: null, status: 'PUBLISHED' };
 
-// --- Blocked words helper ---
-function findBlockedMatches(text, blockedWords = []) {
-  if (!text || !blockedWords?.length) return [];
-  const hay = String(text).toLowerCase();
-  const hits = [];
-  for (const raw of blockedWords) {
-    const w = String(raw || '').trim().toLowerCase();
-    if (!w) continue;
-    // word-boundary if purely word chars; else substring match
-    const isWord = /^[a-z0-9]+$/i.test(w);
-    const re = isWord ? new RegExp(`\\b${w}\\b`, 'i') : new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-    if (re.test(hay)) hits.push(raw);
+  if (scope === 'GROUP' && groupId) match.groupId = groupId;
+  if (allowed.has(filters.type)) match.type = filters.type;
+
+  if (filters.authorId && isObjId(filters.authorId)) {
+    match.authorId = filters.authorId;
+  } else if (authorIdsFromPeople) {
+    match.authorId = authorIdsFromPeople.length ? { $in: authorIdsFromPeople } : { $in: [] };
   }
-  // de-dupe, cap to a few to keep flash message short
-  return Array.from(new Set(hits)).slice(0, 5);
+
+  if (filters.from || filters.to) {
+    match.createdAt = {};
+    if (filters.from) match.createdAt.$gte = new Date(filters.from + 'T00:00:00.000Z');
+    if (filters.to)   match.createdAt.$lte = new Date(filters.to   + 'T23:59:59.999Z');
+  }
+
+  return match;
 }
 
-//----Showing post view and reaction counts ------//
-function sumReactions(byType = {}) {
-  const vals = Object.values(byType || {});
-  return vals.reduce((a, b) => a + (Number(b) || 0), 0);
+async function runFeedQuery({ req, scope, groupId = null }) {
+  const companyId = cid(req);
+  const filters = readFilters(req, { isGroup: scope === 'GROUP' });
+
+  // myGroups filter for company feed
+  let myGroupSet = null;
+  if (scope === 'COMPANY' && filters.myGroups) {
+    const rows = await Group.find({
+      companyId,
+      $or: [{ owners: req.user._id }, { moderators: req.user._id }, { members: req.user._id }]
+    }).select('_id').lean();
+    myGroupSet = new Set(rows.map(r => String(r._id)));
+  }
+
+  const authorIdsFromPeople = (!filters.authorId && filters.people)
+    ? await resolvePeopleToAuthorIds({ companyId, people: filters.people })
+    : null;
+
+  const match = buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople });
+
+  if (scope === 'COMPANY' && myGroupSet) {
+    match.groupId = { $in: Array.from(myGroupSet).map(Types.ObjectId.createFromHexString) };
+  }
+
+  const t0 = performance.now();
+
+  let findCursor;
+  if (filters.q) {
+    try {
+      findCursor = Post.find({ ...match, $text: { $search: filters.q } }, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' }, createdAt: -1 });
+    } catch {
+      findCursor = Post.find({ ...match, richText: { $regex: filters.q, $options: 'i' } })
+        .sort({ createdAt: -1 });
+    }
+  } else {
+    findCursor = Post.find(match).sort({ createdAt: -1 });
+  }
+
+  const [items, total] = await Promise.all([
+    findCursor
+      .skip(filters.skip)
+      .limit(filters.limit)
+      .populate('authorId', 'fullName avatarUrl title')
+      .lean(),
+    Post.countDocuments(match),
+  ]);
+
+  const [withImg, withGroup] = await Promise.all([
+    attachFirstImages(items, companyId),
+    attachGroupStubs(items, companyId),
+  ]);
+
+  if (filters.q) {
+    withGroup.forEach(p => {
+      const text = stripTags(p.richText || '');
+      const i = text.toLowerCase().indexOf(filters.q.toLowerCase());
+      if (i >= 0) {
+        const start = Math.max(0, i - 50);
+        const end = Math.min(text.length, i + filters.q.length + 80);
+        p._qExcerpt = `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`;
+      }
+    });
+  }
+
+  const t1 = performance.now();
+  perf.record({
+    companyId,
+    route: scope === 'COMPANY' ? 'feed.company' : 'feed.group',
+    durationMs: t1 - t0,
+    count: items.length,
+    page: filters.page,
+    limit: filters.limit,
+  });
+
+  const totalPages = Math.max(Math.ceil(total / filters.limit), 1);
+  return { posts: withGroup, total, totalPages, ...filters };
 }
 
-function computeDerived(post) {
-  post.totalReactions = sumReactions(post.reactionsCountByType);
-  const denom = Math.max(post.viewsCount || 0, 1);
-  post.engagementRate = ((post.totalReactions + (post.commentsCount || 0)) / denom) * 100;
-  // keep 1 decimal place for UI
-  post.engagementRate = Math.round(post.engagementRate * 10) / 10;
-  return post;
-}
-function ensureViewedSession(req) {
-  if (!req.session) return;
-  if (!Array.isArray(req.session.viewedPosts)) req.session.viewedPosts = [];
-  // cap to prevent bloat
-  if (req.session.viewedPosts.length > 500) req.session.viewedPosts = req.session.viewedPosts.slice(-300);
-}
+// ---------- controllers ----------
 
-function stripTags(html = '') { return String(html || '').replace(/<[^>]*>/g, ' '); }
-function escapeHtml(s = '') {
-  return String(s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function makeExcerpt(text = '', q = '', win = 80) {
-  if (!q) return '';
-  const hay = stripTags(text);
-  const idx = hay.toLowerCase().indexOf(q.toLowerCase());
-  if (idx === -1) return '';
-  const start = Math.max(0, idx - win);
-  const end   = Math.min(hay.length, idx + q.length + win);
-  const pre   = start > 0 ? '…' : '';
-  const post  = end < hay.length ? '…' : '';
-  const slice = hay.slice(start, end);
-  const esc   = escapeHtml(slice);
-  // highlight all occurrences, case-insensitive
-  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-  return pre + esc.replace(re, (m) => `<mark>${escapeHtml(m)}</mark>`) + post;
-}
-function pushRecentSearch(req, q) {
-  if (!q) return;
-  if (!req.session) return;
-  if (!Array.isArray(req.session.recentSearches)) req.session.recentSearches = [];
-  const arr = req.session.recentSearches.filter(v => v.toLowerCase() !== q.toLowerCase());
-  arr.unshift(q);
-  req.session.recentSearches = arr.slice(0, 8);
-}
-
-
-// ---- Controllers ----
-
-// Company feed — paginated + Day 21 polish
+// GET /:org/feed
 exports.companyFeed = async (req, res, next) => {
   try {
-    const cid = companyIdOf(req);
+    const filters = readFilters(req, { isGroup: false });
+    const key = `feed:v1:${req.company.slug}:${cacheStore.hash(filters)}`;
 
-    // Filters
-    const q        = (req.query.q || '').trim();
-    const type     = (req.query.type || '').toUpperCase();
-    const allowed  = new Set(['TEXT', 'IMAGE', 'LINK']);
-    const authorId = (req.query.authorId && String(req.query.authorId)) || '';
-    const people   = (req.query.people || '').trim();
-    const from     = (req.query.from || '').trim();   // yyyy-mm-dd
-    const to       = (req.query.to || '').trim();     // yyyy-mm-dd
-    const myGroups = String(req.query.myGroups || '') === '1'; // only for company feed
-
-    // Pagination
-    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit || '15', 10), 5), 50);
-    const skip  = (page - 1) * limit;
-
-    // Base match
-    const match = { companyId: cid, deletedAt: null, status: 'PUBLISHED' };
-    if (allowed.has(type)) match.type = type;
-
-    // Author filter (explicit)
-    if (authorId) match.authorId = authorId;
-
-    // People (name/title → resolve to authorId list) — only if authorId not explicitly set
-    if (!authorId && people) {
-      const rx = new RegExp(people.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      const User = require('../models/User');
-      const users = await User.find({
-        companyId: cid,
-        $or: [{ fullName: rx }, { title: rx }]
-      }).select('_id').lean();
-      const ids = users.map(u => u._id);
-      match.authorId = ids.length ? { $in: ids } : { $in: [] }; // no matches if empty
-    }
-
-    // Date range
-    if (from || to) {
-      match.createdAt = {};
-      if (from) match.createdAt.$gte = new Date(from + 'T00:00:00.000Z');
-      if (to)   match.createdAt.$lte = new Date(to   + 'T23:59:59.999Z');
-    }
-
-    // "My groups" (company feed only): restrict to groups the user belongs to
-    if (myGroups) {
-      const rows = await Group.find({
-        companyId: cid,
-        $or: [{ owners: req.user._id }, { moderators: req.user._id }, { members: req.user._id }]
-      }).select('_id').lean();
-      const ids = rows.map(r => r._id);
-      match.groupId = { $in: ids }; // if ids is empty, it returns none, which is correct
-    }
-
-    // Query + relevance sort (with $text fallback to regex)
-    let cursor, total;
-    if (q) {
-      try {
-        const textQuery = { ...match, $text: { $search: q } };
-        cursor = Post.find(textQuery, { score: { $meta: 'textScore' } })
-          .sort({ score: { $meta: 'textScore' }, createdAt: -1 });
-        total  = await Post.countDocuments(textQuery);
-      } catch (_) {
-        const rxQuery = { ...match, richText: { $regex: q, $options: 'i' } };
-        cursor = Post.find(rxQuery).sort({ createdAt: -1 });
-        total  = await Post.countDocuments(rxQuery);
+    const { value } = await microcache.getOrSet({
+      k: key,
+      ttlSec: 10,
+      fetcher: async () => {
+        const data = await runFeedQuery({ req, scope: 'COMPANY' });
+        return {
+          posts: data.posts,
+          total: data.total, totalPages: data.totalPages,
+          page: data.page, limit: data.limit,
+          filters: {
+            q: data.q, type: data.type, authorId: data.authorId, people: data.people,
+            from: data.from, to: data.to, myGroups: data.myGroups
+          }
+        };
       }
-    } else {
-      cursor = Post.find(match).sort({ createdAt: -1 });
-      total  = await Post.countDocuments(match);
-    }
-
-    const posts = await cursor
-      .skip(skip)
-      .limit(limit)
-      .populate('authorId', 'fullName title avatarUrl')
-      .lean();
-
-    await attachFirstImages(posts, cid);
-    await attachGroupStubs(posts, cid);
-    posts.forEach(p => {
-      computeDerived(p);
-      if (q) p._qExcerpt = makeExcerpt(p.richText || '', q, 80);
     });
-
-    ensureViewedSession(req);
-    const viewedPostIds = new Set((req.session?.viewedPosts || []).map(String));
-
-    const totalPages   = Math.max(Math.ceil(total / limit), 1);
-    const searchAction = `/${req.company.slug}/feed`;
-
-    if (q) pushRecentSearch(req, q);
-    const recentSearches = Array.isArray(req.session?.recentSearches) ? req.session.recentSearches : [];
 
     return res.render('feed/index', {
       company: req.company,
       user: req.user,
-      posts,
-      viewedPostIds,
-      filters: {
-        q,
-        type: allowed.has(type) ? type : '',
-        authorId,
-        people,
-        from,
-        to,
-        myGroups
-      },
-      searchAction,
-      page, limit, total, totalPages,
-      recentSearches,
+      posts: value.posts,
+      total: value.total,
+      totalPages: value.totalPages,
+      page: value.page,
+      limit: value.limit,
+      filters: value.filters,
+      searchAction: `/${req.params.org}/feed`,
+      recentSearches: [],
     });
-  } catch (err) { next(err); }
+  } catch (e) { next(e); }
 };
 
-// Group feed — paginated + relevance + highlights + author/people/date
+// GET /:org/g/:groupId
 exports.groupFeed = async (req, res, next) => {
   try {
-    const cid = companyIdOf(req);
-    const { groupId } = req.params;
+    const groupId = req.params.groupId;
+    if (!isObjId(groupId)) return res.status(404).render('errors/404');
 
-    const group = await Group.findOne({ _id: groupId, companyId: cid }).lean();
+    const group = await Group.findOne({ _id: groupId, companyId: cid(req) }).lean();
     if (!group) return res.status(404).render('errors/404');
 
-    // Filters
-    const q        = (req.query.q || '').trim();
-    const type     = (req.query.type || '').toUpperCase();
-    const allowed  = new Set(['TEXT', 'IMAGE', 'LINK']);
-    const authorId = (req.query.authorId && String(req.query.authorId)) || '';
-    const people   = (req.query.people || '').trim();
-    const from     = (req.query.from || '').trim();
-    const to       = (req.query.to || '').trim();
+    const filters = readFilters(req, { isGroup: true });
+    const key = `groupfeed:v1:${req.company.slug}:${groupId}:${cacheStore.hash(filters)}`;
 
-    // Pagination
-    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit || '15', 10), 5), 50);
-    const skip  = (page - 1) * limit;
-
-    // Base match — IMPORTANT: lock to this group
-    const match = { companyId: cid, groupId, deletedAt: null, status: 'PUBLISHED' };
-    if (allowed.has(type)) match.type = type;
-
-    // Author filter (explicit)
-    if (authorId) match.authorId = authorId;
-
-    // People (name/title → resolve to authorId list) — only if authorId not explicitly set
-    if (!authorId && people) {
-      const rx = new RegExp(people.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-      const User = require('../models/User');
-      const users = await User.find({
-        companyId: cid,
-        $or: [{ fullName: rx }, { title: rx }]
-      }).select('_id').lean();
-      const ids = users.map(u => u._id);
-      match.authorId = ids.length ? { $in: ids } : { $in: [] };
-    }
-
-    // Date range
-    if (from || to) {
-      match.createdAt = {};
-      if (from) match.createdAt.$gte = new Date(from + 'T00:00:00.000Z');
-      if (to)   match.createdAt.$lte = new Date(to   + 'T23:59:59.999Z');
-    }
-
-    // Query + relevance sort (with $text fallback to regex)
-    let cursor, total;
-    if (q) {
-      try {
-        const textQuery = { ...match, $text: { $search: q } };
-        cursor = Post.find(textQuery, { score: { $meta: 'textScore' } })
-          .sort({ score: { $meta: 'textScore' }, createdAt: -1 });
-        total  = await Post.countDocuments(textQuery);
-      } catch (_) {
-        const rxQuery = { ...match, richText: { $regex: q, $options: 'i' } };
-        cursor = Post.find(rxQuery).sort({ createdAt: -1 });
-        total  = await Post.countDocuments(rxQuery);
+    const { value } = await microcache.getOrSet({
+      k: key,
+      ttlSec: 10,
+      fetcher: async () => {
+        const data = await runFeedQuery({ req, scope: 'GROUP', groupId });
+        return {
+          group,
+          posts: data.posts,
+          total: data.total, totalPages: data.totalPages,
+          page: data.page, limit: data.limit,
+          filters: {
+            q: data.q, type: data.type, authorId: data.authorId, people: data.people,
+            from: data.from, to: data.to, myGroups: false
+          }
+        };
       }
-    } else {
-      cursor = Post.find(match).sort({ createdAt: -1 });
-      total  = await Post.countDocuments(match);
-    }
-
-    const posts = await cursor
-      .skip(skip)
-      .limit(limit)
-      .populate('authorId', 'fullName title avatarUrl')
-      .lean();
-
-    await attachFirstImages(posts, cid);
-    await attachGroupStubs(posts, cid);
-    posts.forEach(p => {
-      computeDerived(p);
-      if (q) p._qExcerpt = makeExcerpt(p.richText || '', q, 80);
     });
-
-    ensureViewedSession(req);
-    const viewedPostIds = new Set((req.session?.viewedPosts || []).map(String));
-
-    const totalPages   = Math.max(Math.ceil(total / limit), 1);
-    const searchAction = `/${req.company.slug}/g/${group._id}`;
-
-    if (q) pushRecentSearch(req, q);
-    const recentSearches = Array.isArray(req.session?.recentSearches) ? req.session.recentSearches : [];
 
     return res.render('feed/index', {
       company: req.company,
       user: req.user,
-      group,
-      posts,
-      viewedPostIds,
-      filters: {
-        q,
-        type: allowed.has(type) ? type : '',
-        authorId,
-        people,
-        from,
-        to,
-        myGroups: false // not applicable inside a specific group
-      },
-      searchAction,
-      page, limit, total, totalPages,
-      recentSearches,
+      group: value.group,
+      posts: value.posts,
+      total: value.total,
+      totalPages: value.totalPages,
+      page: value.page,
+      limit: value.limit,
+      filters: value.filters,
+      searchAction: `/${req.params.org}/g/${groupId}`,
+      recentSearches: [],
     });
-  } catch (err) { next(err); }
+  } catch (e) { next(e); }
 };
 
-// Post detail
-exports.getPost = async (req, res, next) => {
+// POST /:org/posts
+// fields: content, type (TEXT|LINK|IMAGE), image (multer), groupId?, imageAlt?
+exports.create = async (req, res, next) => {
   try {
-    const cid = companyIdOf(req);
-    const { postId } = req.params;
+    const companyId = cid(req);
+    const mode = (req.company?.policies?.postingMode || 'OPEN').toUpperCase();
+    const status = mode === 'MODERATED' ? 'QUEUED' : 'PUBLISHED';
 
-    let post = await Post.findOne({ _id: postId, companyId: cid, deletedAt: null })
-      .populate('authorId', 'fullName title avatarUrl')
-      .lean();
-    if (!post) return res.status(404).render('errors/404');
+    const type = (req.body.type || 'TEXT').toUpperCase();
+    const groupId = req.body.groupId && isObjId(req.body.groupId) ? req.body.groupId : null;
+    const richText = (req.body.content || '').toString().slice(0, 10000);
 
-    // Day 14: session-unique views bump
-    ensureViewedSession(req);
-    const alreadyViewed = (req.session?.viewedPosts || []).map(String).includes(String(post._id));
-    if (!alreadyViewed) {
-      await Post.updateOne({ _id: post._id, companyId: cid }, { $inc: { viewsCount: 1 } });
-      // reflect increment in the in-memory object so the page shows the correct count
-      post.viewsCount = (post.viewsCount || 0) + 1;
-      req.session.viewedPosts.push(String(post._id));
+    const post = await Post.create({
+      companyId,
+      authorId: req.user._id,
+      groupId,
+      type,
+      richText,
+      status,
+      publishedAt: status === 'PUBLISHED' ? new Date() : null,
+    });
+
+    if (req.file) {
+      await Attachment.create({
+        companyId,
+        ownerUserId: req.user._id,
+        targetType: 'post',
+        targetId: post._id,
+        storageUrl: (req.file.path && req.file.path.startsWith('http'))
+          ? req.file.path
+          : `/uploads/${req.file.filename}`,
+        mimeType: req.file.mimetype || null,
+        sizeBytes: req.file.size || null,
+      });
+      await Post.updateOne({ _id: post._id }, { $inc: { attachmentsCount: 1 } });
     }
 
-    // First image
-    const firstAttach = await Attachment.findOne({
-      companyId: cid,
+    audit.record({
+      companyId,
+      actorUserId: req.user._id,
+      action: 'POST_CREATED',
       targetType: 'post',
       targetId: post._id,
-    }).select('storageUrl').lean();
-    post.firstAttachmentUrl = firstAttach?.storageUrl || post.firstAttachmentUrl;
+      metadata: { type, status, hasAttachment: !!req.file }
+    }).catch(()=>{});
 
-    // Group stub (for breadcrumb)
-    if (post.groupId) {
-      post.group = await Group.findOne({ _id: post.groupId, companyId: cid })
-        .select('_id name')
-        .lean();
-    }
+    // Invalidate cached feeds
+    await microcache.bustTenant(req.company.slug);
+    if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
 
-    // Day 14: derived metrics for detail view
-    post = computeDerived(post);
+    req.flash('success', status === 'PUBLISHED' ? 'Posted.' : 'Submitted for review.');
+    return res.redirect(`/${req.params.org}/feed`);
+  } catch (e) { next(e); }
+};
 
-    // Load comments (visible only)
-    const comments = await Comment.find({ postId: post._id, status: { $ne: 'deleted' } })
+// GET /:org/posts/:postId
+exports.getPost = async (req, res, next) => {
+  try {
+    const companyId = cid(req);
+    const { postId } = req.params;
+    if (!isObjId(postId)) return res.status(404).render('errors/404');
+
+    const key = `post:v1:${req.company.slug}:${postId}`;
+    const { value } = await microcache.getOrSet({
+      k: key, ttlSec: 15,
+      fetcher: async () => {
+        const t0 = performance.now();
+        let post = await Post.findOne({ _id: postId, companyId, deletedAt: null })
+          .populate('authorId', 'fullName title avatarUrl')
+          .lean();
+        if (!post) return { notFound: true };
+
+        const [att, grp] = await Promise.all([
+          Attachment.find({ companyId, targetType: 'post', targetId: post._id })
+            .select('storageUrl').sort({ createdAt: 1 }).limit(1).lean(),
+          post.groupId ? Group.findOne({ _id: post.groupId, companyId }).select('_id name').lean() : null
+        ]);
+        if (att && att[0]) post.firstAttachmentUrl = att[0].storageUrl;
+        if (grp) post.group = grp;
+
+        const t1 = performance.now();
+        perf.record({ companyId, route: 'post.show', durationMs: t1 - t0, count: 1 });
+        return { post };
+      }
+    });
+
+    if (value?.notFound) return res.status(404).render('errors/404');
+
+    // Load comments (visible only) — use value.post._id here
+    const comments = await Comment.find({ postId: value.post._id, status: { $ne: 'deleted' } })
       .sort({ createdAt: 1 })
       .populate('authorId', 'fullName avatarUrl title')
       .lean();
@@ -412,132 +353,45 @@ exports.getPost = async (req, res, next) => {
     return res.render('posts/show', {
       company: req.company,
       user: req.user,
-      post,
+      post: value.post,
       comments,
-      viewed: true, // current session has viewed this post
+      viewed: true,
     });
-  } catch (err) { next(err); }
+  } catch (e) { next(e); }
 };
 
-// Create post (TEXT/LINK/IMAGE)
-exports.create = async (req, res, next) => {
-  try {
-    const cid = companyIdOf(req);
-    const { type = 'TEXT', content, linkUrl, groupId: rawGroupId } = req.body;
-    const groupId = rawGroupId && rawGroupId !== 'null' && rawGroupId !== '' ? rawGroupId : null;
-
-    if (type === 'IMAGE' && !req.file) {
-            const back = req.get('Referer') || `/${req.company?.slug || ''}/feed`;
-            req.flash('error', 'Please attach an image (JPG/PNG/GIF up to 2 MB).');
-            return res.redirect(back);
-    }
-
-    // Determine initial status (Day 11 will add approval queue UI)
-    const postingMode = req.company?.policies?.postingMode || 'OPEN';
-    const status = postingMode === 'MODERATED' ? 'QUEUED' : 'PUBLISHED';
-
-    // Policies: blocked words soft validation
-    const blocked = req.company?.policies?.blockedWords || [];
-    const toScan = [
-      content || '',
-      linkUrl || '',
-    ].join(' ');
-    const matches = findBlockedMatches(toScan, blocked);
-    if (matches.length) {
-      const back = req.get('Referer') || `/${req.company?.slug || ''}/feed`;
-      req.flash('error', `Your post includes blocked terms: ${matches.join(', ')}. Please edit and try again.`);
-      return res.redirect(back);
-    }
-
-    const post = await Post.create({
-      companyId: cid,
-      authorId: req.user._id,
-      groupId: groupId || null,
-      type,
-      richText: content || '',
-      status,
-      publishedAt: status === 'PUBLISHED' ? new Date() : null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // If IMAGE: persist attachment + increment counter
-    if (type === 'IMAGE' && req.file) {
-      const storageUrl = req.file.secure_url || req.file.path || req.file.location;
-      await Attachment.create({ companyId: cid, ownerUserId: req.user._id,
-        targetType: 'post', targetId: post._id, storageUrl,
-        mimeType: req.file.mimetype, sizeBytes: req.file.size
-      });
-      await Post.updateOne(
-        { _id: post._id },
-        {
-          $inc: { attachmentsCount: 1 },
-          $setOnInsert: { coverImageUrl: storageUrl }, // or set if null in a second update
-          $set: { coverImageUrl: storageUrl } // if you want first image to be cover when empty
-        }
-      );
-    }
-
-    try {
-      await audit.record({
-        companyId: cid,
-        actorUserId: req.user._id,
-        action: 'POST_CREATED',
-        targetType: 'post',
-        targetId: post._id,
-        metadata: {
-          type,
-          groupId: groupId || null,
-          status,
-          hadImage: type === 'IMAGE' && !!req.file,
-        },
-      });
-    } catch (_e) {}
-    
-    // (Optional) LINK handling: you can later trigger a preview fetcher job using linkUrl/content.
-
-    req.flash(
-      'success',
-      status === 'QUEUED' ? 'Submitted for approval.' : 'Post created.'
-    );
-    return res.redirect(`/${req.company.slug}/feed`);
-  } catch (err) {
-    // Multer validation errors surface here as plain Error
-    const back = req.get('Referer') || `/${req.company?.slug || ''}/feed`;
-    req.flash('error', err?.message || 'Unable to create post.');
-    return res.redirect(back);
-  }
-};
-
-// Delete (soft delete)
+// POST /:org/posts/:postId/delete  (soft delete)
 exports.destroy = async (req, res, next) => {
   try {
-    const cid = companyIdOf(req);
+    const companyId = cid(req);
     const { postId } = req.params;
+    if (!isObjId(postId)) { req.flash('error', 'Invalid id'); return res.redirect('back'); }
 
-    const post = await Post.findOne({ _id: postId, companyId: cid });
-    if (!post) return res.status(404).render('errors/404');
+    const post = await Post.findOne({ _id: postId, companyId });
+    if (!post) { req.flash('error', 'Not found'); return res.redirect('back'); }
 
-    if (!canDelete(req.user, post)) {
-      req.flash('error', 'You do not have permission to delete this post.');
-      return res.redirect(`/${req.company.slug}/posts/${postId}`);
-    }
+    const isAuthor = String(post.authorId) === String(req.user._id);
+    const isPriv = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
+    if (!(isAuthor || isPriv)) { req.flash('error', 'Forbidden'); return res.redirect('back'); }
 
     post.deletedAt = new Date();
     post.deletedBy = req.user._id;
     await post.save();
 
-    req.flash('success', 'Post deleted.');
-    return res.redirect(`/${req.company.slug}/feed`);
-  } catch (err) {
-    next(err);
-  }
-};
+    audit.record({
+      companyId,
+      actorUserId: req.user._id,
+      action: 'POST_DELETED',
+      targetType: 'post',
+      targetId: post._id,
+    }).catch(()=>{});
 
-module.exports = {
-  companyFeed: exports.companyFeed,
-  groupFeed: exports.groupFeed,
-  getPost: exports.getPost,
-  create: exports.create,
-  destroy: exports.destroy,
+    // Bust caches
+    await microcache.bustTenant(req.company.slug);
+    if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
+    await microcache.bustPost(req.company.slug, post._id);
+
+    req.flash('success', 'Post deleted.');
+    return res.redirect(`/${req.params.org}/feed`);
+  } catch (e) { next(e); }
 };

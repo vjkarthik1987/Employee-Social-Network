@@ -14,6 +14,7 @@
       <form method="POST"
             action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= comment._id %>/delete"
             onsubmit="return confirm('Delete this comment?')">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
         <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
       </form>
     <% } %>
@@ -38,6 +39,7 @@
           action="/<%= company.slug %>/posts/<%= post._id %>/comments"
           class="reply-form"
           style="display:none;">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <input type="hidden" name="parentCommentId" value="<%= comment._id %>">
       <textarea name="content" rows="2" placeholder="Write a reply…" maxlength="3000" required></textarea>
       <button class="btn btn-sm" type="submit">Reply</button>
@@ -45,6 +47,7 @@
   <% } %>
 
   <form method="POST" action="/<%= company.slug %>/report" style="display:inline;">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <input type="hidden" name="targetType" value="comment">
     <input type="hidden" name="targetId" value="<%= comment._id %>">
     <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
@@ -69,6 +72,7 @@
               <form method="POST"
                     action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= r._id %>/delete"
                     onsubmit="return confirm('Delete this reply?')">
+                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
                 <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
               </form>
             <% } %>

@@ -3,11 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="csrf-token" content="<%= csrfToken || '' %>">
   <title><%= typeof title !== 'undefined' ? title : 'Engage' %></title>
   <link rel="stylesheet" href="/css/style.css" />
+  
   <style>
+    <%
+      const _primary =
+        (typeof company !== 'undefined' && company && company.branding && company.branding.theme && company.branding.theme.primary)
+          ? company.branding.theme.primary
+          : '#0a66c2';
+    %>
     :root{
-      --primary: <%= company?.branding?.theme?.primary || '#0a66c2' %>;
+      --primary: <%= _primary %>;
       --bg: #f6f7f9;
       --text: #111;
       --navH: 56px;

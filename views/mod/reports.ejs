@@ -35,6 +35,7 @@
             <td style="padding:.5rem;border-bottom:1px solid #eee;"><%= new Date(r.createdAt).toLocaleString() %></td>
             <td style="padding:.5rem;border-bottom:1px solid #eee;">
               <form method="POST" action="/<%= company.slug %>/mod/reports/<%= r._id %>/resolve" style="display:inline;">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
                 <button type="submit" class="btn small">Resolve</button>
               </form>
             </td>

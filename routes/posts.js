@@ -51,7 +51,7 @@ if (cc && typeof cc?.create === 'function') {
   router.post('/:postId/comments', ensureAuth, cc.create);
 }
 if (cc && typeof cc?.destroy === 'function') {
-  router.post('/comments/:commentId/delete', ensureAuth, cc.destroy);
+  router.post('/:postId/comments/:commentId/delete', ensureAuth, cc.destroy);
 }
 
 module.exports = router;

@@ -33,6 +33,7 @@ const UserSchema = new mongoose.Schema(
 
 // Unique email per company
 UserSchema.index({ companyId: 1, email: 1 }, { unique: true });
+UserSchema.index({ companyId: 1, role: 1 }); // admin dashboards
 
 UserSchema.methods.setPassword = async function (plain) {
   this.password = plain;  // triggers pre-save hashing

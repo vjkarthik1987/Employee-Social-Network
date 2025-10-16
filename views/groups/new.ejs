@@ -5,6 +5,7 @@
   <h2>Create Group</h2>
 
   <form method="POST" action="/<%= company.slug %>/groups" style="display:grid;gap:12px;margin-top:12px;">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <div>
       <label>Name</label><br/>
       <input name="name" required placeholder="e.g., Engineering" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;" />

@@ -8,6 +8,7 @@ const groupsRouter = require('./groups');
 const postsRouter = require('./posts');
 const profileRoutes = require('./profile');
 const savedSearches = require('./savedSearches');
+const adminPerf = require('./adminPerf');
 const adminAudit = require('./adminAudit');
 const exportsRouter = require('./exports');
 
@@ -57,6 +58,7 @@ router.use('/', require('./reports'));
 router.use('/profile', ensureAuth, profileRoutes);
 router.get('/feed', ensureAuth, pc.companyFeed);
 router.use('/saved-searches', savedSearches);
+router.use('/admin/perf', adminPerf);
 router.use('/', exportsRouter);
 router.use('/admin/audit', adminAudit);
 router.use('/api', commentsApi);

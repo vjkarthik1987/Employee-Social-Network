@@ -11,6 +11,7 @@
     class="feed-search"
     style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin:12px 0 6px;"
   >
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <!-- Keyword -->
       <input
@@ -210,152 +211,134 @@
 <script>
   (function () {
     const ORG = "<%= company.slug %>";
-
-    // Reactions bar (unchanged)
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  
+    /* ---------- 1. Reactions ---------- */
     document.addEventListener('click', async (e) => {
       const btn = e.target.closest('[data-react]');
       if (!btn) return;
-
+  
       const bar = btn.closest('[data-react-scope]');
       if (!bar) return;
-
+  
       const type = btn.getAttribute('data-react');
-      const targetType = bar.getAttribute('data-target-type');   // 'post'
+      const targetType = bar.getAttribute('data-target-type');
       const targetId = bar.getAttribute('data-target-id');
       if (!targetType || !targetId) return;
-
-      const resp = await fetch(`/${ORG}/api/reactions`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ targetType, targetId, reactionType: type })
-      });
-      const data = await resp.json();
-      if (!data.ok) { alert('Could not react.'); return; }
-
-      const spans = {
-        LIKE:       bar.querySelector('[data-rc="LIKE"]'),
-        HEART:      bar.querySelector('[data-rc="HEART"]'),
-        CELEBRATE:  bar.querySelector('[data-rc="CELEBRATE"]'),
-        SUPPORT:    bar.querySelector('[data-rc="SUPPORT"]'),
-        LAUGH:      bar.querySelector('[data-rc="LAUGH"]'),
-        INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
-        THANKS:     bar.querySelector('[data-rc="THANKS"]')
-      };
-      const bump = (el, d) => { if (!el) return; el.textContent = Math.max(0, (parseInt(el.textContent||'0',10) + d)); };
-
-      if (data.added) {
-        bump(spans[data.added], +1);
-        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-        bar.querySelector(`[data-react="${data.added}"]`)?.classList.add('active');
-      }
-      if (data.removed) {
-        bump(spans[data.removed], -1);
-        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-      }
-      if (data.changedTo) {
-        if (data.prevType && data.prevType !== data.changedTo) bump(spans[data.prevType], -1);
-        bump(spans[data.changedTo], +1);
-        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-        bar.querySelector(`[data-react="${data.changedTo}"]`)?.classList.add('active');
-      }
-
-      const totalEl = bar.querySelector('[data-total-reactions]');
-      if (totalEl) {
-        const total = Array.from(bar.querySelectorAll('.rc'))
-          .reduce((n, s) => n + parseInt(s.textContent||'0',10), 0);
-        totalEl.textContent = String(total);
-      }
-    });
-  })();
-
-  // Day 21 UX: auto-submit on type change + debounced search input
-  (function(){
-    const form = document.getElementById('feed-search-form');
-    const typeSel = document.getElementById('type-select');
-    const qInput = form?.querySelector('input[name="q"]');
-
-    if (typeSel && form) {
-      typeSel.addEventListener('change', () => {
-        const pageH = form.querySelector('input[name="page"]');
-        if (pageH) pageH.value = '1';
-        form.submit();
-      });
-    }
-
-    if (qInput && form) {
-      let t = null;
-      const submitDebounced = () => {
-        const pageH = form.querySelector('input[name="page"]');
-        if (pageH) pageH.value = '1';
-        form.requestSubmit ? form.requestSubmit() : form.submit();
-      };
-      qInput.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(submitDebounced, 450);
-      });
-    }
-  })();
-
-  // Day 24: Author picker (async)
-  (function(){
-    const ORG   = "<%= company.slug %>";
-    const input = document.getElementById('author-picker');
-    const hidden= document.getElementById('authorId');
-    const menu  = document.getElementById('author-suggest-menu');
-    const form  = document.getElementById('feed-search-form');
-
-    if (!input || !hidden || !menu || !form) return;
-
-    let t = null;
-    function clearMenu(){ menu.style.display = 'none'; menu.innerHTML=''; }
-    function render(items){
-      if (!items.length) return clearMenu();
-      menu.innerHTML = items.map(i => `
-        <div data-id="${i._id}" style="display:flex;gap:8px;align-items:center;padding:8px 10px;cursor:pointer;">
-          <img src="${i.avatarUrl || ''}" alt="" style="width:24px;height:24px;border-radius:999px;object-fit:cover;background:#eee"/>
-          <div style="display:flex;flex-direction:column;">
-            <strong style="font-size:13px;">${i.name}</strong>
-            <small style="font-size:12px;color:#666;">${i.title || ''}</small>
-          </div>
-        </div>
-      `).join('');
-      menu.style.display = 'block';
-      Array.from(menu.children).forEach(el => {
-        el.addEventListener('click', () => {
-          hidden.value = el.getAttribute('data-id');
-          const pageH = form.querySelector('input[name="page"]');
-          if (pageH) pageH.value = '1';
-          form.submit();
+  
+      try {
+        const resp = await fetch(`/${ORG}/api/reactions`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'CSRF-Token': CSRF
+          },
+          body: JSON.stringify({ targetType, targetId, reactionType: type, _csrf: CSRF })
         });
-      });
-    }
-    async function search(q){
-      if (!q || q.length < 2) { clearMenu(); return; }
-      const resp = await fetch(`/${ORG}/api/users?query=${encodeURIComponent(q)}`, { headers:{'Accept':'application/json'}});
-      const data = await resp.json().catch(() => ({ ok:false, items:[] }));
-      if (!data.ok) return clearMenu();
-      render(data.items || []);
-    }
-    input.addEventListener('input', () => {
-      clearTimeout(t);
-      const q = input.value.trim();
-      t = setTimeout(() => search(q), 250);
+  
+        const data = await resp.json();
+        if (!data.ok) {
+          alert(data.error || 'Could not react.');
+          return;
+        }
+  
+        const spans = {
+          LIKE:       bar.querySelector('[data-rc="LIKE"]'),
+          HEART:      bar.querySelector('[data-rc="HEART"]'),
+          CELEBRATE:  bar.querySelector('[data-rc="CELEBRATE"]'),
+          SUPPORT:    bar.querySelector('[data-rc="SUPPORT"]'),
+          LAUGH:      bar.querySelector('[data-rc="LAUGH"]'),
+          INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
+          THANKS:     bar.querySelector('[data-rc="THANKS"]')
+        };
+        const bump = (el, d) => { if (el) el.textContent = Math.max(0, (parseInt(el.textContent || '0', 10) + d)); };
+  
+        if (data.added) {
+          bump(spans[data.added], +1);
+          bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+          bar.querySelector(`[data-react="${data.added}"]`)?.classList.add('active');
+        }
+        if (data.removed) {
+          bump(spans[data.removed], -1);
+          bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+        }
+        if (data.changedTo) {
+          if (data.prevType && data.prevType !== data.changedTo) bump(spans[data.prevType], -1);
+          bump(spans[data.changedTo], +1);
+          bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+          bar.querySelector(`[data-react="${data.changedTo}"]`)?.classList.add('active');
+        }
+  
+        const totalEl = bar.querySelector('[data-total-reactions]');
+        if (totalEl) {
+          const total = Array.from(bar.querySelectorAll('.rc'))
+            .reduce((n, s) => n + parseInt(s.textContent || '0', 10), 0);
+          totalEl.textContent = String(total);
+        }
+      } catch (err) {
+        console.error('Reaction error', err);
+      }
     });
-    input.addEventListener('blur', () => setTimeout(clearMenu, 150));
-    input.addEventListener('focus', () => {
-      if (input.value.trim().length >= 2) search(input.value.trim());
+  
+    /* ---------- 2. Delete Post ---------- */
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-delete-post]');
+      if (!btn) return;
+      if (!confirm('Delete this post?')) return;
+  
+      const postId = btn.getAttribute('data-delete-post');
+      try {
+        const resp = await fetch(`/${ORG}/api/posts/${postId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'CSRF-Token': CSRF
+          },
+          body: JSON.stringify({ _csrf: CSRF })
+        });
+        if (resp.ok) window.location.reload();
+        else alert('Could not delete post.');
+      } catch (err) {
+        console.error('Delete error', err);
+      }
     });
-  })();
-
-  // Saved searches (Day 22/23/24)
-  (function(){
-    const ORG    = "<%= company.slug %>";
-    const scope  = "<%= (typeof group !== 'undefined' && group) ? 'GROUP' : 'COMPANY' %>";
-    const groupId= "<%= (typeof group !== 'undefined' && group) ? String(group._id) : '' %>";
+  
+    /* ---------- 3. Reporting ---------- */
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-report]');
+      if (!btn) return;
+  
+      const targetType = btn.getAttribute('data-report');
+      const targetId = btn.getAttribute('data-target-id');
+      const reason = prompt('Reason for reporting this content?');
+      if (!reason) return;
+  
+      try {
+        const resp = await fetch(`/${ORG}/api/reports`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'CSRF-Token': CSRF
+          },
+          body: JSON.stringify({ targetType, targetId, reason, _csrf: CSRF })
+        });
+        if (resp.ok) alert('Reported. Moderators will review soon.');
+        else alert('Failed to report.');
+      } catch (err) {
+        console.error('Report error', err);
+      }
+    });
+  
+    /* ---------- 4. Saved Searches ---------- */
+    const scope = "<%= (typeof group !== 'undefined' && group) ? 'GROUP' : 'COMPANY' %>";
+    const groupId = "<%= (typeof group !== 'undefined' && group) ? String(group._id) : '' %>";
     const listEl = document.getElementById('saved-searches-list');
-    const saveBtn= document.getElementById('btn-save-search');
-    const form   = document.getElementById('feed-search-form');
-
+    const saveBtn = document.getElementById('btn-save-search');
+    const form = document.getElementById('feed-search-form');
+  
     function buildQuery(params) {
       const qp = new URLSearchParams();
       if (params.q) qp.set('q', params.q);
@@ -369,25 +352,25 @@
       qp.set('limit', '<%= typeof limit !== "undefined" ? String(limit) : "15" %>');
       return qp.toString();
     }
-
+  
     async function loadSaved() {
       try {
         const qs = new URLSearchParams({ scope, ...(scope === 'GROUP' ? { groupId } : {}) });
-        const resp = await fetch(`/${ORG}/saved-searches?` + qs.toString(), { headers: { 'Accept':'application/json' } });
+        const resp = await fetch(`/${ORG}/saved-searches?` + qs.toString(), { headers: { 'Accept': 'application/json' } });
         const data = await resp.json();
         if (!data.ok) return;
         renderList(data.items || []);
-      } catch (e) { /* noop */ }
+      } catch (e) { console.error(e); }
     }
-
+  
     function renderList(items) {
       listEl.innerHTML = '';
       items.forEach(item => {
         const a = document.createElement('a');
         a.href = `<%= (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '' %>?` + buildQuery({
           q: item.q, type: item.type, authorId: item.authorId, people: item.people,
-          from: item.fromDate ? new Date(item.fromDate).toISOString().slice(0,10) : '',
-          to: item.toDate ? new Date(item.toDate).toISOString().slice(0,10) : '',
+          from: item.fromDate ? new Date(item.fromDate).toISOString().slice(0, 10) : '',
+          to: item.toDate ? new Date(item.toDate).toISOString().slice(0, 10) : '',
           myGroups: !!item.myGroups
         });
         a.textContent = (item.pinned ? '📌 ' : '') + item.name;
@@ -395,44 +378,56 @@
         a.style.background = '#f4f4f6';
         a.style.border = '1px solid #e7e7ea';
         a.style.color = '#333';
-
+  
         const wrap = document.createElement('span');
         wrap.style.display = 'inline-flex';
         wrap.style.alignItems = 'center';
         wrap.style.gap = '4px';
         wrap.appendChild(a);
-
+  
         const pin = document.createElement('button');
         pin.type = 'button';
-        pin.title = item.pinned ? 'Unpin' : 'Pin';
         pin.textContent = item.pinned ? 'Unpin' : 'Pin';
         pin.className = 'btn';
         pin.style.padding = '4px 8px';
         pin.addEventListener('click', async (ev) => {
           ev.preventDefault();
-          await fetch(`/${ORG}/saved-searches/${item._id}/pin`, { method: 'POST', headers: { 'Accept':'application/json' } });
+          await fetch(`/${ORG}/saved-searches/${item._id}/pin`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'CSRF-Token': CSRF
+            },
+            body: JSON.stringify({ _csrf: CSRF })
+          });
           loadSaved();
         });
         wrap.appendChild(pin);
-
+  
         const del = document.createElement('button');
         del.type = 'button';
-        del.title = 'Delete';
         del.textContent = 'Delete';
         del.className = 'btn';
         del.style.padding = '4px 8px';
         del.addEventListener('click', async (ev) => {
           ev.preventDefault();
           if (!confirm(`Delete saved search "${item.name}"?`)) return;
-          await fetch(`/${ORG}/saved-searches/${item._id}`, { method: 'DELETE', headers: { 'Accept':'application/json' } });
+          await fetch(`/${ORG}/saved-searches/${item._id}`, {
+            method: 'DELETE',
+            headers: {
+              'Accept': 'application/json',
+              'CSRF-Token': CSRF
+            },
+            body: JSON.stringify({ _csrf: CSRF })
+          });
           loadSaved();
         });
         wrap.appendChild(del);
-
+  
         listEl.appendChild(wrap);
       });
     }
-
+  
     async function saveCurrent() {
       const q        = form?.querySelector('input[name="q"]')?.value || '';
       const type     = form?.querySelector('select[name="type"]')?.value || '';
@@ -441,26 +436,55 @@
       const from     = form?.querySelector('input[name="from"]')?.value || '';
       const to       = form?.querySelector('input[name="to"]')?.value || '';
       const myGroups = !!form?.querySelector('input[name="myGroups"]')?.checked;
-
+  
       const name = prompt('Name this saved search:',
         [q, people, type].filter(Boolean).join(' • ').slice(0, 40) || 'Untitled');
       if (!name) return;
-
+  
       const body = {
         name, q, type, scope, groupId: groupId || null,
         authorId: authorId || null,
-        people, fromDate: from || null, toDate: to || null, myGroups
+        people, fromDate: from || null, toDate: to || null, myGroups,
+        _csrf: CSRF
       };
-
+  
       await fetch(`/${ORG}/saved-searches`, {
         method: 'POST',
-        headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': CSRF
+        },
         body: JSON.stringify(body)
       });
       loadSaved();
     }
-
+  
     if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
     loadSaved();
+  
+    /* ---------- 5. Feed search helpers ---------- */
+    const typeSel = document.getElementById('type-select');
+    const qInput = form?.querySelector('input[name="q"]');
+    if (typeSel && form) {
+      typeSel.addEventListener('change', () => {
+        const pageH = form.querySelector('input[name="page"]');
+        if (pageH) pageH.value = '1';
+        form.submit();
+      });
+    }
+    if (qInput && form) {
+      let t = null;
+      const submitDebounced = () => {
+        const pageH = form.querySelector('input[name="page"]');
+        if (pageH) pageH.value = '1';
+        form.requestSubmit ? form.requestSubmit() : form.submit();
+      };
+      qInput.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(submitDebounced, 450);
+      });
+    }
   })();
-</script>
+  </script>
+  

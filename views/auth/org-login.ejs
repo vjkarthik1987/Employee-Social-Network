@@ -16,6 +16,7 @@
   <% } %>
 
   <form action="/<%= company.slug %>/auth/login" method="POST" style="display:flex;flex-direction:column;gap:15px;">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <div>
       <label>Email</label>
       <input type="email" name="email" required placeholder="you@company.com"

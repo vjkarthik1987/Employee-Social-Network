@@ -1,119 +1,151 @@
 // server.js
 require('dotenv').config();
+
+const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
 const passport = require('passport');
-const path = require('path');
-const ejsMate = require('ejs-mate');
+const engine = require('ejs-mate');
+const csrf = require('csurf');
 
-
-const Company = require('./models/Company');
-
+// --- Routes ---
 const authRoutes = require('./routes/auth');
 const tenantRoutes = require('./routes/tenant');
 
-const { ensureAuth } = require('./middleware/auth');
-const configurePassport = require('./config/passport');
+// --- Passport config (your local module that does serialize/deserialize & strategies)
+const configurePassport = require('./config/passport'); // adjust path if yours differs
 
-
+// --- App & DB ---
 const app = express();
+const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/engage';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'change_me';
 
-// ---- DB ----
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/engage');
+// Connect Mongo
+mongoose.set('strictQuery', false);
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log('[mongo] connected'))
+  .catch((err) => {
+    console.error('[mongo] connection error:', err.message);
+    process.exit(1);
+  });
 
-// ---- Parsers ----
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// ---- Views ----
-app.engine('ejs', ejsMate); 
+// View engine
+app.engine('ejs', engine);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// helper to resolve slug via session cache → DB
-async function resolveSlug(req) {
-  if (req.session?.companySlug) return req.session.companySlug;
-  if (!req.user?.companyId) return null;
-  const company = await Company.findById(req.user.companyId).lean();
-  if (company) {
-    req.session.companySlug = company.slug;
-    return company.slug;
-  }
-  return null;
-}
+// Trust proxy (enable when behind a proxy like Nginx / Heroku)
+// if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
-// ---- Session ----
+// --------- Parsers (must be before session) ---------
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// --------- Session (must be before csrf & passport) ---------
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'change_me',
+    name: 'sid',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/engage' }),
+    store: MongoStore.create({
+      mongoUrl: MONGODB_URI,
+      touchAfter: 24 * 3600, // seconds
+    }),
     cookie: {
       httpOnly: true,
-      // secure: true, // enable in prod behind HTTPS
       sameSite: 'lax',
+      // secure: true, // uncomment in prod with HTTPS + trust proxy
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   })
 );
+
+// Flash messages
 app.use(flash());
+
+// Static
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---- Passport ----
+// --------- Passport ---------
 app.use(passport.initialize());
 app.use(passport.session());
 configurePassport(passport);
 
-// ---- Flash -> locals ----
+// --------- CSRF (must be after session) ---------
+app.use(csrf());
+
+// Expose CSRF token & common locals to all views
 app.use((req, res, next) => {
+  try {
+    res.locals.csrfToken = req.csrfToken();
+  } catch {
+    res.locals.csrfToken = '';
+  }
   res.locals.currentUser = req.user || null;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
-  res.locals.companySlug = (req.session && req.session.companySlug) || null; // 👈 add this
+  res.locals.companySlug = (req.session && req.session.companySlug) || null;
+  // ensure `company` is at least defined so layouts can read it safely
+  res.locals.company = typeof res.locals.company === 'undefined' ? null : res.locals.company;
   next();
 });
 
-// ---- Routes ----
+// --------- Basic routes (public) ---------
+app.get('/health', (_req, res) => res.json({ ok: true }));
+
+// Landing (optional — render a generic page without company context)
+app.get('/', (req, res) => {
+  // You can redirect to /:org/feed if you want, or show a simple landing:
+  res.render('pages/home', { title: 'Welcome', company: null, user: req.user || null });
+});
+
+// --------- App routes ---------
 app.use('/auth', authRoutes);
 app.use('/:org', tenantRoutes);
 
-
-// Make /dashboard redirect to tenant feed
-app.get('/dashboard', ensureAuth, async (req, res, next) => {
-  try {
-    const slug = await resolveSlug(req);
-    if (!slug) {
-      req.flash('error', 'Could not resolve your organization.');
-      return res.redirect('/auth/login');
-    }
-    return res.redirect(`/${slug}/feed`);
-  } catch (e) { next(e); }
-});
-
-app.get('/', (req, res) => {
-  res.render('pages/home', {
-    user: req.user || null,
-    companySlug: req.session?.companySlug || null
-  });
-});
-
-app.get('/health', (_req, res) => res.json({ ok: true }));
-
-app.use((req, res) => {
-  res.status(404).render('errors/404');
-});
-
-// Error handler (optional catch-all for unexpected errors)
+// --------- CSRF error handler (must be after routes) ---------
 app.use((err, req, res, next) => {
-  console.error(err);
-  if (res.headersSent) return next(err);
-  res.status(err.status || 500).send('Something went wrong');
+  if (err && err.code === 'EBADCSRFTOKEN') {
+    // token missing/invalid
+    if (req.accepts('html')) {
+      return res.status(403).render('errors/403', {
+        company: res.locals.company || null,
+        user: req.user || null,
+        message: 'Invalid CSRF token',
+      });
+    }
+    return res.status(403).json({ ok: false, error: 'Invalid CSRF token' });
+  }
+  return next(err);
 });
 
-// ---- Start ----
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
+// --------- 404 ---------
+app.use((req, res) => {
+  if (req.accepts('html')) return res.status(404).render('errors/404', { company: res.locals.company || null, user: req.user || null });
+  return res.status(404).json({ ok: false, error: 'Not Found' });
+});
+
+// --------- Generic error handler ---------
+app.use((err, req, res, _next) => {
+  console.error('[error]', err);
+  const status = err.status || 500;
+  if (req.accepts('html')) {
+    return res.status(status).render('errors/404', {
+      company: res.locals.company || null,
+      user: req.user || null,
+      message: err.message || 'Something went wrong',
+    });
+  }
+  return res.status(status).json({ ok: false, error: err.message || 'Server error' });
+});
+
+// Start
+app.listen(PORT, () => {
+  console.log(`➡  http://localhost:${PORT}`);
+});

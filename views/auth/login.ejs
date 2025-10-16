@@ -5,6 +5,7 @@
   <%- include('../partials/flash') %>
   <h1>Login</h1>
   <form method="POST" action="/auth/login">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <label>Organization Slug</label><br/>
     <input name="org" required placeholder="acme" /><br/><br/>
 

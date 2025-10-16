@@ -38,6 +38,7 @@
 
         <% if (currentUser) { %>
           <form method="POST" action="/<%= org.slug %>/auth/logout" class="logout-form">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
             <button class="btn btn-ghost btn-sm" type="submit">Logout</button>
           </form>
         <% } else { %>
@@ -73,6 +74,7 @@
       <div class="nav-drawer-footer">
         <% if (currentUser) { %>
           <form method="POST" action="/<%= org.slug %>/auth/logout">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
             <button class="btn danger" type="submit">Logout</button>
           </form>
         <% } else { %>

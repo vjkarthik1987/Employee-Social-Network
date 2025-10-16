@@ -77,5 +77,7 @@ PostSchema.virtual('attachments', {
 PostSchema.index({ companyId: 1, createdAt: -1 });
 PostSchema.index({ companyId: 1, status: 1, type: 1, groupId: 1, createdAt: -1 });
 PostSchema.index({ richText: 'text' }); // enables $text search + score
+PostSchema.index({ companyId: 1, authorId: 1, createdAt: -1 }); // profile feed
+PostSchema.index({ groupId: 1, companyId: 1, createdAt: -1 });  // group feed
 
 module.exports = mongoose.model('Post', PostSchema);

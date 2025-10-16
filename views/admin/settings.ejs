@@ -2,13 +2,17 @@
 <section>
   <h1 style="margin:0 0 8px;">Admin Settings — <%= company.name %></h1>
   <p style="margin:0 0 16px;">Only ORG_ADMIN can edit these.</p>
+
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
     <h2 style="margin:0;">Admin Settings</h2>
-    <a class="btn" href="/<%= company.slug %>/admin/audit">View Audit →</a>
+    <div style="display:flex;gap:8px;">
+      <a class="btn" href="/<%= company.slug %>/admin/audit">View Audit →</a>
+      <a class="btn" href="/<%= company.slug %>/admin/perf" style="background:#f7f7ff;border:1px solid #d5d5ff;color:#333;">View Performance →</a>
+    </div>
   </div>
   
-
   <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
     <!-- Identity -->
     <div class="card" style="padding:16px;">

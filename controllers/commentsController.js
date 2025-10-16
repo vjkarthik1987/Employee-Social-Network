@@ -89,17 +89,19 @@ exports.createAjax = async (req, res, next) => {
       .lean();
 
     // Render server-side HTML snippet for the new item
-    const view = level === 0 ? 'partials/_comment' : 'partials/_reply'; // we'll create _reply.ejs below
+
+
+
+    const view = level === 0 ? 'partials/_comment' : 'partials/_reply';
     const locals = {
-      layout: false,                       // ensure partial-only render
+      layout: false,
       company: req.company,
       user: req.user,
       post,
-      // For _comment.ejs we need replies array; for new top-level it's empty.
       comment: level === 0 ? doc : undefined,
       replies: level === 0 ? [] : undefined,
-      // For _reply.ejs we only need 'r'
       r: level === 1 ? doc : undefined,
+      csrfToken: req.csrfToken(),            // ✅ ADD THIS
     };
 
     const file = path.join(__dirname, '..', 'views', `${view}.ejs`);
@@ -110,7 +112,8 @@ exports.createAjax = async (req, res, next) => {
       html,
       isReply: level === 1,
       parentCommentId: parent ? String(parent._id) : null,
-      commentsCountDelta: 1
+      commentsCountDelta: 1,
+      postId: String(c.postId)
     });
   } catch (e) { next(e); }
 };
@@ -128,9 +131,11 @@ exports.destroyAjax = async (req, res, next) => {
     if (!isOwner && !isPriv) return res.status(403).json({ ok: false });
 
     const wasVisible = c.status === 'visible';
+
+    // ✅ keep schema happy (content is required)
     c.status = 'deleted';
-    c.content = '';
-    await c.save();
+    c.content = '(deleted)';          // <-- was '' (violated "required")
+    await c.save();                   // validation now passes
 
     if (wasVisible) {
       await Post.updateOne({ _id: c.postId }, { $inc: { commentsCount: -1 } });
@@ -144,7 +149,8 @@ exports.destroyAjax = async (req, res, next) => {
       commentId: String(c._id),
       isReply: !!c.parentCommentId,
       parentCommentId: c.parentCommentId ? String(c.parentCommentId) : null,
-      commentsCountDelta: wasVisible ? -1 : 0
+      commentsCountDelta: wasVisible ? -1 : 0,
+      postId: String(c.postId),
     });
   } catch (e) { next(e); }
 };

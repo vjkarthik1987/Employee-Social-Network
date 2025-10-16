@@ -20,5 +20,6 @@ const groupSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 groupSchema.index({ companyId: 1, name: 1 }, { unique: true });
+groupSchema.index({ companyId: 1, _id: 1 }); // faster membership checks
 
 module.exports = mongoose.model('Group', groupSchema);

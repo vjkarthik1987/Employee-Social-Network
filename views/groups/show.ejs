@@ -24,10 +24,12 @@
       <% if (user) { %>
         <!-- Join -->
         <form method="POST" action="/<%= company.slug %>/groups/<%= group._id %>/join" style="display:inline;">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button class="btn" type="submit">Join</button>
         </form>
         <!-- Leave -->
         <form method="POST" action="/<%= company.slug %>/groups/<%= group._id %>/leave" style="display:inline;margin-left:6px;">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button class="btn btn-ghost" type="submit">Leave</button>
         </form>
       <% } %>

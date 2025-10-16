@@ -11,4 +11,7 @@ const AttachmentSchema = new mongoose.Schema({
   height: Number,
   createdAt: { type: Date, default: Date.now },
 });
+
+AttachmentSchema.index({ companyId: 1, targetType: 1, targetId: 1 }); // feed preload
+
 module.exports = mongoose.model('Attachment', AttachmentSchema);

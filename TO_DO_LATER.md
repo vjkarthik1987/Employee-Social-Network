@@ -16,7 +16,7 @@
 - Rethink the workflow when a registration happens
 - Overall list of companies page 
 - Overall admin page that creates and manages companies and get analytics
-- Flash should stay longer
+- ~~Flash should stay longer~~
 - Create newsletter
 - Search should go to first page, not second page or others
-- 
+- View for the posts that have been reported

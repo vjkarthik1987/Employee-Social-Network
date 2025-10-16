@@ -4,6 +4,7 @@
 <section style="max-width:720px;margin:24px auto;">
   <h2>Edit Profile</h2>
   <form method="POST" action="">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <div class="form-row">
       <label>Title</label>
       <input type="text" name="title" value="<%= profileUser.title || '' %>" maxlength="120"/>

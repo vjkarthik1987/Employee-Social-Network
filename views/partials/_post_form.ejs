@@ -1,9 +1,6 @@
 <!-- views/partials/_post_form.ejs -->
-<form method="POST"
-      action="/<%= company.slug %>/posts"
-      class="composer-card"
-      enctype="multipart/form-data">
-
+<form method="POST" action="/<%= company.slug %>/posts" enctype="multipart/form-data" class="composer-card">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <!-- top row: avatar + rounded input -->
   <div class="composer-top">
     <textarea name="content"

@@ -3,6 +3,7 @@
   <h2>Users — <%= company.name %></h2>
 
 <form action="/<%= company.slug %>/admin/users/import" method="POST" enctype="multipart/form-data" style="margin: 12px 0;">
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <label>Upload CSV:</label>
   <input type="file" name="csv" accept=".csv" required />
   <button type="submit">Import</button>
@@ -22,6 +23,7 @@
       <td><%= u.status %></td>
       <td>
         <form action="/<%= company.slug %>/admin/users/<%= u._id %>/delete" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline;">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button type="submit">Delete</button>
         </form>
       </td>

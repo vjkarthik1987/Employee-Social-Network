@@ -125,6 +125,7 @@
 
       <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
         <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');" aria-label="Delete post form">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button class="btn-link danger" type="submit">Delete</button>
         </form>
       <% } %>
@@ -132,6 +133,7 @@
 
     <!-- Quick report -->
     <form method="POST" action="/<%= company.slug %>/report" style="display:inline;" aria-label="Report this post">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
       <input type="hidden" name="targetType" value="post">
       <input type="hidden" name="targetId" value="<%= post._id %>">
       <input type="hidden" name="reasonCode" value="INAPPROPRIATE">

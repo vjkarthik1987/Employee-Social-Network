@@ -19,6 +19,7 @@
 
       <% if (user && (String(user._id) === String(post.authorId?._id || post.authorId) || ['ORG_ADMIN','MODERATOR'].includes(user.role))) { %>
         <form method="POST" action="/<%= company.slug %>/posts/<%= post._id %>/delete" onsubmit="return confirm('Delete this post?')">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button class="btn btn-ghost" type="submit">Delete</button>
         </form>
       <% } %>
@@ -80,6 +81,7 @@
       <form method="POST"
             action="/<%= company.slug %>/api/posts/<%= post._id %>/comments"
             class="card" style="margin-bottom:1rem;" id="new-comment-form">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
         <div class="card-body">
           <textarea name="content" rows="3" class="input" placeholder="Write a comment…" maxlength="3000" required></textarea>
           <div style="display:flex;justify-content:flex-end;margin-top:.6rem;">

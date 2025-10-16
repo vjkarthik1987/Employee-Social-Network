@@ -5,6 +5,7 @@
   <%- include('../partials/flash') %>
   <h1>Create your organization</h1>
   <form method="POST" action="/auth/register-org">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
     <label>Company Name</label><br/>
     <input name="companyName" required /><br/><br/>
 
