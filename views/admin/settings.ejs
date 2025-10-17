@@ -1,113 +1,130 @@
 <% layout('layouts/_layout') %>
-<section>
-  <h1 style="margin:0 0 8px;">Admin Settings — <%= company.name %></h1>
-  <p style="margin:0 0 16px;">Only ORG_ADMIN can edit these.</p>
 
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h2 style="margin:0;">Admin Settings</h2>
-    <div style="display:flex;gap:8px;">
-      <a class="btn" href="/<%= company.slug %>/admin/audit">View Audit →</a>
-      <a class="btn" href="/<%= company.slug %>/admin/perf" style="background:#f7f7ff;border:1px solid #d5d5ff;color:#333;">View Performance →</a>
-    </div>
-  </div>
+<section style="max-width:900px;margin:24px auto;display:grid;gap:16px;">
+  <h2 style="margin:0;">Admin Settings</h2>
 
-  <!-- views/admin/settings.ejs — add inside your admin form -->
-  <form method="GET" action="/<%= company.slug %>/admin/export/backup.json" style="display:inline;">
-    <button class="btn" type="submit">⬇️ Download JSON Backup</button>
-  </form>
-
-  <form method="POST" action="/<%= company.slug %>/admin/retention/run" style="display:inline;margin-left:8px;">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <button class="btn danger" type="submit" onclick="return confirm('Run retention now?')">🗑️ Run Retention</button>
-  </form>
-
-  
+  <!-- ONE MAIN FORM -->
   <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
     <!-- Identity -->
-    <div class="card" style="padding:16px;">
-      <h3 style="margin:0 0 8px;">Identity</h3>
-      <label style="display:block;margin:8px 0;">
-        <div>Product Name (internal brand)</div>
-        <input name="productName" type="text" value="<%= company.productName || '' %>" placeholder="e.g., SunVerse / Pulse / Loop" style="width:100%;padding:8px;">
+    <div class="card" style="padding:16px;display:grid;gap:12px;">
+      <h3 style="margin:0;">Identity</h3>
+
+      <label style="display:block;">
+        <div style="margin-bottom:6px;">Product Name (internal brand)</div>
+        <input name="productName" type="text"
+               value="<%= company.productName || '' %>"
+               placeholder="e.g., SunVerse / Pulse / Loop"
+               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
       </label>
-      <label style="display:block;margin:8px 0;">
-        <div>Tagline (optional)</div>
-        <input name="tagline" type="text" value="<%= company.tagline || '' %>" placeholder="Where our people connect & celebrate" style="width:100%;padding:8px;">
+
+      <label style="display:block;">
+        <div style="margin-bottom:6px;">Tagline (optional)</div>
+        <input name="tagline" type="text"
+               value="<%= company.tagline || '' %>"
+               placeholder="Where our people connect & celebrate"
+               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
       </label>
     </div>
 
     <!-- Branding -->
-    <div class="card" style="padding:16px;">
-      <h3 style="margin:0 0 8px;">Branding</h3>
-      <div style="display:flex;gap:16px;align-items:center;">
+    <div class="card" style="padding:16px;display:grid;gap:12px;">
+      <h3 style="margin:0;">Branding</h3>
+
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
         <label>
-          <div>Primary Color</div>
-          <input name="themePrimary" type="color" value="<%= company.branding?.theme?.primary || '#1976d2' %>">
+          <div style="margin-bottom:6px;">Primary Color</div>
+          <input name="themePrimary" type="color"
+                 value="<%= company.branding?.theme?.primary || '#0a66c2' %>">
         </label>
+
         <label>
-          <div>Secondary Color</div>
-          <input name="themeSecondary" type="color" value="<%= company.branding?.theme?.secondary || '#ffffff' %>">
+          <div style="margin-bottom:6px;">Accent Color</div>
+          <input name="themeAccent" type="color"
+                 value="<%= company.branding?.theme?.accent || company.branding?.theme?.primary || '#0a66c2' %>">
         </label>
 
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
           <div>Preview:</div>
-          <div style="width:24px;height:24px;background:<%= company.branding?.theme?.primary %>;border-radius:4px;"></div>
-          <div style="width:24px;height:24px;background:<%= company.branding?.theme?.secondary %>;border-radius:4px;border:1px solid #ddd;"></div>
+          <div title="Primary"
+               style="width:24px;height:24px;border-radius:6px;background:<%= company.branding?.theme?.primary || '#0a66c2' %>;"></div>
+          <div title="Accent"
+               style="width:24px;height:24px;border-radius:6px;background:<%= company.branding?.theme?.accent || company.branding?.theme?.primary || '#0a66c2' %>;border:1px solid #ddd;"></div>
         </div>
       </div>
+
+      <label style="display:block;">
+        <div style="margin-bottom:6px;">Logo URL</div>
+        <input type="url" name="logoUrl" placeholder="https://..."
+               value="<%= company.branding?.logoUrl || '' %>"
+               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
+      </label>
+
+      <% if (company.branding?.logoUrl) { %>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="color:#666;font-size:13px;">Current Logo:</div>
+          <img src="<%= company.branding.logoUrl %>" alt="logo" style="height:36px;max-width:160px;object-fit:contain;">
+        </div>
+      <% } %>
     </div>
 
-    <div class="card" style="padding:16px;">
-      <h3>Branding & Theme</h3>
-      <form method="POST" action="/<%= company.slug %>/admin/settings">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-        <label>Primary Color:</label>
-        <input type="color" name="themePrimary" value="<%= company.branding?.theme?.primary || '#0a66c2' %>">
-
-        <label>Accent Color:</label>
-        <input type="color" name="themeAccent" value="<%= company.branding?.theme?.accent || '#0a66c2' %>">
-
-        <label>Logo URL:</label>
-        <input type="url" name="logoUrl" placeholder="https://..." value="<%= company.branding?.logoUrl || '' %>" style="width:100%;">
-
-        <label><input type="checkbox" name="darkModeDefault" <%= company.branding?.theme?.darkModeDefault ? 'checked' : '' %>> Default Dark Mode</label>
-
-        <button class="btn" type="submit">Save Theme</button>
-      </form>
-    </div>
-    
     <!-- Policies -->
-    <div class="card" style="padding:16px;">
-      <h3 style="margin:0 0 8px;">Policies</h3>
+    <div class="card" style="padding:16px;display:grid;gap:12px;">
+      <h3 style="margin:0;">Policies</h3>
 
-      <div style="margin:8px 0;">
+      <div style="margin:4px 0 10px;">
         <div style="margin-bottom:6px;">Posting Mode</div>
         <label style="margin-right:16px;">
-          <input type="radio" name="postingMode" value="OPEN" <%= company.policies?.postingMode === 'OPEN' ? 'checked' : '' %> >
+          <input type="radio" name="postingMode" value="OPEN"
+                 <%= company.policies?.postingMode === 'OPEN' ? 'checked' : '' %> >
           Open — publish instantly
         </label>
         <label>
-          <input type="radio" name="postingMode" value="MODERATED" <%= company.policies?.postingMode === 'MODERATED' ? 'checked' : '' %> >
+          <input type="radio" name="postingMode" value="MODERATED"
+                 <%= company.policies?.postingMode === 'MODERATED' ? 'checked' : '' %> >
           Moderated — approval required
         </label>
       </div>
 
-      <label style="display:block;margin:8px 0;">
-        <div>Blocked Words (comma-separated)</div>
-        <textarea name="blockedWordsCSV" rows="3" placeholder="spam,badword,..." style="width:100%;padding:8px;"><%= (company.policies?.blockedWords || []).join(', ') %></textarea>
+      <label style="display:block;">
+        <div style="margin-bottom:6px;">Blocked Words (comma-separated)</div>
+        <textarea name="blockedWordsCSV" rows="3"
+                  style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;"><%= (company.policies?.blockedWords || []).join(', ') %></textarea>
       </label>
 
-      <label style="display:block;margin:8px 0;">
-        <div>Retention Days (7–3650)</div>
-        <input name="retentionDays" type="number" min="7" max="3650" value="<%= company.policies?.retentionDays || 730 %>" style="width:180px;padding:8px;">
+      <label style="display:block;">
+        <div style="margin-bottom:6px;">Retention Days (7–3650)</div>
+        <input name="retentionDays" type="number" min="7" max="3650"
+               value="<%= company.policies?.retentionDays || 730 %>"
+               style="width:180px;padding:8px;border:1px solid #ddd;border-radius:8px;">
       </label>
     </div>
 
-    <div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn" type="submit">Save Settings</button>
     </div>
   </form>
+
+  <!-- Utilities (separate, NOT nested) -->
+  <div class="card" style="padding:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">
+    <div style="font-weight:600;">Utilities</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <!-- JSON Backup -->
+      <form method="GET" action="/<%= company.slug %>/admin/export/backup.json">
+        <button class="btn" type="submit">⬇️ Download JSON Backup</button>
+      </form>
+
+      <!-- NDJSON Backup -->
+      <form method="GET" action="/<%= company.slug %>/admin/export/backup.ndjson">
+        <button class="btn" type="submit">⬇️ Download NDJSON Backup</button>
+      </form>
+
+      <!-- Run Retention -->
+      <form method="POST" action="/<%= company.slug %>/admin/retention/run" onsubmit="return confirm('Run retention now? This will hard-delete expired soft-deleted items.');">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <button class="btn danger" type="submit">🗑️ Run Retention</button>
+      </form>
+    </div>
+  </div>
 </section>
