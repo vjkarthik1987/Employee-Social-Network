@@ -1,9 +1,12 @@
 // routes/exports.js
 const express = require('express');
-const { ensureAuth } = require('../middleware/auth');
+const { ensureAuth, requireRole } = require('../middleware/auth');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const Group = require('../models/Group');
+const Comment = require('../models/Comment');
+const Reaction = require('../models/Reaction');
+const Report = require('../models/Report');
 const Attachment = require('../models/Attachment');
 
 const router = express.Router({ mergeParams: true });
@@ -140,6 +143,69 @@ router.get('/export/posts.csv', ensureAuth, async (req, res, next) => {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="posts-export.csv"');
     return res.send(csv);
+  } catch (e) { next(e); }
+});
+
+// -------------- NEW: Full-tenant JSON snapshot --------------
+router.get('/admin/export/backup.json', ensureAuth, requireRole('ORG_ADMIN'), async (req, res, next) => {
+  try {
+    const cid = req.companyId;
+    const [companyUsers, groups, posts, comments, reactions, reports, attachments] = await Promise.all([
+      User.find({ companyId: cid }).lean(),
+      Group.find({ companyId: cid }).lean(),
+      Post.find({ companyId: cid }).lean(),
+      Comment.find({ companyId: cid }).lean(),
+      Reaction.find({ companyId: cid }).lean(),
+      Report.find({ companyId: cid }).lean(),
+      Attachment.find({ companyId: cid }).lean(),
+    ]);
+
+    const payload = {
+      org: req.company.slug,
+      exportedAt: new Date().toISOString(),
+      users: companyUsers,
+      groups,
+      posts,
+      comments,
+      reactions,
+      reports,
+      attachments,
+    };
+
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${req.company.slug}-backup.json"`);
+    return res.status(200).send(JSON.stringify(payload, null, 2));
+  } catch (e) { next(e); }
+});
+
+// -------------- NEW: NDJSON stream (big-tenants friendly) --------------
+router.get('/admin/export/backup.ndjson', ensureAuth, requireRole('ORG_ADMIN'), async (req, res, next) => {
+  try {
+    const cid = req.companyId;
+    res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${req.company.slug}-backup.ndjson"`);
+
+    const write = (obj) => res.write(JSON.stringify(obj) + '\n');
+
+    write({ _meta: { org: req.company.slug, exportedAt: new Date().toISOString() } });
+
+    const collections = [
+      ['users',       User.find({ companyId: cid }).lean().cursor()],
+      ['groups',      Group.find({ companyId: cid }).lean().cursor()],
+      ['posts',       Post.find({ companyId: cid }).lean().cursor()],
+      ['comments',    Comment.find({ companyId: cid }).lean().cursor()],
+      ['reactions',   Reaction.find({ companyId: cid }).lean().cursor()],
+      ['reports',     Report.find({ companyId: cid }).lean().cursor()],
+      ['attachments', Attachment.find({ companyId: cid }).lean().cursor()],
+    ];
+
+    for (const [name, cursor] of collections) {
+      write({ _collection: name, _begin: true });
+      for await (const doc of cursor) write({ _collection: name, doc });
+      write({ _collection: name, _end: true });
+    }
+
+    res.end();
   } catch (e) { next(e); }
 });
 

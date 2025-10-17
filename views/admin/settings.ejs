@@ -10,6 +10,17 @@
       <a class="btn" href="/<%= company.slug %>/admin/perf" style="background:#f7f7ff;border:1px solid #d5d5ff;color:#333;">View Performance →</a>
     </div>
   </div>
+
+  <!-- views/admin/settings.ejs — add inside your admin form -->
+  <form method="GET" action="/<%= company.slug %>/admin/export/backup.json" style="display:inline;">
+    <button class="btn" type="submit">⬇️ Download JSON Backup</button>
+  </form>
+
+  <form method="POST" action="/<%= company.slug %>/admin/retention/run" style="display:inline;margin-left:8px;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button class="btn danger" type="submit" onclick="return confirm('Run retention now?')">🗑️ Run Retention</button>
+  </form>
+
   
   <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">

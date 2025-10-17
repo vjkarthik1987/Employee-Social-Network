@@ -21,3 +21,4 @@
 - Search should go to first page, not second page or others
 - View for the posts that have been reported
 - Birthdays and anniversaries should come in the feed
+- Follow Feature
