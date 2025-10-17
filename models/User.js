@@ -20,6 +20,9 @@ const UserSchema = new mongoose.Schema(
     bio: { type: String, trim: true, maxlength: 2000 },
     skills: [{ type: String, trim: true }],
     interests: [{ type: String, trim: true }],
+    preferences: {
+      darkMode: { type: Boolean, default: null } // null = follow company default
+    },
 
     // denorm counters
     postsCount: { type: Number, default: 0 },

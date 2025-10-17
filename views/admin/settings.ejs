@@ -59,6 +59,26 @@
       </div>
     </div>
 
+    <div class="card" style="padding:16px;">
+      <h3>Branding & Theme</h3>
+      <form method="POST" action="/<%= company.slug %>/admin/settings">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <label>Primary Color:</label>
+        <input type="color" name="themePrimary" value="<%= company.branding?.theme?.primary || '#0a66c2' %>">
+
+        <label>Accent Color:</label>
+        <input type="color" name="themeAccent" value="<%= company.branding?.theme?.accent || '#0a66c2' %>">
+
+        <label>Logo URL:</label>
+        <input type="url" name="logoUrl" placeholder="https://..." value="<%= company.branding?.logoUrl || '' %>" style="width:100%;">
+
+        <label><input type="checkbox" name="darkModeDefault" <%= company.branding?.theme?.darkModeDefault ? 'checked' : '' %>> Default Dark Mode</label>
+
+        <button class="btn" type="submit">Save Theme</button>
+      </form>
+    </div>
+    
     <!-- Policies -->
     <div class="card" style="padding:16px;">
       <h3 style="margin:0 0 8px;">Policies</h3>

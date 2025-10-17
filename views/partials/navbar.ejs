@@ -2,10 +2,15 @@
 <nav class="navbar">
   <div class="nav-inner">
     <!-- Brand -->
-    <a class="brand" href="/<%= (org||company)?.slug %>/feed">
-      <%= (org?.productName && org.productName.trim()) 
-            ? org.productName 
+    <a class="brand" href="/<%= (org||company)?.slug %>/feed" style="display:inline-flex;align-items:center;gap:8px;">
+      <% if (company?.branding?.logoUrl) { %>
+        <img src="<%= company.branding.logoUrl %>" alt="<%= company?.name || 'Engage' %>" style="height:28px;vertical-align:middle;">
+      <% } %>
+      <span>
+        <%= (org?.productName && org.productName.trim())
+            ? org.productName
             : (org?.name || company?.name || 'Engage') %>
+      </span>
     </a>
 
     <!-- Hamburger -->
@@ -35,7 +40,7 @@
           <a href="/<%= org.slug %>/admin/settings">Admin</a>
           <a href="/<%= org.slug %>/admin/users">Users</a>
         <% } %>
-
+        
         <% if (currentUser) { %>
           <form method="POST" action="/<%= org.slug %>/auth/logout" class="logout-form">
             <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
@@ -73,6 +78,11 @@
 
       <div class="nav-drawer-footer">
         <% if (currentUser) { %>
+          <form method="POST" action="/<%= org.slug %>/profile/toggle-dark" style="margin-bottom:8px;">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <button class="btn" type="submit"><%= currentUser?.preferences?.darkMode ? '☀️ Light' : '🌙 Dark' %></button>
+          </form>
+
           <form method="POST" action="/<%= org.slug %>/auth/logout">
             <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
             <button class="btn danger" type="submit">Logout</button>
@@ -106,24 +116,19 @@
     };
 
     backdrop.addEventListener('click', function () {
-      drawer.classList.remove('open');
-      syncHidden();
+      drawer.classList.remove('open'); syncHidden();
       var hb = document.querySelector('.hamburger');
       hb && hb.setAttribute('aria-expanded', 'false');
     });
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && drawer.classList.contains('open')) {
-        drawer.classList.remove('open');
-        syncHidden();
+        drawer.classList.remove('open'); syncHidden();
         var hb = document.querySelector('.hamburger');
         hb && hb.setAttribute('aria-expanded', 'false');
       }
     });
 
-    new MutationObserver(syncHidden).observe(drawer, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
+    new MutationObserver(syncHidden).observe(drawer, { attributes: true, attributeFilter: ['class'] });
   })();
 </script>

@@ -3,6 +3,8 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const { ensureAuth, requireRole } = require('../middleware/auth');
 const profile = require('../controllers/profileController');
+const User = require('../models/User');
+
 
 
 router.get('/:userId', ensureAuth, profile.show);

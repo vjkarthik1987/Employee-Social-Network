@@ -84,6 +84,11 @@ exports.updateSettings = async (req, res, next) => {
       };
     }
 
+    company.branding.logoUrl = req.body.logoUrl || company.branding.logoUrl;
+    company.branding.theme.primary = req.body.themePrimary || company.branding.theme.primary;
+    company.branding.theme.accent  = req.body.themeAccent  || company.branding.theme.accent;
+    company.branding.theme.darkModeDefault = !!req.body.darkModeDefault;
+
     await company.save();
 
     if (Object.keys(changed).length) {

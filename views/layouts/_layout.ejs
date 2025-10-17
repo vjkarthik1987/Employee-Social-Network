@@ -6,24 +6,37 @@
   <meta name="csrf-token" content="<%= csrfToken || '' %>">
   <title><%= typeof title !== 'undefined' ? title : 'Engage' %></title>
   <link rel="stylesheet" href="/css/style.css" />
-  
+
+  <% 
+    // --- Theme variables ---
+    const _p = company?.branding?.theme?.primary || '#0a66c2';
+    const _a = company?.branding?.theme?.accent  || _p;
+
+    // Prefer explicit user preference, else fall back to company default
+    const _userPref = (typeof currentUser !== 'undefined' && currentUser?.preferences?.darkMode)
+                   ?? (typeof user !== 'undefined' && user?.preferences?.darkMode)
+                   ?? null; // null means follow company default
+    const _companyDefaultDark = !!(company?.branding?.theme?.darkModeDefault);
+    const _prefersDark = (_userPref === true) || (_userPref === null && _companyDefaultDark);
+  %>
+
+  <% if (company?.branding?.logoUrl) { %>
+    <link rel="icon" href="<%= company.branding.logoUrl %>" type="image/png">
+  <% } %>
+
   <style>
-    <%
-      const _primary =
-        (typeof company !== 'undefined' && company && company.branding && company.branding.theme && company.branding.theme.primary)
-          ? company.branding.theme.primary
-          : '#0a66c2';
-    %>
-    :root{
-      --primary: <%= _primary %>;
-      --bg: #f6f7f9;
-      --text: #111;
-      --navH: 56px;
+    :root {
+      --primary: <%= _p %>;
+      --accent:  <%= _a %>;
+      --bg:      <%= _prefersDark ? '#121212' : '#f6f7f9' %>;
+      --text:    <%= _prefersDark ? '#eaeaea' : '#111' %>;
+      --navH:    56px;
     }
-    </style>
+    html, body { background: var(--bg); color: var(--text); }
+  </style>
 </head>
 
-<body style="margin:0; font-family:Inter, sans-serif; background:#fafafa; color:#333;">
+<body style="margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;">
 
   <!-- Global Navbar -->
   <%- include('../partials/navbar', {
@@ -36,12 +49,7 @@
 
   <!-- Main Page Container -->
   <div class="page-container" style="
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    padding: 20px;
-    box-sizing: border-box;
-  ">
+    display:flex; flex-direction:column; min-height:100vh; padding:20px; box-sizing:border-box;">
     <main class="app-shell">
       <div class="col-center">
         <%- include('../partials/flash') %>
@@ -49,6 +57,5 @@
       </div>
     </main>
   </div>
-
 </body>
 </html>
