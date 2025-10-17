@@ -5,9 +5,10 @@ const perf = require('../services/perfService');
 
 const router = express.Router({ mergeParams: true });
 
+// Page (unchanged summary table, now with live widgets fed by JSON)
 router.get('/', ensureAuth, requireRole('ORG_ADMIN'), async (req, res) => {
   const raw = perf.getRecent({ limit: 200 })
-    .filter(r => !r.companyId || String(r.companyId) === String(req.companyId));
+    .filter(r => !r.companyId || String(r.companyId) === String(req.company?._id));
 
   const byRoute = new Map();
   for (const r of raw) {
@@ -33,5 +34,46 @@ router.get('/', ensureAuth, requireRole('ORG_ADMIN'), async (req, res) => {
     cache,
   });
 });
+
+// ---------- Day 28 JSON endpoints ----------
+
+// GET /:org/admin/perf/summary.json?window=60
+router.get('/summary.json', ensureAuth, requireRole('ORG_ADMIN'), (req, res) => {
+  const minutes = Math.max(1, Math.min(180, parseInt(req.query.window || '60', 10)));
+  const data = perf.aggregateLast({
+    minutes,
+    companyId: req.company?._id,
+    slug: req.company?.slug,
+  });
+  res.json(data);
+});
+
+// GET /:org/admin/perf/series.json?window=15
+router.get('/series.json', ensureAuth, requireRole('ORG_ADMIN'), (req, res) => {
+  const minutes = Math.max(5, Math.min(180, parseInt(req.query.window || '15', 10)));
+  const data = perf.series({
+    minutes,
+    companyId: req.company?._id,
+    slug: req.company?.slug,
+  });
+  res.json(data);
+});
+
+// GET /:org/admin/perf/recent-slow.json?threshold=400&limit=20
+router.get('/recent-slow.json', ensureAuth, requireRole('ORG_ADMIN'), (req, res) => {
+  const threshold = Math.max(100, Math.min(10000, parseInt(req.query.threshold || '400', 10)));
+  const limit = Math.max(1, Math.min(100, parseInt(req.query.limit || '20', 10)));
+  const data = perf.recentSlow({ companyId: req.company?._id, thresholdMs: threshold, limit });
+  // shape it a bit for the UI
+  res.json({
+    items: data.map(r => ({
+      ts: new Date(r.ts).toISOString(),
+      route: r.route || 'unknown',
+      durationMs: Math.round(r.durationMs || 0),
+    })),
+  });
+});
+
+
 
 module.exports = router;

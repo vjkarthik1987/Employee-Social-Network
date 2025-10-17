@@ -1,9 +1,45 @@
 <% layout('layouts/_layout') %>
 
-<section style="max-width:960px;margin:0 auto;">
+<section style="max-width:1024px;margin:0 auto;">
   <h2 style="margin:0 0 12px;">Performance Dashboard</h2>
-  <p class="muted" style="margin-top:-6px;">Lightweight timings from server-side feed & post endpoints (in-memory). Refresh to update.</p>
+  <p class="muted" style="margin-top:-6px;">Live timings from server endpoints (in-memory). Refresh updates, or watch the auto-refresh.</p>
 
+  <!-- Top cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0;">
+    <div class="card" style="padding:12px;">
+      <div class="muted small">p95 (ms)</div>
+      <div id="p95" style="font-size:24px;font-weight:600;">—</div>
+    </div>
+    <div class="card" style="padding:12px;">
+      <div class="muted small">Avg (ms)</div>
+      <div id="avg" style="font-size:24px;font-weight:600;">—</div>
+    </div>
+    <div class="card" style="padding:12px;">
+      <div class="muted small">RPM</div>
+      <div id="rpm" style="font-size:24px;font-weight:600;">—</div>
+    </div>
+    <div class="card" style="padding:12px;">
+      <div class="muted small">Hit Rate</div>
+      <div id="hitRate" style="font-size:24px;font-weight:600;">—</div>
+    </div>
+  </div>
+
+  <!-- Sparkline -->
+  <div class="card" style="padding:12px;">
+    <div class="muted small" style="margin-bottom:8px;">p95 (last 15 min)</div>
+    <canvas id="p95Chart" height="80"></canvas>
+  </div>
+
+  <!-- Cache panel -->
+  <h3 style="margin:18px 0 8px;">Cache</h3>
+  <div class="card" style="padding:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+    <div>Hit: <strong id="cacheHit"><%= cache?.agg?.hit || 0 %></strong></div>
+    <div>Miss: <strong id="cacheMiss"><%= cache?.agg?.miss || 0 %></strong></div>
+    <div>Busts: <strong id="cacheBust"><%= cache?.agg?.bust || 0 %></strong></div>
+    <div>Hit Rate: <strong id="cacheRate"><%= cache?.hitRate || 0 %>%</strong></div>
+  </div>
+
+  <!-- Route Summary (existing table) -->
   <h3 style="margin:18px 0 8px;">Route Summary</h3>
   <div class="card">
     <table class="table" style="width:100%;border-collapse:collapse;">
@@ -34,62 +70,92 @@
     </table>
   </div>
 
-  <h3 style="margin:18px 0 8px;">Cache</h3>
-    <div class="card" style="padding:12px;">
-    <% if (!cache) { %>
-        <div>No cache stats yet.</div>
-    <% } else { %>
-        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
-        <div>Hit: <strong><%= cache.agg.hit %></strong></div>
-        <div>Miss: <strong><%= cache.agg.miss %></strong></div>
-        <div>Busts: <strong><%= cache.agg.bust %></strong></div>
-        <div>Hit Rate: <strong><%= cache.hitRate %>%</strong></div>
-        </div>
-        <details style="margin-top:8px;">
-        <summary>Recent cache events</summary>
-        <table class="table" style="width:100%;border-collapse:collapse;margin-top:6px;">
-            <thead><tr><th align="left">Time</th><th align="left">Type</th><th align="left">Key</th><th align="right">Count</th></tr></thead>
-            <tbody>
-            <% (cache.recent||[]).slice(0,50).forEach(ev => { %>
-                <tr>
-                <td style="padding:6px;border-bottom:1px solid #f2f2f2;"><%= new Date(ev.ts).toLocaleString() %></td>
-                <td style="padding:6px;border-bottom:1px solid #f2f2f2;"><%= ev.type %></td>
-                <td style="padding:6px;border-bottom:1px solid #f2f2f2;"><code><%= ev.key %></code></td>
-                <td style="padding:6px;border-bottom:1px solid #f2f2f2;" align="right"><%= ev.count %></td>
-                </tr>
-            <% }) %>
-            </tbody>
-        </table>
-        </details>
-    <% } %>
-    </div>
-
-
-  <h3 style="margin:18px 0 8px;">Recent Events</h3>
-  <div class="card" style="overflow:auto;max-height:360px;">
+  <!-- Recent slow requests -->
+  <h3 style="margin:18px 0 8px;">Recent Slow (≥ 400 ms)</h3>
+  <div class="card" style="overflow:auto;max-height:240px;">
     <table class="table" style="width:100%;border-collapse:collapse;">
       <thead>
         <tr>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #eee;">Time</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #eee;">Route</th>
           <th style="text-align:right;padding:8px;border-bottom:1px solid #eee;">Duration (ms)</th>
-          <th style="text-align:right;padding:8px;border-bottom:1px solid #eee;">Count</th>
-          <th style="text-align:right;padding:8px;border-bottom:1px solid #eee;">Page</th>
-          <th style="text-align:right;padding:8px;border-bottom:1px solid #eee;">Limit</th>
         </tr>
       </thead>
-      <tbody>
-        <% (recent || []).forEach(ev => { %>
-          <tr>
-            <td style="padding:8px;border-bottom:1px solid #f5f5f5;"><%= new Date(ev.ts).toLocaleString() %></td>
-            <td style="padding:8px;border-bottom:1px solid #f5f5f5;"><code><%= ev.route %></code></td>
-            <td style="padding:8px;border-bottom:1px solid #f5f5f5;text-align:right;"><%= Math.round(ev.durationMs) %></td>
-            <td style="padding:8px;border-bottom:1px solid #f5f5f5;text-align:right;"><%= ev.count %></td>
-            <td style="padding:8px;border-bottom:1px solid #f5f5f5;text-align:right;"><%= ev.page ?? '' %></td>
-            <td style="padding:8px;border-bottom:1px solid #f5f5f5;text-align:right;"><%= ev.limit ?? '' %></td>
-          </tr>
-        <% }) %>
+      <tbody id="slowBody">
+        <tr><td colspan="3" style="padding:10px;">No slow items yet.</td></tr>
       </tbody>
     </table>
   </div>
 </section>
+
+<!-- Chart.js via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function(){
+  const orgBase = location.pathname.replace(/\\/admin\\/perf.*$/, '') + '/admin/perf';
+
+  const el = (id) => document.getElementById(id);
+
+  // Sparkline (p95)
+  const ctx = el('p95Chart').getContext('2d');
+  let chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'p95 (ms)', data: [], tension: 0.25, pointRadius: 0 }] },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { display: false }, y: { beginAtZero: true } }
+    }
+  });
+
+  async function refresh() {
+    try {
+      const [summaryRes, seriesRes] = await Promise.all([
+        fetch(orgBase + '/summary.json?window=60', { credentials: 'same-origin' }),
+        fetch(orgBase + '/series.json?window=15', { credentials: 'same-origin' })
+      ]);
+      const summary = await summaryRes.json();
+      const series = await seriesRes.json();
+
+      // Top cards
+      el('p95').textContent = summary.latency.p95Ms;
+      el('avg').textContent = summary.latency.avgMs;
+      el('rpm').textContent = summary.throughput.rpm;
+      el('hitRate').textContent = summary.cache.hitRate + '%';
+
+      // Cache panel (quick refresh)
+      el('cacheHit').textContent = summary.cache.hit;
+      el('cacheMiss').textContent = summary.cache.miss;
+      el('cacheBust').textContent = summary.cache.bust;
+      el('cacheRate').textContent = summary.cache.hitRate + '%';
+
+      // Chart
+      const labels = series.points.map(p => new Date(p.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      const p95s = series.points.map(p => p.p95Ms);
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = p95s;
+      chart.update();
+
+      // Slow table (real slow requests)
+      const slowRes = await fetch(orgBase + '/recent-slow.json?threshold=400&limit=20', { credentials: 'same-origin' });
+      const slowData = await slowRes.json();
+      const slowRows = (slowData.items || []).map(it => (
+        `<tr>
+          <td style="padding:8px;border-bottom:1px solid #f5f5f5;">${new Date(it.ts).toLocaleString()}</td>
+          <td style="padding:8px;border-bottom:1px solid #f5f5f5;"><code>${it.route}</code></td>
+          <td style="padding:8px;border-bottom:1px solid #f5f5f5;" align="right">${it.durationMs}</td>
+        </tr>`
+      ));
+      el('slowBody').innerHTML = slowRows.length ? slowRows.join('') : '<tr><td colspan="3" style="padding:10px;">No slow items yet.</td></tr>';
+
+    } catch (e) {
+      // swallow errors to keep the page usable
+      console.warn('[perf] refresh failed', e);
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 10000); // every 10s
+})();
+</script>

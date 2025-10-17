@@ -113,7 +113,7 @@ exports.createAjax = async (req, res, next) => {
       isReply: level === 1,
       parentCommentId: parent ? String(parent._id) : null,
       commentsCountDelta: 1,
-      postId: String(c.postId)
+      postId: String(postId)
     });
   } catch (e) { next(e); }
 };

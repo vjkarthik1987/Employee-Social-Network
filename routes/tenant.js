@@ -58,7 +58,7 @@ router.use('/', require('./reports'));
 router.use('/profile', ensureAuth, profileRoutes);
 router.get('/feed', ensureAuth, pc.companyFeed);
 router.use('/saved-searches', savedSearches);
-router.use('/admin/perf', adminPerf);
+router.use('/admin/perf', ensureAuth, requireRole('ORG_ADMIN'), adminPerf);
 router.use('/', exportsRouter);
 router.use('/admin/audit', adminAudit);
 router.use('/api', commentsApi);

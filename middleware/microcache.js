@@ -8,16 +8,20 @@ function key(namespace, parts) {
   return `${namespace}:${store.hash(parts)}`;
 }
 
+function computeTTL(path) {
+    if (/\/feed/.test(path)) return 10;
+    if (/\/posts\/[a-f\d]{24}/.test(path)) return 15;
+    return 5;
+}
+  
+
 async function getOrSet({ k, ttlSec, fetcher }) {
-  const cached = await store.get(k);
-  if (cached) {
-    perf.cacheEvent({ type: 'hit', key: k });
-    return { fromCache: true, value: cached };
-  }
-  const value = await fetcher();
-  await store.set(k, value, ttlSec);
-  perf.cacheEvent({ type: 'miss', key: k });
-  return { fromCache: false, value };
+    const cached = await store.get(k);
+    if (cached) { perf.cacheEvent({ type: 'hit', key: k }); return { fromCache: true, value: cached }; }
+    const value = await fetcher();
+    await store.set(k, value, ttlSec);
+    perf.cacheEvent({ type: 'miss', key: k });
+    return { fromCache: false, value };
 }
 
 // Invalidate helpers (tenant-aware)
@@ -39,4 +43,4 @@ async function bustPost(slug, postId) {
   perf.cacheEvent({ type: 'bust', key: k, count: 1 });
 }
 
-module.exports = { key, getOrSet, bustTenant, bustGroup, bustPost };
+module.exports = { key, computeTTL, getOrSet, bustTenant, bustGroup, bustPost };

@@ -12,10 +12,13 @@ const audit = require('../services/auditService');
 const perf = require('../services/perfService');
 const microcache = require('../middleware/microcache');
 const cacheStore = require('../services/cacheStore');
+const etag = require('../services/etag');
+
 
 function cid(req) { return req.companyId || req.company?._id; }
 function isObjId(v) { return Types.ObjectId.isValid(v); }
 function stripTags(html = '') { return String(html).replace(/<[^>]*>/g, ' '); }
+
 
 // ---------- filter + query helpers ----------
 function readFilters(req, { isGroup = false } = {}) {
@@ -177,35 +180,57 @@ exports.companyFeed = async (req, res, next) => {
   try {
     const filters = readFilters(req, { isGroup: false });
     const key = `feed:v1:${req.company.slug}:${cacheStore.hash(filters)}`;
+    const ttl = microcache.computeTTL(req.path);   // dynamic TTL
 
     const { value } = await microcache.getOrSet({
-      k: key,
-      ttlSec: 10,
+      k: key, ttlSec: ttl,
       fetcher: async () => {
         const data = await runFeedQuery({ req, scope: 'COMPANY' });
         return {
           posts: data.posts,
           total: data.total, totalPages: data.totalPages,
           page: data.page, limit: data.limit,
-          filters: {
-            q: data.q, type: data.type, authorId: data.authorId, people: data.people,
-            from: data.from, to: data.to, myGroups: data.myGroups
-          }
+          filters: { q: data.q, type: data.type, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: data.myGroups }
         };
       }
     });
 
+    // Pre-warm page 2 (non-blocking) when viewing page 1
+    if (Number(value.page) === 1 && value.totalPages > 1) {
+      const nextFilters = { ...filters, page: 2 };
+      const nextKey = `feed:v1:${req.company.slug}:${cacheStore.hash(nextFilters)}`;
+      const nextTtl = microcache.computeTTL(req.path);
+      setImmediate(() => {
+        microcache.getOrSet({
+          k: nextKey, ttlSec: nextTtl,
+          fetcher: async () => {
+            const data = await runFeedQuery({
+              req: { ...req, query: { ...req.query, page: '2' } },
+              scope: 'COMPANY'
+            });
+            return {
+              posts: data.posts,
+              total: data.total, totalPages: data.totalPages,
+              page: data.page, limit: data.limit,
+              filters: { q: data.q, type: data.type, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: data.myGroups }
+            };
+          }
+        }).catch(() => {});
+      });
+    }
+
+    // ETag for company feed (304 if unchanged)
+    if (etag.setAndCheck(req, res, {
+      posts: value.posts.map(p => String(p._id)),
+      total: value.total, page: value.page, totalPages: value.totalPages,
+      filters: value.filters
+    })) return res.status(304).end();
+
     return res.render('feed/index', {
-      company: req.company,
-      user: req.user,
-      posts: value.posts,
-      total: value.total,
-      totalPages: value.totalPages,
-      page: value.page,
-      limit: value.limit,
-      filters: value.filters,
-      searchAction: `/${req.params.org}/feed`,
-      recentSearches: [],
+      company: req.company, user: req.user,
+      posts: value.posts, total: value.total, totalPages: value.totalPages,
+      page: value.page, limit: value.limit, filters: value.filters,
+      searchAction: `/${req.params.org}/feed`, recentSearches: [],
     });
   } catch (e) { next(e); }
 };
@@ -215,16 +240,15 @@ exports.groupFeed = async (req, res, next) => {
   try {
     const groupId = req.params.groupId;
     if (!isObjId(groupId)) return res.status(404).render('errors/404');
-
     const group = await Group.findOne({ _id: groupId, companyId: cid(req) }).lean();
     if (!group) return res.status(404).render('errors/404');
 
     const filters = readFilters(req, { isGroup: true });
     const key = `groupfeed:v1:${req.company.slug}:${groupId}:${cacheStore.hash(filters)}`;
+    const ttl = microcache.computeTTL(req.path);
 
     const { value } = await microcache.getOrSet({
-      k: key,
-      ttlSec: 10,
+      k: key, ttlSec: ttl,
       fetcher: async () => {
         const data = await runFeedQuery({ req, scope: 'GROUP', groupId });
         return {
@@ -232,29 +256,53 @@ exports.groupFeed = async (req, res, next) => {
           posts: data.posts,
           total: data.total, totalPages: data.totalPages,
           page: data.page, limit: data.limit,
-          filters: {
-            q: data.q, type: data.type, authorId: data.authorId, people: data.people,
-            from: data.from, to: data.to, myGroups: false
-          }
+          filters: { q: data.q, type: data.type, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: false }
         };
       }
     });
 
+    // Pre-warm page 2 for group feed (non-blocking)
+    if (Number(value.page) === 1 && value.totalPages > 1) {
+      const nextFilters = { ...filters, page: 2 };
+      const nextKey = `groupfeed:v1:${req.company.slug}:${groupId}:${cacheStore.hash(nextFilters)}`;
+      const nextTtl = microcache.computeTTL(req.path);
+      setImmediate(() => {
+        microcache.getOrSet({
+          k: nextKey, ttlSec: nextTtl,
+          fetcher: async () => {
+            const data = await runFeedQuery({
+              req: { ...req, query: { ...req.query, page: '2' } },
+              scope: 'GROUP', groupId
+            });
+            return {
+              group,
+              posts: data.posts,
+              total: data.total, totalPages: data.totalPages,
+              page: data.page, limit: data.limit,
+              filters: { q: data.q, type: data.type, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: false }
+            };
+          }
+        }).catch(() => {});
+      });
+    }
+
+    // ETag for group feed (304 if unchanged)
+    if (etag.setAndCheck(req, res, {
+      g: String(group._id),
+      posts: value.posts.map(p => String(p._id)),
+      total: value.total, page: value.page, totalPages: value.totalPages,
+      filters: value.filters
+    })) return res.status(304).end();
+
     return res.render('feed/index', {
-      company: req.company,
-      user: req.user,
-      group: value.group,
-      posts: value.posts,
-      total: value.total,
-      totalPages: value.totalPages,
-      page: value.page,
-      limit: value.limit,
-      filters: value.filters,
-      searchAction: `/${req.params.org}/g/${groupId}`,
-      recentSearches: [],
+      company: req.company, user: req.user, group: value.group,
+      posts: value.posts, total: value.total, totalPages: value.totalPages,
+      page: value.page, limit: value.limit, filters: value.filters,
+      searchAction: `/${req.params.org}/g/${groupId}`, recentSearches: [],
     });
   } catch (e) { next(e); }
 };
+
 
 // POST /:org/posts
 // fields: content, type (TEXT|LINK|IMAGE), image (multer), groupId?, imageAlt?
@@ -344,7 +392,7 @@ exports.getPost = async (req, res, next) => {
 
     if (value?.notFound) return res.status(404).render('errors/404');
 
-    // Load comments (visible only) — use value.post._id here
+    // Load comments (visible only)
     const comments = await Comment.find({ postId: value.post._id, status: { $ne: 'deleted' } })
       .sort({ createdAt: 1 })
       .populate('authorId', 'fullName avatarUrl title')
