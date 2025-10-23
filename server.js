@@ -10,6 +10,7 @@ const flash = require('connect-flash');
 const passport = require('passport');
 const engine = require('ejs-mate');
 const csrf = require('csurf');
+const pkg = require('./package.json');
 
 // --- Routes ---
 const authRoutes = require('./routes/auth');
@@ -24,6 +25,7 @@ const configurePassport = require('./config/passport'); // ensure this exists
 
 // --- App & DB ---
 const app = express();
+ 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/engage';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change_me';
@@ -42,6 +44,12 @@ mongoose
 app.engine('ejs', engine);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Dev: ensure templates always re-render fresh
+if (process.env.NODE_ENV !== 'production') {
+  app.set('view cache', false);
+  app.disable('etag');            // avoid 304s on HTML in dev
+}
 
 // if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
@@ -70,7 +78,7 @@ app.use(
 app.use(flash());
 
 // Static
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {maxAge: '1y'}));
 
 // --------- Passport ---------
 app.use(passport.initialize());
@@ -78,7 +86,7 @@ app.use(passport.session());
 configurePassport(passport);
 
 // --------- CSRF (after session) ---------
-app.use(csrf());
+//app.use(csrf());
 
 // Perf/Server-Timing
 app.use(timing);
@@ -89,9 +97,16 @@ app.use((req, res, next) => {
   res.locals.currentUser = req.user || null;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
+  res.locals.assetVersion = Date.now(); 
   res.locals.companySlug = (req.session && req.session.companySlug) || null;
   // Keep `company` defined so layouts don't explode
   if (typeof res.locals.company === 'undefined') res.locals.company = null;
+  if (req.method === 'GET' && req.accepts('html')) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+  }
   next();
 });
 
@@ -104,9 +119,33 @@ app.get('/', (_req, res) => {
   // Or: res.redirect('/yourorg/feed');
 });
 
+app.use('/:org', (req, res, next) => {
+  res.locals.org = req.params.org;       // available in all EJS views
+  next();
+});
+
+
 // --------- App routes ---------
 app.use('/auth', authRoutes);
 app.use('/:org', tenantRoutes);
+
+// 1) No-store for HTML responses
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store'); // for HTML routes
+  next();
+});
+
+// 2) Long cache for static assets
+app.use(express.static('public', {
+  maxAge: '1y',
+  setHeaders: (res, path) => {
+    // mark versioned assets as immutable
+    if (path.includes('?v=')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
+
 
 // --------- CSRF error handler (after routes) ---------
 app.use((err, req, res, next) => {

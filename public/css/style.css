@@ -5,6 +5,15 @@
   --bg: #f6f7f9;         /* page background */
   --text: #111;          /* default text */
   --navH: 56px;          /* navbar height */
+  --nav-dark: #1e3a8a;      /* indigo-700 */
+  --nav-dark-2: #1b357f;     /* deeper shade */
+  --nav-text: #ffffff;       /* white */
+  --nav-text-dim: rgba(255,255,255,0.82);
+  --nav-text-muted: rgba(255,255,255,0.68);
+  --nav-border: rgba(255,255,255,0.10);
+  --sidebarW: clamp(220px, 18vw, 300px);
+  --navH: 56px; /* ensure this exists for the top bar height */
+
 }
 
 html, body {
@@ -17,13 +26,19 @@ html, body {
 }
   
   /* ---------- Main Container ---------- */
-  .page-container {
+  .page-container{
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     padding: 20px;
     box-sizing: border-box;
+  
+    /* sidebar-aware layout */
+    margin-left: var(--sidebarW);
+    width: calc(100vw - (var(--sidebarW) + 1px)); /* +1px for sidebar border */
+    overflow-x: clip; /* belt-and-suspenders */
   }
+  
   
   /* ---------- Sidebar (if included) ---------- */
   .sidebar {
@@ -276,48 +291,84 @@ html, body {
   
   /* ====== Navbar (top) ====== */
   .navbar {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    width: var(--sidebarW);
+    height: 100vh;
+    background: linear-gradient(180deg, var(--nav-dark, #1e3a8a), var(--nav-dark-2, #1b357f)); /* uses your dark topbar colors */
+    border-right: 1px solid var(--nav-border, rgba(255,255,255,0.10));
+    border-bottom: none; /* no bottom border in sidebar mode */
     z-index: 900;
-    background: #fff;
-    border-bottom: 1px solid #eee;
-    height: var(--navH);
+    display: block; /* ensure it's visible even if previous rules hide it */
   }
   .nav-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 10px 16px;
+    max-width: none;               /* remove center width constraint */
+    height: 100%;
+    padding: 16px;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 12px;
+    color: var(--nav-text, #fff);
   }
   .brand {
     font-weight: 700;
     font-size: 1rem;
-    color: #111;
+    color: var(--nav-text);
     letter-spacing: 0.2px;
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 10px;
   }
+
+  .brand:hover { background: rgba(255,255,255,0.10); }
 /* Desktop link area */
+/* Turn horizontal links into a vertical menu */
 .nav-links {
-  display: flex;
-  gap: 16px;
-  align-items: center;
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 6px;
 }
 
-.nav-links a {
-  color: #333;
-  text-decoration: none;
-  font-weight: 500;
+.nav-links a,
+.logout-form .btn {
+  color: rgba(255,255,255,0.92) !important;
+  background: transparent;
+  padding: 8px 10px;
+  font-weight: 600;
+  border  : 0;
 }
 
-.nav-links a:hover { color: var(--primary, #0a66c2); }
+.nav-links a:hover,
+.logout-form .btn:hover {
+  background: rgba(255,255,255,0.12);
+}
 
+/* Make logout form buttons span full width neatly */
+.logout-form {
+  display: block;
+}
+.logout-form .btn {
+  width: 100%;
+  text-align: center;
+}
 /* Hamburger */
-.hamburger { display:none; background:transparent; border:0; padding:6px; cursor:pointer; }
-.hamburger span { display:block; width:22px; height:2px; background:#333; margin:4px 0; transition:all .2s; }
+/* We’re not using the mobile hamburger/drawer in this step */
+.hamburger,
+#nav-drawer,
+#nav-backdrop {
+  display: none !important;
+}
 
 /* Drawer */
 .nav-drawer {
@@ -360,6 +411,22 @@ html, body {
   display: none;
 }
 .nav-backdrop[hidden] { display: none; }
+
+/* Ghost buttons in the navbar (e.g., Logout/Login) */
+.navbar .btn.btn-ghost {
+  background: transparent;
+  color: var(--nav-text);
+  border-color: rgba(255,255,255,0.35);
+}
+.navbar .btn.btn-ghost:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.5);
+}
+
+/* Hamburger bars on small screens */
+.hamburger span {
+  background: #fff;
+}
 
 /* Prevent scroll when drawer is open */
 body.drawer-open { overflow: hidden; }
@@ -651,3 +718,507 @@ body.drawer-open { overflow: hidden; }
   .comment-actions { flex-wrap: wrap; }
   .replies { border-left: 2px solid #eee; padding-left: 12px; }
 }
+
+@media (max-width: 839px) {
+  /* 1) Top bar (reuse .navbar container) */
+  .navbar {
+    position: sticky;
+    top: 0;
+    left: auto;
+    width: 100%;
+    height: var(--navH);
+    background: linear-gradient(180deg, var(--nav-dark, #1e3a8a), var(--nav-dark-2, #1b357f));
+    border-right: none;
+    border-bottom: 1px solid var(--nav-border, rgba(255,255,255,0.10));
+    z-index: 950;
+  }
+  .nav-inner {
+    height: 100%;
+    max-width: 100%;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  /* Hide the vertical menu; use hamburger instead */
+  .nav-links { display: none !important; }
+
+  /* Show hamburger on mobile */
+  .hamburger { display: inline-block !important; }
+  .hamburger span { background: #fff; }
+
+  /* Main content should not be pushed right on mobile */
+  .page-container {
+    margin-left: 0 !important;
+    padding: 16px;
+  }
+
+  /* 2) Drawer panel (reuses your existing #nav-drawer element) */
+  #nav-drawer {
+    position: fixed;
+    top: var(--navH);
+    left: 0;
+    height: calc(100vh - var(--navH));
+    width: min(84vw, 320px);
+    max-width: 90vw;
+    overflow-y: auto;
+
+    /* Indigo drawer look */
+    background: linear-gradient(180deg, var(--nav-dark, #1e3a8a), var(--nav-dark-2, #1b357f));
+    color: #fff;
+    border-right: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 10px 0 30px rgba(0,0,0,.28);
+
+    /* Slide-in behavior */
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    display: block;      /* ignore any previous "display:none" */
+  }
+  #nav-drawer.open { transform: translateX(0); }
+
+  /* Drawer links */
+  #nav-drawer a {
+    display: block;
+    padding: 12px 16px;
+    color: rgba(255,255,255,0.92);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    font-weight: 600;
+  }
+  #nav-drawer a:hover {
+    background: rgba(255,255,255,0.10);
+  }
+
+  /* Drawer footer buttons (if present) */
+  #nav-drawer .btn {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    border-color: rgba(255,255,255,0.25);
+  }
+  #nav-drawer .btn:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.4);
+  }
+
+  /* 3) Backdrop (reuses your existing #nav-backdrop element) */
+  #nav-backdrop {
+    position: fixed;
+    top: var(--navH);
+    left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 940;
+  }
+  /* Show backdrop when not hidden (the JS toggles hidden attribute) */
+  #nav-backdrop:not([hidden]) { display: block !important; }
+}
+
+
+/* ===== FIX: mobile topbar + drawer overrides (highest priority) ===== */
+@media (max-width: 839px) {
+  /* 1) Kill the desktop sidebar offset */
+  body .page-container {
+    margin-left: 0 !important;
+    padding: 16px !important;
+    width: 100% !important;   /* <-- add this */
+  }
+  body .col-center { max-width: 100% !important; }
+
+  /* 2) Force navbar to be a horizontal top bar (not a tall sidebar) */
+  .navbar {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: var(--navH, 56px) !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--nav-border, rgba(255,255,255,0.10)) !important;
+    z-index: 950 !important;
+  }
+  .nav-inner {
+    height: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 12px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+  }
+
+  /* 3) Use hamburger + drawer; hide inline desktop links */
+  .nav-links { display: none !important; }
+  .hamburger { display: inline-block !important; }
+  .hamburger span { background: #fff !important; }
+
+  /* 4) Drawer behaviour (make sure hidden works, and slide-in is smooth) */
+  #nav-drawer[hidden] { display: none !important; }
+  #nav-drawer {
+    position: fixed !important;
+    top: var(--navH, 56px) !important;
+    left: 0 !important;
+    height: calc(100vh - var(--navH, 56px)) !important;
+    width: min(84vw, 320px) !important;
+    overflow-y: auto !important;
+
+    background: linear-gradient(180deg, var(--nav-dark, #1e3a8a), var(--nav-dark-2, #1b357f)) !important;
+    color: #fff !important;
+    border-right: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 10px 0 30px rgba(0,0,0,.28) !important;
+
+    transform: translateX(-100%) !important;
+    transition: transform .22s ease !important;
+    display: block !important; /* visible when not [hidden] */
+  }
+  #nav-drawer.open { transform: translateX(0) !important; }
+
+  #nav-drawer a {
+    display: block !important;
+    padding: 12px 16px !important;
+    color: rgba(255,255,255,0.92) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+    font-weight: 600 !important;
+  }
+  #nav-drawer a:hover { background: rgba(255,255,255,0.10) !important; }
+
+  /* 5) Backdrop visibility */
+  #nav-backdrop { 
+    position: fixed !important;
+    top: var(--navH, 56px) !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    background: rgba(0,0,0,0.35) !important;
+    z-index: 940 !important;
+  }
+  #nav-backdrop[hidden] { display: none !important; }
+}
+
+/* ============================
+   Post card – mobile polish
+   ============================ */
+   @media (max-width: 600px){
+
+    /* Card + header */
+    .post-card { padding: 12px; border-radius: 12px; }
+    .post-header { align-items: flex-start; gap: 10px; }
+    .post-avatar { width: 36px; height: 36px; }
+  
+    /* Names/time wrap nicely */
+    .post-meta { min-width: 0; }
+    .post-author a { font-size: .96rem; }
+    .post-title { font-size: .9rem; }
+    .post-time { font-size: .85rem; line-height: 1.3; word-break: break-word; }
+  
+    /* Content readability & wrapping */
+    .post-content { 
+      font-size: .98rem;
+      line-height: 1.55;
+      overflow-wrap: anywhere; /* long words/links don’t overflow */
+      word-break: break-word;
+    }
+  
+    /* Image sizing */
+    .post-image { 
+      max-height: 360px; 
+      width: 100%; 
+      height: auto; 
+      object-fit: cover; 
+      border-radius: 10px; 
+    }
+  
+    /* Link preview stacks vertically on phones */
+    .link-preview{ 
+      display: grid; 
+      grid-template-columns: 1fr; 
+      gap: 10px; 
+    }
+    .link-thumb{ width: 100%; height: 160px; }
+  
+    /* Footer stacks and wraps */
+    .post-footer { 
+      display: grid; 
+      gap: 8px; 
+      border-top: 1px solid #f1f1f1; 
+      margin-top: 12px; 
+      padding-top: 8px; 
+    }
+  
+    /* Metrics wrap and stay readable */
+    .card-metrics { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 8px 14px; 
+      font-size: .92rem; 
+    }
+    .card-metrics > * { display: inline-flex; align-items: center; gap: 6px; }
+  
+    /* Reactions wrap into multiple rows if needed */
+    .reactions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .reactions .btn, 
+    .reactions .btn.btn-ghost { padding: 6px 10px; flex: 1 0 auto; }
+  
+    /* “Open / Delete” actions move to their own row on the right */
+    .admin-links { 
+      order: 3; 
+      width: 100%; 
+      display: flex; 
+      gap: 12px; 
+      justify-content: flex-end; 
+    }
+  }
+  
+  /* Tiny screens: avoid horizontal scroll from long URLs/text */
+  @media (max-width: 360px){
+    .post-content, .post-time { font-size: .9rem; }
+  }
+
+  /* =========================================
+   Feed search form – responsive fixes
+   ========================================= */
+@media (max-width: 840px){
+  /* Stack the whole form into one column (override inline grid) */
+  #feed-search-form{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  /* The inputs row: let fields wrap full width */
+  #feed-search-form > div:nth-of-type(1){
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  /* Inputs/selects/dates/labels fill the line; no min-width fights */
+  #feed-search-form > div:nth-of-type(1) input[type="text"],
+  #feed-search-form > div:nth-of-type(1) input[type="date"],
+  #feed-search-form > div:nth-of-type(1) select,
+  #feed-search-form > div:nth-of-type(1) label{
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Actions row (Search / Clear / Export): stack & wrap nicely */
+  #feed-search-form > div:nth-of-type(3){
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: flex-start !important; /* not pushed off-screen */
+  }
+  #feed-search-form > div:nth-of-type(3) .btn{
+    flex: 1 1 48% !important;      /* two per row on most phones */
+  }
+
+  /* Very small phones: single-column buttons */
+  @media (max-width: 400px){
+    #feed-search-form > div:nth-of-type(3) .btn{
+      flex: 1 1 100% !important;
+    }
+  }
+
+  /* Author suggest menu: keep it inside viewport */
+  #author-suggest-menu{
+    width: min(280px, calc(100vw - 40px)) !important;
+    max-width: calc(100vw - 40px) !important;
+  }
+}
+
+/* Chips + saved searches wrap without overflow */
+#saved-searches, 
+#saved-searches + div{
+  flex-wrap: wrap;
+}
+
+/* ====== Kill the tiny horizontal scroll ====== */
+html, body { overflow-x: hidden; }
+
+/* Make sure nothing inside the main containers can push out */
+.page-container, .app-shell, .col-center { max-width: 100%; overflow-x: hidden; }
+
+/* ====== Logout button cleanup ====== */
+.sidebar-footer form[action*="logout"] .btn,
+#nav-drawer form[action*="logout"] .btn {
+  background: transparent !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.sidebar-footer form[action*="logout"] .btn:hover,
+#nav-drawer form[action*="logout"] .btn:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+
+/* Media: phones/tablets */
+@media (max-width: 840px){
+  /* Flex children (inputs/buttons) can overflow if they keep their intrinsic min-width */
+  #feed-search-form * { min-width: 0 !important; }
+
+  /* Action buttons: allow wrapping and don’t exceed row width */
+  #feed-search-form > div:nth-of-type(3) .btn{
+    flex: 1 1 calc(50% - 6px) !important;  /* two per row */
+    white-space: normal !important;        /* wrap text if needed */
+  }
+}
+
+@media (max-width: 400px){
+  #feed-search-form > div:nth-of-type(3) .btn{
+    flex: 1 1 100% !important;             /* one per row on very small phones */
+  }
+}
+
+/* Images/embeds never wider than their container */
+img, video, canvas, iframe { max-width: 100%; height: auto; display: block; }
+
+/* Long words/URLs in post content won’t force overflow */
+.post-content { overflow-wrap: anywhere; word-break: break-word; }
+
+/* Drawer/backdrop safety: ensure no stray width issues */
+#nav-drawer, #nav-backdrop { max-width: 100%; }
+
+/* ====== Full-screen mobile drawer ====== */
+@media (max-width: 839px){
+  #nav-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: translateX(-100%) !important;
+    transition: transform .25s ease !important;
+    background: linear-gradient(180deg,
+                var(--nav-dark, #1e3a8a),
+                var(--nav-dark-2, #1b357f)) !important;
+    z-index: 999 !important;
+  }
+  #nav-drawer.open { transform: translateX(0) !important; }
+  /* make backdrop invisible because drawer itself covers screen */
+  #nav-backdrop { display: none !important; }
+}
+
+/* ============ Filters drawer ============ */
+.filters-details { position: relative; }
+
+.filters-details > summary { list-style: none; cursor: pointer; }
+.filters-details > summary::-webkit-details-marker { display: none; }
+
+.filters-count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; margin-left: 6px; padding: 0 6px;
+  border-radius: 999px; font-size: 12px; background: #fff; color: #111;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.filters-panel{
+  margin-top: 10px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.06);
+}
+
+.f-item{ display:flex; flex-direction:column; gap:6px; }
+.f-item > span{ font-size:.85rem; color:#666; }
+.f-item input[type="text"],
+.f-item input[type="date"],
+.f-item select{
+  padding:8px 10px; border:1px solid #ddd; border-radius:8px; min-width:0;
+}
+
+.f-item.f-inline{ flex-direction:row; align-items:center; gap:8px; }
+
+/* Author suggest menu */
+.suggest-menu{
+  position:absolute; z-index:5; background:#fff; border:1px solid #ddd;
+  border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,.08);
+  display:none; max-height:260px; overflow:auto; width:min(280px, 100%);
+}
+
+/* Responsive */
+@media (max-width: 1000px){
+  .filters-panel{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+}
+@media (max-width: 600px){
+  .filters-panel{ grid-template-columns: 1fr; }
+}
+
+/* Hide advanced filters by default; show only when <details> is open */
+.filters-panel { display: none !important; }
+.filters-details[open] .filters-panel { display: grid !important; }
+
+/* Panel layout + inputs */
+.filters-panel{
+  margin-top: 10px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  padding: 12px;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.06);
+}
+.f-item{ display:flex; flex-direction:column; gap:6px; }
+.f-item > span{ font-size:.85rem; color:#666; }
+.f-item input[type="text"], .f-item input[type="date"], .f-item select{
+  padding:8px 10px; border:1px solid #ddd; border-radius:8px; min-width:0;
+}
+.f-item.f-inline{ flex-direction:row; align-items:center; gap:8px; }
+
+/* Count badge on the summary button */
+.filters-details > summary { list-style:none; cursor:pointer; }
+.filters-details > summary::-webkit-details-marker { display:none; }
+.filters-count-badge{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:22px; height:22px; margin-left:6px; padding:0 6px;
+  border-radius:999px; font-size:12px; background:#fff; color:#111;
+  border:1px solid rgba(0,0,0,0.08);
+}
+
+/* Responsive */
+@media (max-width: 1000px){ .filters-panel{ grid-template-columns: repeat(2, minmax(160px,1fr)); } }
+@media (max-width: 600px){ .filters-panel{ grid-template-columns: 1fr; } }
+
+
+/* --- Force advanced filters hidden until <details> is open --- */
+.filters-details:not([open]) .filters-panel { display:none !important; }
+.filters-details[open] .filters-panel { display:grid !important; }
+
+/* Keep summary button tidy */
+.filters-details > summary.btn { white-space: nowrap; }
+
+/* Flash Messages */
+.flash {
+  position: relative;
+  padding: 10px 40px 10px 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.flash-close {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.flash-close:hover { opacity: 1; }
+
+.flash-success { background: #e8f5e9; color: #2e7d32; }
+.flash-error { background: #ffebee; color: #c62828; }

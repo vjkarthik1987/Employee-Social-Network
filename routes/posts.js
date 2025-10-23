@@ -1,6 +1,8 @@
 // routes/posts.js
 const express = require('express');
 const router = express.Router({ mergeParams: true });
+const csrf = require('csurf');
+const csrfProtection = csrf();
 
 /** Auth middleware */
 const auth = require('../middleware/auth');
@@ -23,18 +25,23 @@ const upload = require('../services/storage');
 if (typeof pc?.companyFeed !== 'function') {
   throw new Error('postController.companyFeed is not a function (check your exports).');
 }
-router.get('/feed', ensureAuth, pc.companyFeed);
+router.get('/feed', ensureAuth, csrfProtection, pc.companyFeed);
 
 if (typeof pc?.groupFeed !== 'function') {
   throw new Error('postController.groupFeed is not a function (check your exports).');
 }
-router.get('/g/:groupId', ensureAuth, pc.groupFeed);
+router.get('/g/:groupId', ensureAuth, csrfProtection, pc.groupFeed);
 
 // ---------- Post CRUD ----------
 if (typeof pc?.create !== 'function') {
   throw new Error('postController.create is not a function (check your exports).');
 }
-router.post('/', ensureAuth, upload.single('image'), pc.create);
+router.post('/',
+  ensureAuth,               // your auth guard
+  upload.single('image'),   // multer if used
+  csrfProtection,           // if you run CSRF per-route
+  pc.create
+);
 
 if (typeof pc?.getPost !== 'function') {
   throw new Error('postController.getPost is not a function (check your exports).');

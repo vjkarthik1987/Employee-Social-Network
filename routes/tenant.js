@@ -1,5 +1,7 @@
 // /routes/tenant.js
 const express = require('express');
+const csrf = require('csurf');
+const csrfProtection = csrf();
 
 const { ensureAuth, requireRole } = require('../middleware/auth');
 const tenantAuth = require('./tenantAuth');
@@ -57,7 +59,7 @@ router.use('/groups', groupsRouter);
 router.use('/posts', postsRouter);
 router.use('/', require('./reports'));
 router.use('/profile', ensureAuth, profileRoutes);
-router.get('/feed', ensureAuth, pc.companyFeed);
+router.get('/feed', ensureAuth, csrfProtection, pc.companyFeed);
 router.use('/saved-searches', savedSearches);
 router.use('/admin/retention', adminRetention);
 router.use('/admin/perf', ensureAuth, requireRole('ORG_ADMIN'), adminPerf);

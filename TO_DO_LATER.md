@@ -23,3 +23,4 @@
 - Birthdays and anniversaries should come in the feed
 - Follow Feature
 - Add Links
+- Hashtags and Mentions

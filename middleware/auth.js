@@ -7,14 +7,21 @@ exports.ensureAuth = (req, res, next) => {
 };
 
 exports.requireRole = (...allowed) => {
+  const allowedUpper = allowed.map(r => String(r).toUpperCase());
   return (req, res, next) => {
-    if (!req.isAuthenticated()) {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
       req.flash('error', 'Please log in.');
-      return res.redirect('/auth/login');
+      return res.redirect(`/${req.params?.org || ''}/auth/login`);
     }
-    if (!req.user?.role || !allowed.includes(req.user.role)) {
-      return res.status(403).render('errors/403'); // or flash + redirect
+
+    const userRole = String(req.user?.role || '').toUpperCase();
+    if (!userRole || !allowedUpper.includes(userRole)) {
+      console.warn('[RBAC] 403 role denied', { route: req.originalUrl, need: allowedUpper, have: userRole });
+      // For web routes, a friendly redirect is nicer than a hard 403:
+      req.flash('error', 'You don’t have permission to do that.');
+      return res.redirect('back');
     }
+
     return next();
   };
 };

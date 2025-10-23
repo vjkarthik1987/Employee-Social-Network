@@ -1,0 +1,558 @@
+/* ===== Reset & Vars ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root{
+  --primary: #0a66c2;
+  --bg: #e9ebee;
+  --text: #111;
+
+  /* layout */
+  --leftW: 20vw;           /* left nav width */
+  --rightW: 25vw;          /* right sidebar width */
+  --gutter: 24px;          /* spacing between columns and main */
+}
+
+html, body{
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;      /* no horizontal scroll */
+}
+
+/* ===== Left Navbar (fixed) ===== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 20vw;                   /* or use var(--leftW) if defined */
+  height: 100vh;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 20px 14px;
+  overflow-y: auto;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.08);
+  z-index: 999;
+  border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+/* brand (top section) */
+.nav-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #fff;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.brand:hover { background: rgba(255,255,255,0.1); }
+
+/* vertical links */
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.nav-links a {
+  color: rgba(255,255,255,0.92);
+  text-decoration: none;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.nav-links a:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* logout form */
+.logout-form {
+  margin-top: 8px;
+}
+.logout-form button {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+.logout-form button:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+/* hide mobile drawer bits (since not focusing on mobile now) */
+.hamburger,
+#nav-drawer,
+#nav-backdrop {
+  display: none !important;
+}
+
+/* ===== Right Sidebar (fixed) ===== */
+.rightBar{
+  position: fixed;
+  top: 0; right: 0;
+  width: var(--rightW);
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 900;
+  background: #eef3ff;          /* tweak */
+  border-left: 1px solid #dde3f0;
+  padding: 16px;
+}
+
+/* ===== Main Content (center) ===== */
+.page-container{
+  /* occupy the space between the two fixed sidebars */
+  margin-left: calc(var(--leftW) + var(--gutter));
+  margin-right: calc(var(--rightW) + var(--gutter));
+  width: calc(100vw - (var(--leftW) + var(--rightW) + 2 * var(--gutter)));
+  min-height: 100vh;
+  padding: 20px 0;              /* top/bottom padding; side gutters handled above */
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.app-shell{ min-height: 100%; }
+.col-center{ max-width: 1400px; margin: 0 auto; padding: 0 12px; }
+
+/* ===== Simple bits so you can see it working ===== */
+h1,h2,h3{ line-height: 1.25; }
+.btn{
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: var(--primary); color:#fff; border:0; border-radius: 10px;
+  padding: 9px 14px; font-weight: 600; cursor: pointer;
+}
+.btn:hover{ filter: brightness(.96); }
+
+/* Flash (optional) */
+.flash{ padding:10px 12px; border-radius:8px; margin: 8px 0; }
+.flash-success{ background:#e8f5e9; color:#2e7d32; }
+.flash-error{ background:#ffebee; color:#c62828; }
+
+/* ---- Feed search ---- */
+#feed-search-form .search-row input[name="q"] {
+  border-radius: 999px;     /* <-- was blank before */
+  padding: 10px 16px;
+  border: 1px solid #ccc;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+
+#feed-search-form .search-row input[name="q"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(10,102,194,0.15);
+}
+
+/* Buttons (unified size) */
+.btn, .btn-ghost, #feed-search-form summary.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;                 /* same vertical size */
+  line-height: 1;
+  padding: 0 18px;
+  border-radius: 999px;         /* pill shape */
+  font-weight: 600;
+  font-size: 0.95rem;           /* unified font size */
+  cursor: pointer;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+}
+
+
+.btn:hover { filter: brightness(0.96); }
+
+/* “More filters” ghost button variant */
+.btn-ghost {
+  background: #fff;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.btn-ghost:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Slide effects for filters panel controlled by <details> */
+.filters-details .filters-panel {
+  overflow: hidden;
+  transition: all 0.25s ease;
+  opacity: 0;
+  max-height: 0;
+  /* when <details> is closed, panel is visually collapsed */
+}
+
+/* when <details open> … show panel */
+.filters-details[open] .filters-panel {
+  opacity: 1;
+  max-height: 800px; /* big enough to reveal contents */
+}
+
+.search-input {
+    flex: 1;
+    min-width: 240px;
+    padding: 10px 16px;
+    border: 1px solid #ccc;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.2s;
+}
+.search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(10,102,194,0.15);
+}
+
+.link-button {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 4px 0;
+    font-size: 0.95rem;
+}
+.link-button:hover {
+    color: #084b9a;
+    text-decoration: none;
+}
+
+.filters-panel {
+    background: #fff;
+    border: 1px solid #e6e6e6;
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(200px, 1fr));
+    gap: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .06);
+    transition: all 0.25s ease;
+}
+.filters-panel[hidden] {
+    display: none;
+}
+  
+
+/* Feed grid layout */
+/* One column by default (mobile-first) */
+.feed-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  grid-template-rows: masonry;    /* the magic */
+}
+
+@media (min-width: 768px) {
+  .feed-grid { grid-template-columns: repeat(1, 1fr); }
+}
+@media (min-width: 1200px) {
+  .feed-grid { grid-template-columns: repeat(1, 1fr); }
+}
+
+/* Divider between post body and footer */
+.post-body {
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb; /* light gray separator */
+}
+
+.post-card {
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 5px;
+  break-inside: avoid;       /* Prevent card breaks between columns */
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  vertical-align: top;
+  padding:10px;
+}
+
+.post-content {
+  margin-bottom: 25px;
+}
+  
+  /* Compact card tweaks (feed view) */
+  .post-card .post-content.compact {
+    color: #333;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-height: 5.5em;           /* roughly 3–4 lines */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .post-card .post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .post-header {
+    margin-bottom: 10px;
+  }
+  
+  .post-card .post-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .post-card .post-meta {
+    flex: 1;
+  }
+  
+  .post-card .post-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .post-card img{ max-width: 100%; height: auto; display: block; }
+
+  /* ===== Composer (Post form) ===== */
+.composer-card{
+  background:#fff;
+  border:1px solid #e6e6e6;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  padding: 12px;
+  margin: 12px 0 16px;
+}
+
+.composer-head{
+  display:flex; align-items:center; gap:10px; margin-bottom:8px;
+}
+.composer-avatar{
+  width:38px; height:38px; border-radius:50%; object-fit:cover;
+}
+.composer-head-meta{ display:flex; flex-direction:column; gap:4px; }
+.composer-hint{ font-weight:600; color:#222; }
+.composer-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  font-size:.8rem; color:#6b6b6b; background:#f3f4f6;
+  border:1px solid #e8e8e8; border-radius:10px; padding:2px 8px;
+}
+
+/* .composer-textwrap{
+  padding: 2px 4px; border-radius: 10px; background:#fafafa; border:1px solid #eee;
+} */
+.composer-input {
+  width: 100%;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 999px;           /* <-- makes it perfectly rounded */
+  outline: none;
+  resize: none;
+  padding: 10px 16px;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: #111;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+  overflow: hidden;
+  font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
+}
+
+/* Focus state for elegance */
+.composer-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(10,102,194,0.12);
+  background: #fff;
+}
+
+/* Optional: keep text top-aligned for multiline */
+.composer-input {
+  min-height: 40px;
+  border-radius: 30px;
+}
+
+/* When the textarea grows (multi-line), keep rounded corners consistent */
+.composer-input.expanded {
+  border-radius: 24px;
+}
+
+.composer-input::placeholder{ color:#888; }
+
+.composer-previews{ margin-top:8px; display:flex; flex-direction:column; gap:8px; }
+.link-preview{
+  border:1px solid #e6e6e6; border-radius:12px; background:#fff; overflow:hidden;
+}
+.link-preview .lp-body{
+  display:flex; align-items:center; justify-content:space-between; padding:10px 12px; gap:12px;
+}
+.link-preview .lp-title{ font-weight:700; margin-bottom:2px; }
+.link-preview .lp-url{ font-size:.9rem; color:#555; word-break:break-all; }
+.link-preview .lp-remove{
+  border:0; background:#f4f4f4; width:28px; height:28px; border-radius:50%; cursor:pointer;
+}
+
+.media-preview{
+  position:relative; display:inline-block; max-width:100%;
+  border:1px solid #e6e6e6; border-radius:12px; background:#fff; padding:6px;
+}
+.media-thumb{ max-width:100%; height:auto; border-radius:8px; display:block; }
+.media-remove{
+  position:absolute; top:6px; right:6px; width:28px; height:28px;
+  border:0; background:rgba(0,0,0,0.06); border-radius:50%; cursor:pointer;
+}
+
+.composer-sep{ border:0; border-top:1px solid #eee; margin:10px 0; }
+
+.composer-actions{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+.composer-action{
+  display:inline-flex; align-items:center; gap:.5rem; padding:8px 12px;
+  border:1px solid #e6e6e6; background:#fff; border-radius:999px; cursor:pointer; font-weight:600;
+}
+.composer-action:hover{ background:#f7f9ff; border-color:#dfe7fb; }
+.composer-action .icon{ font-size:1.05rem; line-height:1; }
+
+.composer-card .btn{
+  height:38px; padding:0 16px; border-radius:999px; font-weight:700;
+}
+.composer-card .btn[disabled]{ opacity:.6; cursor:not-allowed; }
+
+.fineprint{ color:#777; font-size:.85rem; }
+.spacer{ flex:1; }
+
+.d-none{ display:none !important; }
+
+/* === Reaction Buttons === */
+.reactions-buttons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.reactions-buttons .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  font-size: 1.05rem;
+  padding: 0;
+  transition: all 0.15s ease-in-out;
+  color: #555;
+  line-height: 1;
+  position: relative;
+}
+
+/* Count bubble (the small number) */
+.reactions-buttons .btn-ghost .rc {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 0.7rem;
+  color: #444;
+  background: #f1f1f1;
+  border-radius: 6px;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+/* Hover & active states */
+.reactions-buttons .btn-ghost:hover {
+  background: #f0f7ff;
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: scale(1.1);
+}
+
+.reactions-buttons .btn-ghost.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Muted text below reactions */
+.reactions .muted {
+  color: #666;
+  font-size: 0.85rem;
+  margin-left: 4px;
+}
+
+/* Prevent overflow from long unbroken strings */
+.post-card,
+.post-body,
+.post-content,
+.post-content.compact,
+.link-title,
+.link-desc,
+.card-metrics,
+.post-meta,
+.post-time {
+  overflow-wrap: anywhere;      /* modern, best for arbitrary tokens */
+  word-break: break-word;       /* safety for older engines */
+}
+
+/* Make flex children allow shrinking/truncation in header row */
+.post-header .post-meta {
+  min-width: 0;                 /* allows wrapping inside flex container */
+}
+
+/* Optional: nicer 3–4 line clamp for compact cards */
+.post-content.compact {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;        /* clamp lines in compact mode */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.reactions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 6px;
+}
+
+/* Comments section on the right */
+.comments-count {
+  font-size: 0.9rem;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.comments-count span {
+  font-weight: 600;
+  color: #222;
+}
+

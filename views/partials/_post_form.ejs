@@ -1,102 +1,248 @@
 <!-- views/partials/_post_form.ejs -->
-<form method="POST" action="/<%= company.slug %>/posts" enctype="multipart/form-data" class="composer-card">
+<form method="POST" action="/<%= company.slug %>/posts" enctype="multipart/form-data" class="composer-card" id="composerForm" novalidate>
   <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-  <!-- top row: avatar + rounded input -->
-  <div class="composer-top">
+  <input type="hidden" name="type" id="postTypeSel" value="TEXT">
+
+  <% if (typeof groupId !== 'undefined' && groupId) { %>
+    <input type="hidden" name="groupId" value="<%= groupId %>">
+  <% } %>
+
+  <!-- Header: avatar + hint -->
+  <div class="composer-head">
+    <img class="composer-avatar" src="<%= (currentUser?.avatarUrl || '/img/avatar.png') %>" alt="">
+    <div class="composer-head-meta">
+      <div class="composer-hint">
+        <%= currentUser ? `What's on your mind, ${currentUser.fullName?.split(' ')[0] || ''}?` : 'Start a post' %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Textarea -->
+  <div class="composer-textwrap">
     <textarea name="content"
-              rows="2"
+              rows="1"
               class="composer-input"
-              placeholder="<%= currentUser ? `What's on your mind, ${currentUser.fullName?.split(' ')[0] || ''}?` : 'Start a post' %>"></textarea>
+              placeholder="Write something… (paste a link to show a preview)"></textarea>
+  </div>
+
+  <!-- Inline Previews -->
+  <div class="composer-previews">
+    <!-- Link preview -->
+    <div id="linkPreview" class="link-preview d-none" aria-live="polite">
+      <div class="lp-body">
+        <div class="lp-text">
+          <div class="lp-title">Link</div>
+          <div class="lp-url" id="lpUrl"></div>
+        </div>
+        <button class="lp-remove" type="button" id="removeLinkPreview" title="Remove link">×</button>
+      </div>
+      <input type="hidden" name="linkUrl" id="linkUrlHidden">
+    </div>
+
+    <!-- Media preview -->
+    <div id="mediaPreview" class="media-preview d-none">
+      <img id="mediaImg" alt="" class="media-thumb d-none"/>
+      <video id="mediaVideo" class="media-thumb d-none" playsinline controls></video>
+      <button type="button" class="media-remove" id="removeMediaPreview" title="Remove file">×</button>
+    </div>
   </div>
 
   <hr class="composer-sep"/>
 
-  <!-- actions row: video / photo-video / link -->
+  <!-- Actions -->
   <div class="composer-actions">
-    <button type="button" class="composer-action" data-action="VIDEO" disabled title="Video (coming soon)">
-      <span class="icon" aria-hidden="true">🎥</span><span>Live/Video</span>
-    </button>
-
     <label class="composer-action" title="Photo/Video">
-      <span class="icon" aria-hidden="true">🖼️</span><span>Photo/video</span>
-      <!-- file input stays inside label so click triggers file picker -->
+      <span class="icon" aria-hidden="true">🖼️</span><span>Photo/Video</span>
       <input id="composerFile" type="file" name="image" accept="image/*,video/*" hidden>
     </label>
 
     <button type="button" class="composer-action" data-action="LINK" title="Share a link">
       <span class="icon" aria-hidden="true">🔗</span><span>Link</span>
     </button>
+
+    <div class="spacer"></div>
+
+    <button class="btn" type="submit" id="postBtn" disabled>Post</button>
   </div>
 
-  <!-- hidden / toggled rows (reuse your original fields) -->
-  <div id="linkHint" class="d-none" style="margin-top:.35rem;">
-    <small>Paste your link in the text box above.</small>
-  </div>
-
-  <div id="imageRow" class="d-none" style="margin-top:.8rem;">
-    <!-- keep your original constraints -->
-    <div><small>JPG/PNG/GIF • up to 2 MB</small></div>
+  <!-- Hidden helper row for IMAGE -->
+  <div id="imageRow" class="d-none" style="margin-top:.6rem;">
+    <div class="fineprint">JPG/PNG/GIF/MP4 • up to 2 MB (images) / 10 MB (video)</div>
     <input type="text" name="imageAlt" class="input" placeholder="Describe the image (alt text, optional)" style="margin-top:.4rem;">
-  </div>
-
-  <!-- keep the original select (now hidden) so backend stays unchanged -->
-  <select name="type" id="postTypeSel" style="display:none;" required>
-    <option value="TEXT" selected>Text</option>
-    <option value="LINK">Link</option>
-    <option value="IMAGE">Image</option>
-  </select>
-
-  <% if (typeof groupId !== 'undefined' && groupId) { %>
-    <input type="hidden" name="groupId" value="<%= groupId %>">
-  <% } %>
-
-  <div style="display:flex;justify-content:flex-end;margin-top:.8rem;">
-    <button class="btn" type="submit">Post</button>
   </div>
 </form>
 
 <script>
 (function(){
-  const sel     = document.getElementById('postTypeSel');
-  const fileInp = document.getElementById('composerFile');
-  const linkHint= document.getElementById('linkHint');
-  const imageRow= document.getElementById('imageRow');
-  const textarea= document.querySelector('.composer-input');
+  const form      = document.getElementById('composerForm');
+  const textarea  = form.querySelector('.composer-input');
+  const typeSel   = document.getElementById('postTypeSel');
+  const fileInp   = document.getElementById('composerFile');
+  const postBtn   = document.getElementById('postBtn');
+  const imageRow  = document.getElementById('imageRow');
 
-  // default = TEXT
-  setType('TEXT');
+  // Link preview nodes
+  const linkPreview = document.getElementById('linkPreview');
+  const lpUrl       = document.getElementById('lpUrl');
+  const linkUrlHidden = document.getElementById('linkUrlHidden');
+  const removeLinkPreview = document.getElementById('removeLinkPreview');
 
-  // action buttons
-  document.currentScript.previousElementSibling // the form wrapper
-  const form = document.currentScript.previousElementSibling; // <form>
-  form.querySelectorAll('.composer-action[data-action]').forEach(btn => {
+  // Media preview nodes
+  const mediaPreview = document.getElementById('mediaPreview');
+  const mediaImg     = document.getElementById('mediaImg');
+  const mediaVideo   = document.getElementById('mediaVideo');
+  const removeMediaPreview = document.getElementById('removeMediaPreview');
+
+  // —————————————————————————————
+  // Helpers
+  // —————————————————————————————
+  function setType(t){
+    typeSel.value = t;
+    linkPreview.classList.toggle('d-none', t !== 'LINK' || !linkUrlHidden.value);
+    imageRow.classList.toggle('d-none', t !== 'IMAGE');
+  }
+
+  function autoGrow(el){
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 320) + 'px';
+  }
+
+  function firstUrlFromText(text){
+    const m = text.match(/https?:\/\/[^\s]+/i);
+    return m ? m[0] : '';
+  }
+
+  function enableIfHasContent(){
+    const hasText = (textarea.value || '').trim().length > 0;
+    const hasMedia = !!(fileInp.files && fileInp.files.length);
+    const hasLink = !!(linkUrlHidden.value);
+    postBtn.disabled = !(hasText || hasMedia || hasLink);
+  }
+
+  function resetMediaPreview(){
+    mediaImg.src = '';
+    mediaVideo.removeAttribute('src');
+    mediaImg.classList.add('d-none');
+    mediaVideo.classList.add('d-none');
+    mediaPreview.classList.add('d-none');
+    if (fileInp) fileInp.value = '';
+    if (typeSel.value === 'IMAGE') setType('TEXT');
+  }
+
+  function resetLinkPreview(){
+    linkUrlHidden.value = '';
+    lpUrl.textContent = '';
+    linkPreview.classList.add('d-none');
+    if (typeSel.value === 'LINK') setType('TEXT');
+  }
+
+  // —————————————————————————————
+  // Textarea auto-expand + link detect
+  // —————————————————————————————
+  autoGrow(textarea);
+  textarea.addEventListener('input', () => {
+    autoGrow(textarea);
+    const found = firstUrlFromText(textarea.value);
+    if (found && !fileInp.files.length) {
+      // only show link preview if not in IMAGE mode
+      linkUrlHidden.value = found;
+      lpUrl.textContent = found;
+      setType('LINK');
+    } else if (!found && typeSel.value === 'LINK') {
+      resetLinkPreview();
+      setType('TEXT');
+    }
+    enableIfHasContent();
+  });
+
+  // Action button → LINK (puts focus and hints user to paste)
+  form.querySelectorAll('.composer-action[data-action="LINK"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const action = btn.getAttribute('data-action');
-      if (action === 'LINK') {
-        setType('LINK');
-        textarea?.focus();
-      } else if (action === 'VIDEO') {
-        // not implemented; you can wire later
+      setType('LINK');
+      textarea.focus();
+      // if a URL already exists in text, show it
+      const found = firstUrlFromText(textarea.value);
+      if (found) {
+        linkUrlHidden.value = found;
+        lpUrl.textContent = found;
+        linkPreview.classList.remove('d-none');
       }
+      enableIfHasContent();
     });
   });
 
-  // file picker -> IMAGE
-  if (fileInp) {
-    fileInp.addEventListener('click', () => setType('IMAGE'));
-    fileInp.addEventListener('change', () => {
-      if (fileInp.files && fileInp.files.length) {
-        setType('IMAGE');
-        imageRow.classList.remove('d-none');
-      }
-    });
-  }
+  removeLinkPreview.addEventListener('click', () => {
+    resetLinkPreview();
+    enableIfHasContent();
+  });
 
-  function setType(t){
-    sel.value = t;
-    // toggle helper rows
-    linkHint?.classList.toggle('d-none', t !== 'LINK');
-    imageRow?.classList.toggle('d-none', t !== 'IMAGE');
-  }
+  // —————————————————————————————
+  // File picker → media preview (Image/Video)
+  // —————————————————————————————
+  fileInp.addEventListener('click', () => setType('IMAGE'));
+
+  fileInp.addEventListener('change', () => {
+    if (!(fileInp.files && fileInp.files.length)) {
+      resetMediaPreview();
+      enableIfHasContent();
+      return;
+    }
+
+    const f = fileInp.files[0];
+    const isImage = /^image\//i.test(f.type);
+    const isVideo = /^video\//i.test(f.type);
+
+    // Size guard: 2MB image, 10MB video
+    if (isImage && f.size > 2 * 1024 * 1024) {
+      alert('Images up to 2 MB only.');
+      resetMediaPreview();
+      return;
+    }
+    if (isVideo && f.size > 10 * 1024 * 1024) {
+      alert('Videos up to 10 MB only.');
+      resetMediaPreview();
+      return;
+    }
+
+    // Switching away from link preview if any
+    resetLinkPreview();
+
+    const url = URL.createObjectURL(f);
+    mediaPreview.classList.remove('d-none');
+
+    if (isImage) {
+      mediaImg.src = url;
+      mediaImg.classList.remove('d-none');
+      mediaVideo.classList.add('d-none');
+    } else if (isVideo) {
+      mediaVideo.src = url;
+      mediaVideo.classList.remove('d-none');
+      mediaImg.classList.add('d-none');
+    } else {
+      alert('Unsupported file type.');
+      resetMediaPreview();
+      return;
+    }
+
+    setType('IMAGE');
+    enableIfHasContent();
+  });
+
+  removeMediaPreview.addEventListener('click', () => {
+    resetMediaPreview();
+    enableIfHasContent();
+  });
+
+  // —————————————————————————————
+  // Submit handling
+  // —————————————————————————————
+  form.addEventListener('submit', () => {
+    postBtn.disabled = true;
+    postBtn.textContent = 'Posting…';
+  });
+
+  // Initial
+  setType('TEXT');
+  enableIfHasContent();
 })();
 </script>

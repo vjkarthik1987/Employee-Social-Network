@@ -1,8 +1,14 @@
 <!-- views/partials/_post_card.ejs -->
+<%
+  const isCompact = typeof compact !== 'undefined' && compact;
+  const maxLength = 200;
+  const plainText = (post.richText || '').replace(/<[^>]*>/g, ''); // strip HTML
+  const shortText = plainText.length > maxLength ? plainText.slice(0, maxLength) + '…' : plainText;
+%>
 <article class="post-card" data-post-id="<%= post._id %>" aria-labelledby="post-title-<%= post._id %>">
   
   <!-- Header -->
-  <header class="post-header">
+  <header class="post-header" style="margin-bottom: 15px;">
     <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" aria-label="<%= (post.authorId?.fullName || 'User') + ' profile' %>">
       <img
         class="post-avatar"
@@ -14,14 +20,12 @@
       />
     </a>
 
-    <div class="post-meta">
+    <!-- Post Header -->
+    <div class="post-meta" >
       <div class="post-author">
-        <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
+        <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight: bold;">
           <%= post.authorId?.fullName || 'Unknown User' %>
         </a>
-        <% if (post.authorId?.title) { %>
-          <span class="post-title"> · <%= post.authorId.title %></span>
-        <% } %>
       </div>
 
       <div class="post-time" data-ts="<%= (post.createdAt || post.publishedAt || post.updatedAt || new Date()).toISOString ? (post.createdAt || post.publishedAt || post.updatedAt) : new Date(post.createdAt || post.publishedAt || Date.now()) %>">
@@ -29,24 +33,26 @@
           const _ts = new Date(post.createdAt || post.publishedAt || Date.now());
           const _inGroup = !!(post.groupId && post.group);
         %>
-        <time datetime="<%= _ts.toISOString() %>"><%= _ts.toLocaleString() %></time>
+        <time datetime="<%= _ts.toISOString() %>" style="font-size: smaller;"><%= _ts.toLocaleString() %></time>
         <% if (_inGroup) { %>
           · in
           <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group?.name %></a>
-        <% } %>
-        <% if (post.type) { %>
-          · <span class="muted" title="Post type"><%= String(post.type).toLowerCase() %></span>
         <% } %>
       </div>
     </div>
   </header>
 
-  <!-- Body -->
+  <!-- Post Body -->
   <section class="post-body">
     <% /* Assume post.richText is sanitized HTML. */ %>
     <% if (post.richText) { %>
-      <div class="post-content"><%- post.richText %></div>
+      <% if (isCompact) { %>
+        <div class="post-content compact"><%= shortText %></div>
+      <% } else { %>
+        <div class="post-content"><%- post.richText %></div>
+      <% } %>
     <% } %>
+    
 
     <% /* First attachment (image) with Cloudinary smart transform if relevant */ %>
     <% if (post.firstAttachmentUrl) {
@@ -85,7 +91,7 @@
     <% } %>
   </section>
 
-  <!-- Footer -->
+  <!-- Post Footer -->
   <footer class="post-footer">
     <% /* Derived helpers & safe fallbacks */ %>
     <%
@@ -103,25 +109,26 @@
       const __viewed = (typeof viewedPostIds !== 'undefined') && viewedPostIds && viewedPostIds.has(String(post._id));
     %>
 
-    <!-- Metrics -->
-    <div class="card-metrics" aria-label="Post metrics">
-      <span title="Unique per session views">👁 <span data-count="views"><%= __views %></span> views</span>
-      <span title="All reactions (sum of types)">🎉 <span data-count="reactions"><%= __totalReactions %></span> reactions</span>
-      <span title="Visible comments">💬 <span data-count="comments"><%= __comments %></span> comments</span>
-      <span title="(Reactions + Comments) / Views">↗️ <span data-rate="engagement"><%= __engRate.toFixed(1) %></span>% engagement</span>
-      <% if (__viewed) { %>
-        <span class="muted" aria-label="You viewed this post">👁 Viewed</span>
-      <% } %>
-    </div>
-
+    
     <!-- Reactions -->
     <div class="post-reactions reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
       <%- include('./_reactions_bar', { company, user, post }) %>
     </div>
 
+    <!-- <div class="card-metrics" aria-label="Post metrics">
+      <span title="Unique per session views">👁 <span data-count="views"><%= __views %></span> views</span>
+      <span title="(Reactions + Comments) / Views">↗️ <span data-rate="engagement"><%= __engRate.toFixed(1) %></span>% engagement</span>
+      <% if (__viewed) { %>
+        <span class="muted" aria-label="You viewed this post">👁 Viewed</span>
+      <% } %>
+    </div> -->
+
     <!-- Actions -->
     <div class="post-actions admin-links">
-      <a class="btn-link" href="/<%= company.slug %>/posts/<%= post._id %>" aria-label="Open post">Open</a>
+      <% if (isCompact) { %>
+        <a class="btn-link" href="/<%= company.slug %>/posts/<%= post._id %>" aria-label="Open post">Open</a>
+      <% } %>
+      
 
       <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
         <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');" aria-label="Delete post form">

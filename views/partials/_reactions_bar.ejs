@@ -1,6 +1,6 @@
 
 
-<div class="reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
+<div class="reactions-bar" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
   <%
   // _reactions_bar.ejs
   // Inputs: company, user, post
@@ -19,7 +19,7 @@
     -->
   </div>
 
-  <small class="muted">
-    <span data-total-reactions><%= total %></span> reactions • <%= post.commentsCount || 0 %> comments
-  </small>
+  <div class="comments-count">
+    💬<span data-total-reactions><%= post.commentsCount || 0 %> comments
+  </div>
 </div>

@@ -1,26 +1,28 @@
 <% layout('layouts/_layout') %>
 
 <section>
-  <h2 style="margin:0 0 12px;">Company Feed</h2>
-
+  <h2>Welcome to our internal social network, <%= `${user.fullName?.split(' ')[0] || ''}` %></h2>
   <!-- Search + Filters -->
   <form
     id="feed-search-form"
     method="GET"
     action="<%= (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '' %>"
     class="feed-search"
-    style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin:12px 0 6px;"
+    style="display:grid;gap:8px;margin:12px 0 6px;"
   >
-  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <!-- Keyword -->
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <input type="hidden" name="page"  value="<%= typeof page !== 'undefined' ? page : 1 %>"/>
+    <input type="hidden" name="limit" value="<%= typeof limit !== 'undefined' ? limit : 15 %>"/>
+
+    <!-- ROW 1: Search box + Search button -->
+    <div class="search-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-bottom: 1px;">
       <input
         type="text"
         name="q"
         list="search-suggestions"
         placeholder="Search posts…"
         value="<%= (filters && filters.q) ? filters.q : '' %>"
-        style="flex:1;min-width:220px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;"
+        class="search-input"
       />
       <% if (Array.isArray(recentSearches) && recentSearches.length) { %>
         <datalist id="search-suggestions">
@@ -29,462 +31,343 @@
           <% }) %>
         </datalist>
       <% } %>
-
-      <!-- Type -->
-      <select name="type" id="type-select" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;">
-        <option value="" <%= (!filters || !filters.type) ? 'selected' : '' %>>All types</option>
-        <option value="TEXT"  <%= (filters && filters.type==='TEXT') ? 'selected' : '' %>>Text</option>
-        <option value="IMAGE" <%= (filters && filters.type==='IMAGE') ? 'selected' : '' %>>Image</option>
-        <option value="LINK"  <%= (filters && filters.type==='LINK') ? 'selected' : '' %>>Link</option>
-      </select>
-
-      <!-- Author (async picker) -->
-      <input
-        type="text"
-        id="author-picker"
-        placeholder="<%= (filters && filters.authorId) ? 'Author selected' : 'Author (pick user)' %>"
-        autocomplete="off"
-        value=""
-        style="min-width:220px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;"
-      />
-      <input type="hidden" name="authorId" id="authorId" value="<%= (filters && filters.authorId) ? filters.authorId : '' %>"/>
-      <div id="author-suggest" style="position:relative;">
-        <div id="author-suggest-menu" style="position:absolute;z-index:5;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.08);display:none;max-height:260px;overflow:auto;width:280px;"></div>
-      </div>
-
-      <!-- People (name/title) -->
-      <input
-        type="text"
-        name="people"
-        placeholder="People (name or title)"
-        value="<%= (filters && filters.people) ? filters.people : '' %>"
-        style="flex:1;min-width:200px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;"
-      />
-
-      <!-- Date range -->
-      <input type="date" name="from" value="<%= (filters && filters.from) ? filters.from : '' %>" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;"/>
-      <input type="date" name="to"   value="<%= (filters && filters.to)   ? filters.to   : '' %>" style="padding:8px 10px;border:1px solid #ddd;border-radius:8px;"/>
-
-      <!-- My Groups (company feed only) -->
-      <% if (typeof group === 'undefined') { %>
-        <label style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fafafa;">
-          <input type="checkbox" name="myGroups" value="1" <%= (filters && filters.myGroups) ? 'checked' : '' %> />
-          My groups only
-        </label>
-      <% } %>
-    </div>
-
-    <div style="display:none;"></div> <!-- grid filler -->
-
-    <!-- Actions -->
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <input type="hidden" name="page"  value="<%= typeof page !== 'undefined' ? page : 1 %>"/>
-      <input type="hidden" name="limit" value="<%= typeof limit !== 'undefined' ? limit : 15 %>"/>
       <button class="btn" type="submit">Search</button>
-      <% if ((filters && (filters.q || filters.type || filters.authorId || filters.people || filters.from || filters.to || filters.myGroups))) { %>
-        <a class="btn" href="<%= (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '' %>" style="background:#f2f2f2;color:#333;border:1px solid #e5e5e5;">Clear</a>
-      <% } %>
-
-      <% // Build Export CSV URL preserving filters
-         const exportQP = new URLSearchParams();
-         if (filters && filters.q) exportQP.set('q', filters.q);
-         if (filters && filters.type) exportQP.set('type', filters.type);
-         if (filters && filters.authorId) exportQP.set('authorId', filters.authorId);
-         if (filters && filters.people) exportQP.set('people', filters.people);
-         if (filters && filters.from) exportQP.set('from', filters.from);
-         if (filters && filters.to) exportQP.set('to', filters.to);
-         if (filters && filters.myGroups) exportQP.set('myGroups', '1');
-         if (typeof group !== 'undefined' && group) exportQP.set('groupId', String(group._id));
-         const exportHref = `/${company.slug}/export/posts.csv?` + exportQP.toString();
-      %>
-      <a class="btn" href="<%= exportHref %>" title="Download CSV of current results">Export CSV</a>
     </div>
   </form>
 
-  <!-- Saved Searches Toolbar -->
-  <div id="saved-searches" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0 12px;">
-    <button id="btn-save-search" class="btn" type="button" title="Save current filter">⭐ Save this search</button>
-    <div id="saved-searches-list" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-  </div>
-
-  <!-- Chips -->
-  <% if ((filters && (filters.q || filters.type || filters.authorId || filters.people || filters.from || filters.to || filters.myGroups)) || (typeof total !== 'undefined')) { %>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;">
-      <% if (typeof total !== 'undefined') { %>
-        <span style="font-size:12px;color:#666;border:1px solid #eee;padding:4px 8px;border-radius:999px;">Results: <strong><%= total %></strong></span>
-      <% } %>
-      <% function chip(href, label){ %>
-        <a href="<%= href %>" style="font-size:12px;text-decoration:none;color:#333;border:1px solid #eee;padding:4px 8px;border-radius:999px;background:#f7f7f7;"><%= label %> ✕</a>
-      <% } %>
-      <%
-        const base = (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '';
-        function qpKeep(obj){
-          const qp = new URLSearchParams();
-          if (filters && filters.q && !obj.dropQ) qp.set('q', filters.q);
-          if (filters && filters.type && !obj.dropType) qp.set('type', filters.type);
-          if (filters && filters.authorId && !obj.dropAuthor) qp.set('authorId', filters.authorId);
-          if (filters && filters.people && !obj.dropPeople) qp.set('people', filters.people);
-          if (filters && filters.from && !obj.dropFrom) qp.set('from', filters.from);
-          if (filters && filters.to && !obj.dropTo) qp.set('to', filters.to);
-          if (filters && filters.myGroups && !obj.dropMyGroups) qp.set('myGroups', '1');
-          qp.set('page','1'); qp.set('limit', String(typeof limit !== 'undefined' ? limit : 15));
-          return qp;
-        }
-      %>
-      <% if (filters && filters.q) { const qps = qpKeep({ dropQ:true }); %>
-        <%= chip(`${base}?${qps.toString()}`, `“${filters.q}”`) %>
-      <% } %>
-      <% if (filters && filters.type) { const qps = qpKeep({ dropType:true }); %>
-        <%= chip(`${base}?${qps.toString()}`, `Type: ${filters.type}`) %>
-      <% } %>
-      <% if (filters && filters.authorId) { const qps = qpKeep({ dropAuthor:true }); %>
-        <%= chip(`${base}?${qps.toString()}`, `Author`) %>
-      <% } %>
-      <% if (filters && filters.people) { const qps = qpKeep({ dropPeople:true }); %>
-        <%= chip(`${base}?${qps.toString()}`, `People: ${filters.people}`) %>
-      <% } %>
-      <% if (filters && filters.from) { const qps = qpKeep({ dropFrom:true }); %>
-        <%= chip(`${base}?${qps.toString()}`, `From: ${filters.from}`) %>
-      <% } %>
-      <% if (filters && filters.to) { const qps = qpKeep({ dropTo:true }); %>
-        <%= chip(`${base}?${qps.toString()}`, `To: ${filters.to}`) %>
-      <% } %>
-      <% if (filters && filters.myGroups) { const qps = qpKeep({ dropMyGroups:true }); %>
-        <%= chip(`${base}?${qps.toString()}`, `My groups`) %>
-      <% } %>
-    </div>
-  <% } %>
-
-  <!-- Post form -->
+  <!-- ✏️ Post Composer (only if logged in) -->
   <% if (user) { %>
-    <%- include('../partials/_post_form', { company, groupId: (typeof group !== 'undefined' && group) ? group._id : null }) %>
+    <%- include('../partials/_post_form', {
+      company,
+      groupId: (typeof group !== 'undefined' && group) ? group._id : null,
+      currentUser: user,
+      csrfToken
+    }) %>
   <% } %>
-
-  <!-- Empty state -->
+  
+  <!-- Results + Posts -->
   <% if (!posts || posts.length === 0) { %>
-    <div class="empty">No posts found<%= (filters && (filters.q || filters.type || filters.authorId || filters.people || filters.from || filters.to || filters.myGroups)) ? ' for your filter' : '' %>. Try a different query.</div>
+    <div class="empty">No posts found. Try a different query.</div>
   <% } %>
 
-  <!-- Posts + matched excerpt -->
-  <% (posts || []).forEach(function(post){ %>
-    <%- include('../partials/_post_card', { company, user, post }) %>
-
-    <% if (filters && filters.q && post && post._qExcerpt) { %>
-      <div class="match-excerpt" style="margin:-8px 0 12px 8px;padding:6px 8px;background:#fff7cc;border:1px solid #ffe08a;border-radius:8px;font-size:13px;color:#5a4b00;">
-        <strong>Matched:</strong> <span><%- post._qExcerpt %></span>
-      </div>
-    <% } %>
-  <% }) %>
-
-  <!-- Pagination -->
-  <% if (typeof page !== 'undefined' && typeof totalPages !== 'undefined') { %>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.75rem;gap:8px;flex-wrap:wrap;">
-      <div><small>Page <%= page %> of <%= totalPages %> <% if (typeof total !== 'undefined') { %> • <%= total %> result<%= total===1 ? '' : 's' %><% } %></small></div>
-      <div style="display:flex;gap:8px;">
-        <%
-          function qpForPage(p){
-            const qp = new URLSearchParams();
-            if (filters && filters.q) qp.set('q', filters.q);
-            if (filters && filters.type) qp.set('type', filters.type);
-            if (filters && filters.authorId) qp.set('authorId', filters.authorId);
-            if (filters && filters.people) qp.set('people', filters.people);
-            if (filters && filters.from) qp.set('from', filters.from);
-            if (filters && filters.to) qp.set('to', filters.to);
-            if (filters && filters.myGroups) qp.set('myGroups', '1');
-            qp.set('limit', String(typeof limit !== 'undefined' ? limit : 15));
-            qp.set('page', String(p));
-            return qp.toString();
-          }
-          const base = (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '';
-        %>
-        <% if (page > 1) { %>
-          <a class="btn" href="<%= base %>?<%= qpForPage(page-1) %>">← Newer</a>
-        <% } else { %><span></span><% } %>
-        <% if (page < totalPages) { %>
-          <a class="btn" href="<%= base %>?<%= qpForPage(page+1) %>">Older →</a>
-        <% } %>
-      </div>
-    </div>
-  <% } %>
+  <div class="feed-grid">
+    <% (posts || []).forEach(function(post){ %>
+      <%- include('../partials/_post_card', { company, user, post, compact: true }) %>
+    <% }) %>
+  </div>
 </section>
 
 <script>
-  (function () {
-    const ORG = "<%= company.slug %>";
-    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
-  
-    /* ---------- 1. Reactions ---------- */
-    document.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-react]');
-      if (!btn) return;
-  
-      const bar = btn.closest('[data-react-scope]');
-      if (!bar) return;
-  
-      const type = btn.getAttribute('data-react');
-      const targetType = bar.getAttribute('data-target-type');
-      const targetId = bar.getAttribute('data-target-id');
-      if (!targetType || !targetId) return;
-  
-      try {
-        const resp = await fetch(`/${ORG}/api/reactions`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'CSRF-Token': CSRF
-          },
-          body: JSON.stringify({ targetType, targetId, reactionType: type, _csrf: CSRF })
-        });
-  
-        const data = await resp.json();
-        if (!data.ok) {
-          alert(data.error || 'Could not react.');
-          return;
-        }
-  
-        const spans = {
-          LIKE:       bar.querySelector('[data-rc="LIKE"]'),
-          HEART:      bar.querySelector('[data-rc="HEART"]'),
-          CELEBRATE:  bar.querySelector('[data-rc="CELEBRATE"]'),
-          SUPPORT:    bar.querySelector('[data-rc="SUPPORT"]'),
-          LAUGH:      bar.querySelector('[data-rc="LAUGH"]'),
-          INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
-          THANKS:     bar.querySelector('[data-rc="THANKS"]')
-        };
-        const bump = (el, d) => { if (el) el.textContent = Math.max(0, (parseInt(el.textContent || '0', 10) + d)); };
-  
-        if (data.added) {
-          bump(spans[data.added], +1);
-          bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-          bar.querySelector(`[data-react="${data.added}"]`)?.classList.add('active');
-        }
-        if (data.removed) {
-          bump(spans[data.removed], -1);
-          bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-        }
-        if (data.changedTo) {
-          if (data.prevType && data.prevType !== data.changedTo) bump(spans[data.prevType], -1);
-          bump(spans[data.changedTo], +1);
-          bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
-          bar.querySelector(`[data-react="${data.changedTo}"]`)?.classList.add('active');
-        }
-  
-        const totalEl = bar.querySelector('[data-total-reactions]');
-        if (totalEl) {
-          const total = Array.from(bar.querySelectorAll('.rc'))
-            .reduce((n, s) => n + parseInt(s.textContent || '0', 10), 0);
-          totalEl.textContent = String(total);
-        }
-      } catch (err) {
-        console.error('Reaction error', err);
-      }
-    });
-  
-    /* ---------- 2. Delete Post ---------- */
-    document.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-delete-post]');
-      if (!btn) return;
-      if (!confirm('Delete this post?')) return;
-  
-      const postId = btn.getAttribute('data-delete-post');
-      try {
-        const resp = await fetch(`/${ORG}/api/posts/${postId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'CSRF-Token': CSRF
-          },
-          body: JSON.stringify({ _csrf: CSRF })
-        });
-        if (resp.ok) window.location.reload();
-        else alert('Could not delete post.');
-      } catch (err) {
-        console.error('Delete error', err);
-      }
-    });
-  
-    /* ---------- 3. Reporting ---------- */
-    document.addEventListener('click', async (e) => {
-      const btn = e.target.closest('[data-report]');
-      if (!btn) return;
-  
-      const targetType = btn.getAttribute('data-report');
-      const targetId = btn.getAttribute('data-target-id');
-      const reason = prompt('Reason for reporting this content?');
-      if (!reason) return;
-  
-      try {
-        const resp = await fetch(`/${ORG}/api/reports`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'CSRF-Token': CSRF
-          },
-          body: JSON.stringify({ targetType, targetId, reason, _csrf: CSRF })
-        });
-        if (resp.ok) alert('Reported. Moderators will review soon.');
-        else alert('Failed to report.');
-      } catch (err) {
-        console.error('Report error', err);
-      }
-    });
-  
-    /* ---------- 4. Saved Searches ---------- */
-    const scope = "<%= (typeof group !== 'undefined' && group) ? 'GROUP' : 'COMPANY' %>";
-    const groupId = "<%= (typeof group !== 'undefined' && group) ? String(group._id) : '' %>";
-    const listEl = document.getElementById('saved-searches-list');
-    const saveBtn = document.getElementById('btn-save-search');
-    const form = document.getElementById('feed-search-form');
-  
-    function buildQuery(params) {
-      const qp = new URLSearchParams();
-      if (params.q) qp.set('q', params.q);
-      if (params.type) qp.set('type', params.type);
-      if (params.authorId) qp.set('authorId', params.authorId);
-      if (params.people) qp.set('people', params.people);
-      if (params.from) qp.set('from', params.from);
-      if (params.to) qp.set('to', params.to);
-      if (params.myGroups) qp.set('myGroups', '1');
-      qp.set('page', '1');
-      qp.set('limit', '<%= typeof limit !== "undefined" ? String(limit) : "15" %>');
-      return qp.toString();
-    }
-  
-    async function loadSaved() {
-      try {
-        const qs = new URLSearchParams({ scope, ...(scope === 'GROUP' ? { groupId } : {}) });
-        const resp = await fetch(`/${ORG}/saved-searches?` + qs.toString(), { headers: { 'Accept': 'application/json' } });
-        const data = await resp.json();
-        if (!data.ok) return;
-        renderList(data.items || []);
-      } catch (e) { console.error(e); }
-    }
-  
-    function renderList(items) {
-      listEl.innerHTML = '';
-      items.forEach(item => {
-        const a = document.createElement('a');
-        a.href = `<%= (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '' %>?` + buildQuery({
-          q: item.q, type: item.type, authorId: item.authorId, people: item.people,
-          from: item.fromDate ? new Date(item.fromDate).toISOString().slice(0, 10) : '',
-          to: item.toDate ? new Date(item.toDate).toISOString().slice(0, 10) : '',
-          myGroups: !!item.myGroups
-        });
-        a.textContent = (item.pinned ? '📌 ' : '') + item.name;
-        a.className = 'btn';
-        a.style.background = '#f4f4f6';
-        a.style.border = '1px solid #e7e7ea';
-        a.style.color = '#333';
-  
-        const wrap = document.createElement('span');
-        wrap.style.display = 'inline-flex';
-        wrap.style.alignItems = 'center';
-        wrap.style.gap = '4px';
-        wrap.appendChild(a);
-  
-        const pin = document.createElement('button');
-        pin.type = 'button';
-        pin.textContent = item.pinned ? 'Unpin' : 'Pin';
-        pin.className = 'btn';
-        pin.style.padding = '4px 8px';
-        pin.addEventListener('click', async (ev) => {
-          ev.preventDefault();
-          await fetch(`/${ORG}/saved-searches/${item._id}/pin`, {
-            method: 'POST',
-            headers: {
-              'Accept': 'application/json',
-              'CSRF-Token': CSRF
-            },
-            body: JSON.stringify({ _csrf: CSRF })
-          });
-          loadSaved();
-        });
-        wrap.appendChild(pin);
-  
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.textContent = 'Delete';
-        del.className = 'btn';
-        del.style.padding = '4px 8px';
-        del.addEventListener('click', async (ev) => {
-          ev.preventDefault();
-          if (!confirm(`Delete saved search "${item.name}"?`)) return;
-          await fetch(`/${ORG}/saved-searches/${item._id}`, {
-            method: 'DELETE',
-            headers: {
-              'Accept': 'application/json',
-              'CSRF-Token': CSRF
-            },
-            body: JSON.stringify({ _csrf: CSRF })
-          });
-          loadSaved();
-        });
-        wrap.appendChild(del);
-  
-        listEl.appendChild(wrap);
+(function () {
+  const ORG = "<%= company.slug %>";
+  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const form = document.getElementById('feed-search-form');
+
+  /* =====================================================
+     1) REACTIONS
+  ===================================================== */
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-react]');
+    if (!btn) return;
+    const bar = btn.closest('[data-react-scope]');
+    if (!bar) return;
+
+    const type = btn.getAttribute('data-react');
+    const targetType = bar.getAttribute('data-target-type');
+    const targetId = bar.getAttribute('data-target-id');
+    if (!targetType || !targetId) return;
+
+    try {
+      const resp = await fetch(`/${ORG}/api/reactions`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': CSRF
+        },
+        body: JSON.stringify({ targetType, targetId, reactionType: type, _csrf: CSRF })
       });
-    }
-  
-    async function saveCurrent() {
-      const q        = form?.querySelector('input[name="q"]')?.value || '';
-      const type     = form?.querySelector('select[name="type"]')?.value || '';
-      const authorId = form?.querySelector('input[name="authorId"]')?.value || '';
-      const people   = form?.querySelector('input[name="people"]')?.value || '';
-      const from     = form?.querySelector('input[name="from"]')?.value || '';
-      const to       = form?.querySelector('input[name="to"]')?.value || '';
-      const myGroups = !!form?.querySelector('input[name="myGroups"]')?.checked;
-  
-      const name = prompt('Name this saved search:',
-        [q, people, type].filter(Boolean).join(' • ').slice(0, 40) || 'Untitled');
-      if (!name) return;
-  
-      const body = {
-        name, q, type, scope, groupId: groupId || null,
-        authorId: authorId || null,
-        people, fromDate: from || null, toDate: to || null, myGroups,
-        _csrf: CSRF
+      const data = await resp.json();
+      if (!data.ok) return alert(data.error || 'Could not react.');
+
+      const spans = {
+        LIKE: bar.querySelector('[data-rc="LIKE"]'),
+        HEART: bar.querySelector('[data-rc="HEART"]'),
+        CELEBRATE: bar.querySelector('[data-rc="CELEBRATE"]'),
+        SUPPORT: bar.querySelector('[data-rc="SUPPORT"]'),
+        LAUGH: bar.querySelector('[data-rc="LAUGH"]'),
+        INSIGHTFUL: bar.querySelector('[data-rc="INSIGHTFUL"]'),
+        THANKS: bar.querySelector('[data-rc="THANKS"]')
       };
-  
-      await fetch(`/${ORG}/saved-searches`, {
+      const bump = (el, d) => { if (el) el.textContent = Math.max(0, (parseInt(el.textContent || '0', 10) + d)); };
+
+      if (data.added) {
+        bump(spans[data.added], +1);
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+        bar.querySelector(`[data-react="${data.added}"]`)?.classList.add('active');
+      }
+      if (data.removed) {
+        bump(spans[data.removed], -1);
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+      }
+      if (data.changedTo) {
+        if (data.prevType && data.prevType !== data.changedTo) bump(spans[data.prevType], -1);
+        bump(spans[data.changedTo], +1);
+        bar.querySelectorAll('[data-react].active')?.forEach(b => b.classList.remove('active'));
+        bar.querySelector(`[data-react="${data.changedTo}"]`)?.classList.add('active');
+      }
+
+      const totalEl = bar.querySelector('[data-total-reactions]');
+      if (totalEl) {
+        const total = Array.from(bar.querySelectorAll('.rc'))
+          .reduce((n, s) => n + parseInt(s.textContent || '0', 10), 0);
+        totalEl.textContent = String(total);
+      }
+    } catch (err) {
+      console.error('Reaction error', err);
+    }
+  });
+
+
+  /* =====================================================
+     2) DELETE POST
+  ===================================================== */
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-delete-post]');
+    if (!btn) return;
+    if (!confirm('Delete this post?')) return;
+    const postId = btn.getAttribute('data-delete-post');
+    try {
+      const resp = await fetch(`/${ORG}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'CSRF-Token': CSRF
+        },
+        body: JSON.stringify({ _csrf: CSRF })
+      });
+      if (resp.ok) window.location.reload();
+      else alert('Could not delete post.');
+    } catch (err) {
+      console.error('Delete error', err);
+    }
+  });
+
+
+  /* =====================================================
+     3) REPORTING
+  ===================================================== */
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-report]');
+    if (!btn) return;
+    const targetType = btn.getAttribute('data-report');
+    const targetId = btn.getAttribute('data-target-id');
+    const reason = prompt('Reason for reporting this content?');
+    if (!reason) return;
+    try {
+      const resp = await fetch(`/${ORG}/api/reports`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'CSRF-Token': CSRF
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ targetType, targetId, reason, _csrf: CSRF })
       });
-      loadSaved();
+      if (!resp.ok) alert('Failed to report.');
+      else alert('Reported. Moderators will review soon.');
+    } catch (err) {
+      console.error('Report error', err);
     }
-  
-    if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
+  });
+
+  /* =====================================================
+     5) SAVED SEARCHES
+  ===================================================== */
+  const scope = "<%= (typeof group !== 'undefined' && group) ? 'GROUP' : 'COMPANY' %>";
+  const groupId = "<%= (typeof group !== 'undefined' && group) ? String(group._id) : '' %>";
+  const listEl = document.getElementById('saved-searches-list');
+  const saveBtn = document.getElementById('btn-save-search');
+
+  function buildQuery(params) {
+    const qp = new URLSearchParams();
+    if (params.q) qp.set('q', params.q);
+    if (params.type) qp.set('type', params.type);
+    if (params.authorId) qp.set('authorId', params.authorId);
+    if (params.people) qp.set('people', params.people);
+    if (params.from) qp.set('from', params.from);
+    if (params.to) qp.set('to', params.to);
+    if (params.myGroups) qp.set('myGroups', '1');
+    qp.set('page', '1');
+    qp.set('limit', '<%= typeof limit !== "undefined" ? String(limit) : "15" %>');
+    return qp.toString();
+  }
+
+  async function loadSaved() {
+    try {
+      const qs = new URLSearchParams({ scope, ...(scope === 'GROUP' ? { groupId } : {}) });
+      const resp = await fetch(`/${ORG}/saved-searches?` + qs.toString(), { headers: { 'Accept': 'application/json' } });
+      const data = await resp.json();
+      if (!data.ok) return;
+      renderList(data.items || []);
+    } catch (e) { console.error(e); }
+  }
+
+  function renderList(items) {
+    if (!listEl) return;
+    listEl.innerHTML = '';
+    items.forEach(item => {
+      const a = document.createElement('a');
+      a.href = `<%= (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '' %>?` + buildQuery({
+        q: item.q, type: item.type, authorId: item.authorId, people: item.people,
+        from: item.fromDate ? new Date(item.fromDate).toISOString().slice(0, 10) : '',
+        to: item.toDate ? new Date(item.toDate).toISOString().slice(0, 10) : '',
+        myGroups: !!item.myGroups
+      });
+      a.textContent = (item.pinned ? '📌 ' : '') + item.name;
+      a.className = 'btn';
+      a.style.background = '#f4f4f6';
+      a.style.border = '1px solid #e7e7ea';
+      a.style.color = '#333';
+
+      const wrap = document.createElement('span');
+      wrap.style.display = 'inline-flex';
+      wrap.style.alignItems = 'center';
+      wrap.style.gap = '4px';
+      wrap.appendChild(a);
+
+      const pin = document.createElement('button');
+      pin.type = 'button';
+      pin.textContent = item.pinned ? 'Unpin' : 'Pin';
+      pin.className = 'btn';
+      pin.style.padding = '4px 8px';
+      pin.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        await fetch(`/${ORG}/saved-searches/${item._id}/pin`, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'CSRF-Token': CSRF },
+          body: JSON.stringify({ _csrf: CSRF })
+        });
+        loadSaved();
+      });
+      wrap.appendChild(pin);
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = 'Delete';
+      del.className = 'btn';
+      del.style.padding = '4px 8px';
+      del.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        if (!confirm(`Delete saved search "${item.name}"?`)) return;
+        await fetch(`/${ORG}/saved-searches/${item._id}`, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json', 'CSRF-Token': CSRF },
+          body: JSON.stringify({ _csrf: CSRF })
+        });
+        loadSaved();
+      });
+      wrap.appendChild(del);
+
+      listEl.appendChild(wrap);
+    });
+  }
+
+  async function saveCurrent() {
+    if (!form) return;
+    const q = form.querySelector('input[name="q"]')?.value || '';
+    const type = form.querySelector('select[name="type"]')?.value || '';
+    const authorId = form.querySelector('input[name="authorId"]')?.value || '';
+    const people = form.querySelector('input[name="people"]')?.value || '';
+    const from = form.querySelector('input[name="from"]')?.value || '';
+    const to = form.querySelector('input[name="to"]')?.value || '';
+    const myGroups = !!form.querySelector('input[name="myGroups"]')?.checked;
+
+    const name = prompt('Name this saved search:', [q, people, type].filter(Boolean).join(' • ').slice(0, 40) || 'Untitled');
+    if (!name) return;
+
+    const body = {
+      name, q, type, scope, groupId: groupId || null,
+      authorId: authorId || null,
+      people, fromDate: from || null, toDate: to || null, myGroups,
+      _csrf: CSRF
+    };
+
+    await fetch(`/${ORG}/saved-searches`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'CSRF-Token': CSRF
+      },
+      body: JSON.stringify(body)
+    });
     loadSaved();
-  
-    /* ---------- 5. Feed search helpers ---------- */
-    const typeSel = document.getElementById('type-select');
-    const qInput = form?.querySelector('input[name="q"]');
-    if (typeSel && form) {
-      typeSel.addEventListener('change', () => {
-        const pageH = form.querySelector('input[name="page"]');
-        if (pageH) pageH.value = '1';
-        form.submit();
-      });
+  }
+
+  if (saveBtn) saveBtn.addEventListener('click', saveCurrent);
+  loadSaved();
+
+
+  /* =====================================================
+     6) TYPE + SEARCH INPUT (auto-submit)
+  ===================================================== */
+  const typeSel = document.getElementById('type-select');
+  const qInput = form?.querySelector('input[name="q"]');
+  if (typeSel && form) {
+    typeSel.addEventListener('change', () => {
+      const pageH = form.querySelector('input[name="page"]');
+      if (pageH) pageH.value = '1';
+      form.submit();
+    });
+  }
+
+  if (qInput && form) {
+    let t = null;
+    const submitDebounced = () => {
+      const pageH = form.querySelector('input[name="page"]');
+      if (pageH) pageH.value = '1';
+      form.requestSubmit ? form.requestSubmit() : form.submit();
+    };
+    qInput.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(submitDebounced, 450);
+    });
+  }
+
+
+  /* =====================================================
+     7) FILTERS BADGE SYNC
+  ===================================================== */
+  const adv = document.getElementById('adv-filters');
+  const badge = document.getElementById('filters-count');
+  function countActiveAdvanced(fObj) {
+    let n = 0;
+    if (fObj.type) n++; if (fObj.authorId) n++; if (fObj.people) n++;
+    if (fObj.from) n++; if (fObj.to) n++; if (fObj.myGroups) n++;
+    return n;
+  }
+  function syncFiltersBadge() {
+    if (!form) return;
+    const fObj = {
+      type: form.querySelector('select[name="type"]')?.value || '',
+      authorId: form.querySelector('input[name="authorId"]')?.value || '',
+      people: form.querySelector('input[name="people"]')?.value || '',
+      from: form.querySelector('input[name="from"]')?.value || '',
+      to: form.querySelector('input[name="to"]')?.value || '',
+      myGroups: form.querySelector('input[name="myGroups"]')?.checked || false
+    };
+    const n = countActiveAdvanced(fObj);
+    if (badge) badge.textContent = n ? n : '';
+    const panel = document.getElementById('advanced-row');
+    if (n && adv && !adv.hasAttribute('open')) {
+      adv.setAttribute('open', '');
     }
-    if (qInput && form) {
-      let t = null;
-      const submitDebounced = () => {
-        const pageH = form.querySelector('input[name="page"]');
-        if (pageH) pageH.value = '1';
-        form.requestSubmit ? form.requestSubmit() : form.submit();
-      };
-      qInput.addEventListener('input', () => {
-        clearTimeout(t);
-        t = setTimeout(submitDebounced, 450);
-      });
-    }
-  })();
-  </script>
-  
+  }
+  syncFiltersBadge();
+  form?.addEventListener('change', (e) => {
+    if (e.target.closest('#advanced-row')) syncFiltersBadge();
+  });
+})();
+</script>

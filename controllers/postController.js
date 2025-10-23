@@ -230,7 +230,7 @@ exports.companyFeed = async (req, res, next) => {
       company: req.company, user: req.user,
       posts: value.posts, total: value.total, totalPages: value.totalPages,
       page: value.page, limit: value.limit, filters: value.filters,
-      searchAction: `/${req.params.org}/feed`, recentSearches: [],
+      searchAction: `/${req.params.org}/feed`, recentSearches: [],csrfToken: req.csrfToken && req.csrfToken(),
     });
   } catch (e) { next(e); }
 };
@@ -298,7 +298,7 @@ exports.groupFeed = async (req, res, next) => {
       company: req.company, user: req.user, group: value.group,
       posts: value.posts, total: value.total, totalPages: value.totalPages,
       page: value.page, limit: value.limit, filters: value.filters,
-      searchAction: `/${req.params.org}/g/${groupId}`, recentSearches: [],
+      searchAction: `/${req.params.org}/g/${groupId}`, recentSearches: [],csrfToken: req.csrfToken && req.csrfToken(),
     });
   } catch (e) { next(e); }
 };
