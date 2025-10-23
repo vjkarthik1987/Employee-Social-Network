@@ -59,6 +59,7 @@
 
   <!-- Right side bar -->
   <div class="rightBar">
+    <%- include('../partials/_sidebar_links', { company, internalLinks: (typeof internalLinks !== 'undefined' ? internalLinks : []) }) %>
     <!-- put widgets/links/lists here -->
   </div>
 </body>

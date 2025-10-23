@@ -1,0 +1,27 @@
+<!-- debug: <%= Array.isArray(internalLinks) ? internalLinks.length : 'no-var' %> -->
+<% if (Array.isArray(internalLinks) && internalLinks.length) { %>
+    <div class="card" style="padding:12px;display:grid;gap:8px;">
+      <div style="font-weight:700;">Quick Links</div>
+      <div class="il-grid">
+        <% internalLinks.forEach(function(l){ %>
+          <a class="il-tile" href="<%= l.url %>" target="_blank" rel="noopener"
+             title="<%= l.title %>" aria-label="<%= l.title %> – opens in new tab"
+             data-link-id="<%= l._id %>">
+            <!-- <span class="il-icon"><%= l.icon %></span> -->
+            <span class="il-text"><%= l.title %></span>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+  <% } %>
+  
+  <script>
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('.il-tile');
+    if (!a) return;
+    const id = a.getAttribute('data-link-id');
+    if (!id) return;
+    fetch(`/<%= company.slug %>/api/links/${id}/click`, { method: 'POST', headers: { 'Accept': 'application/json' } });
+  });
+  </script>
+  

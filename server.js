@@ -99,6 +99,7 @@ app.use((req, res, next) => {
   res.locals.error = req.flash('error');
   res.locals.assetVersion = Date.now(); 
   res.locals.companySlug = (req.session && req.session.companySlug) || null;
+  res.locals.currentPath = req.originalUrl || '';
   // Keep `company` defined so layouts don't explode
   if (typeof res.locals.company === 'undefined') res.locals.company = null;
   if (req.method === 'GET' && req.accepts('html')) {

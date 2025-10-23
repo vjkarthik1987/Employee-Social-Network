@@ -3,6 +3,24 @@
 <section style="max-width:900px;margin:24px auto;display:grid;gap:16px;">
   <h2 style="margin:0;">Admin Settings</h2>
 
+  <!-- Admin Quick Nav -->
+  <div class="admin-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px;">
+    <a href="/<%= company.slug %>/admin/internal-links"
+       class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/internal-links')) ? 'active' : '' %>">
+       🔗 Internal Links
+    </a>
+    <a href="/<%= company.slug %>/admin/perf"
+       class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/perf')) ? 'active' : '' %>">
+       ⚡ Performance Logs
+    </a>
+    <a href="/<%= company.slug %>/admin/audit"
+       class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/audit')) ? 'active' : '' %>">
+       🧾 Audit Logs
+    </a>
+  </div>
+  
+
+
   <!-- ONE MAIN FORM -->
   <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">

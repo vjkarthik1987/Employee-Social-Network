@@ -5,42 +5,69 @@
   const plainText = (post.richText || '').replace(/<[^>]*>/g, ''); // strip HTML
   const shortText = plainText.length > maxLength ? plainText.slice(0, maxLength) + '…' : plainText;
 %>
-<article class="post-card" data-post-id="<%= post._id %>" aria-labelledby="post-title-<%= post._id %>">
-  
+<article class="post-card"
+         data-post-id="<%= post._id %>"
+         data-href="/<%= company.slug %>/posts/<%= post._id %>"
+         aria-labelledby="post-title-<%= post._id %>">  
   <!-- Header -->
-  <header class="post-header" style="margin-bottom: 15px;">
-    <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" aria-label="<%= (post.authorId?.fullName || 'User') + ' profile' %>">
-      <img
-        class="post-avatar"
-        src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
-        alt=""
-        loading="lazy"
-        decoding="async"
-        onerror="this.src='/img/avatar.png'; this.onerror=null;"
-      />
-    </a>
-
-    <!-- Post Header -->
-    <div class="post-meta" >
-      <div class="post-author">
-        <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight: bold;">
-          <%= post.authorId?.fullName || 'Unknown User' %>
-        </a>
-      </div>
-
-      <div class="post-time" data-ts="<%= (post.createdAt || post.publishedAt || post.updatedAt || new Date()).toISOString ? (post.createdAt || post.publishedAt || post.updatedAt) : new Date(post.createdAt || post.publishedAt || Date.now()) %>">
-        <% 
-          const _ts = new Date(post.createdAt || post.publishedAt || Date.now());
-          const _inGroup = !!(post.groupId && post.group);
-        %>
-        <time datetime="<%= _ts.toISOString() %>" style="font-size: smaller;"><%= _ts.toLocaleString() %></time>
-        <% if (_inGroup) { %>
-          · in
-          <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group?.name %></a>
-        <% } %>
+  <header class="post-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+    <!-- LEFT: Avatar + meta -->
+    <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
+      <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
+        <img
+          class="post-avatar"
+          src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onerror="this.src='/img/avatar.png'; this.onerror=null;"
+        />
+      </a>
+  
+      <div class="post-meta">
+        <div class="post-author">
+          <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight:bold;">
+            <%= post.authorId?.fullName || 'Unknown User' %>
+          </a>
+        </div>
+  
+        <div class="post-time">
+          <%
+            const tsRaw = post.createdAt || post.publishedAt || post.updatedAt || Date.now();
+            const ts = new Date(tsRaw);
+            const inGroup = !!(post.groupId && post.group);
+          %>
+          <time datetime="<%= ts.toISOString() %>" style="font-size:smaller;"><%= ts.toLocaleString() %></time>
+          <% if (inGroup) { %>
+            · in <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group?.name %></a>
+          <% } %>
+        </div>
       </div>
     </div>
+  
+    <!-- RIGHT: Actions -->
+    <div class="post-header-actions" style="display:flex; align-items:center; gap:10px;">
+      <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
+        <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <button type="submit" title="Delete post" class="icon-btn danger" aria-label="Delete post">
+            🗑️
+          </button>
+        </form>
+      <% } %>
+  
+      <form method="POST" action="/<%= company.slug %>/report" style="display:inline;">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <input type="hidden" name="targetType" value="post">
+        <input type="hidden" name="targetId" value="<%= post._id %>">
+        <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
+        <button type="submit" title="Report post" class="icon-btn" aria-label="Report post">
+          🚩
+        </button>
+      </form>
+    </div>
   </header>
+  
 
   <!-- Post Body -->
   <section class="post-body">
@@ -123,29 +150,6 @@
       <% } %>
     </div> -->
 
-    <!-- Actions -->
-    <div class="post-actions admin-links">
-      <% if (isCompact) { %>
-        <a class="btn-link" href="/<%= company.slug %>/posts/<%= post._id %>" aria-label="Open post">Open</a>
-      <% } %>
-      
-
-      <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
-        <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');" aria-label="Delete post form">
-          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-          <button class="btn-link danger" type="submit">Delete</button>
-        </form>
-      <% } %>
-    </div>
-
-    <!-- Quick report -->
-    <form method="POST" action="/<%= company.slug %>/report" style="display:inline;" aria-label="Report this post">
-      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-      <input type="hidden" name="targetType" value="post">
-      <input type="hidden" name="targetId" value="<%= post._id %>">
-      <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
-      <button type="submit" class="btn btn-ghost small" title="Report this post" aria-label="Report this post">Report</button>
-    </form>
   </footer>
 </article>
 
@@ -168,3 +172,20 @@
     } catch(e){}
   })();
 </script>
+
+<script>
+  (function(){
+    document.addEventListener('click', function(e){
+      // If the click is on a control (button, link, input, textarea, select, label), do nothing.
+      const interactive = e.target.closest('a, button, input, textarea, select, label, summary, details');
+      if (interactive) return;
+  
+      const card = e.target.closest('.post-card[data-href]');
+      if (!card) return;
+  
+      const url = card.getAttribute('data-href');
+      if (url) window.location.href = url;
+    }, {passive:true});
+  })();
+  </script>
+  

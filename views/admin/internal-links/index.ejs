@@ -1,0 +1,38 @@
+<% layout('layouts/_layout') %>
+
+<section style="max-width:900px;margin:24px auto;display:grid;gap:16px;">
+  <h2 style="margin:0;">Internal Links</h2>
+
+  <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;">
+    <div class="fineprint">Shown on the right sidebar for all members (unless restricted by visibility).</div>
+    <a class="btn" href="/<%= company.slug %>/admin/internal-links/new">＋ New Link</a>
+  </div>
+
+  <% if (!items || !items.length) { %>
+    <div class="card" style="padding:16px;">No links yet.</div>
+  <% } %>
+
+  <ul id="links-list" style="list-style:none;display:grid;gap:8px;">
+    <% (items||[]).forEach(function(item){ %>
+      <li data-id="<%= item._id %>" class="card" style="padding:12px;display:flex;align-items:center;gap:12px;">
+        <div style="width:28px;text-align:center;"><%= item.icon %></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;"><%= item.title %></div>
+          <div style="color:#666;font-size:.9rem;"><%= item.url %></div>
+          <div style="color:#777;font-size:.85rem;">Visibility: <%= item.visibility %> • Category: <%= item.category || '—' %></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <a class="btn" href="/<%= company.slug %>/admin/internal-links/<%= item._id %>/edit">Edit</a>
+          <form method="POST" action="/<%= company.slug %>/admin/internal-links/<%= item._id %>/delete" onsubmit="return confirm('Delete this link?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn danger" type="submit">Delete</button>
+          </form>
+        </div>
+      </li>
+    <% }) %>
+  </ul>
+</section>
+
+<script>
+/* Optional drag reorder later posting to /reorder with ids[] */
+</script>

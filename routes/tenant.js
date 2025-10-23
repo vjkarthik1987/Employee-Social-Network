@@ -11,6 +11,8 @@ const postsRouter = require('./posts');
 const profileRoutes = require('./profile');
 const savedSearches = require('./savedSearches');
 const adminRetention = require('./adminRetention');
+const adminInternalLinks = require('./adminInternalLinks'); 
+const internalLinksApi = require('./api/internalLinks');
 const adminPerf = require('./adminPerf');
 const adminAudit = require('./adminAudit');
 const exportsRouter = require('./exports');
@@ -31,6 +33,7 @@ const router = express.Router({ mergeParams: true });
 
 const Company = require('../models/Company');
 const Group = require('../models/Group');
+const linksLoader = require('../middleware/linksLoader');
 
 // Tiny async wrapper so errors don’t crash the process.
 const aw = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -39,9 +42,6 @@ const aw = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch
 // tenant resolver
 router.use(aw(async (req, res, next) => {
   const slug = (req.params.org || '').toLowerCase().trim();
-
-  // (Optional) very light slug validation
-  // if (!/^[a-z0-9-]{2,32}$/.test(slug)) return res.status(400).render('errors/400');
 
   const company = await Company.findOne({ slug });
   if (!company) return res.status(404).render('errors/404');
@@ -53,6 +53,7 @@ router.use(aw(async (req, res, next) => {
   next();
 }));
 
+router.use(linksLoader);
 router.use('/auth', tenantAuth);
 router.use('/admin/users', adminUsers);
 router.use('/groups', groupsRouter);
@@ -62,6 +63,7 @@ router.use('/profile', ensureAuth, profileRoutes);
 router.get('/feed', ensureAuth, csrfProtection, pc.companyFeed);
 router.use('/saved-searches', savedSearches);
 router.use('/admin/retention', adminRetention);
+router.use('/admin/internal-links', adminInternalLinks);
 router.use('/admin/perf', ensureAuth, requireRole('ORG_ADMIN'), adminPerf);
 router.use('/', exportsRouter);
 router.use('/admin/audit', adminAudit);
@@ -70,6 +72,7 @@ router.use('/api', reactionsApi);
 router.use('/api', postsApi); 
 router.use('/api', reportsApi);
 router.use('/api', usersApi);
+router.use('/api', internalLinksApi);
 
 // Org root → feed
 router.get('/', ensureAuth, (req, res) => {

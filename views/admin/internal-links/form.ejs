@@ -1,0 +1,72 @@
+<% layout('layouts/_layout') %>
+<%
+  const editing = !!item;
+  const title = editing ? 'Edit Link' : 'New Link';
+%>
+<section style="max-width:720px;margin:24px auto;display:grid;gap:16px;">
+  <h2 style="margin:0;"><%= title %></h2>
+
+  <form action="/<%= company.slug %>/admin/internal-links/<%= editing ? (item._id + '/edit') : 'new' %>" method="POST" style="display:grid;gap:14px;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <label>
+      <div style="margin-bottom:6px;">Title</div>
+      <input name="title" type="text" required value="<%= item?.title || '' %>" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
+    </label>
+
+    <label>
+      <div style="margin-bottom:6px;">URL (https)</div>
+      <input name="url" type="url" required value="<%= item?.url || '' %>" placeholder="https://..." style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
+    </label>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <label>
+        <div style="margin-bottom:6px;">Icon</div>
+        <select name="icon" style="padding:8px;border:1px solid #ddd;border-radius:8px;">
+          <% ['HR','TRAVEL','EXPENSES','HELPDESK','POLICIES','PAYSLIP','LEARNING','BENEFITS','APPROVALS','TIMESHEET'].forEach(function(k){ %>
+            <option value="<%= k %>" <%= item?.icon===k ? 'selected' : '' %>><%= k %></option>
+          <% }) %>
+        </select>
+      </label>
+
+      <label style="flex:1;min-width:240px;">
+        <div style="margin-bottom:6px;">Custom Icon SVG URL (optional)</div>
+        <input name="customIconUrl" type="url" value="<%= item?.customIconUrl || '' %>" placeholder="https://...svg"
+               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
+      </label>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <label style="flex:1;min-width:240px;">
+        <div style="margin-bottom:6px;">Category (optional)</div>
+        <input name="category" type="text" value="<%= item?.category || '' %>" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
+      </label>
+
+      <label>
+        <div style="margin-bottom:6px;">Order</div>
+        <input name="order" type="number" value="<%= typeof item?.order === 'number' ? item.order : 0 %>" style="width:120px;padding:8px;border:1px solid #ddd;border-radius:8px;">
+      </label>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <label>
+        <input type="checkbox" name="isActive" value="1" <%= (item ? item.isActive : true) ? 'checked' : '' %> >
+        Active
+      </label>
+
+      <label>
+        <div style="margin-bottom:6px;">Visibility</div>
+        <select name="visibility" style="padding:8px;border:1px solid #ddd;border-radius:8px;">
+          <% ['ALL','MEMBER','MODERATOR','ORG_ADMIN'].forEach(function(v){ %>
+            <option value="<%= v %>" <%= item?.visibility===v ? 'selected' : '' %>><%= v %></option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <a class="btn" href="/<%= company.slug %>/admin/internal-links">Cancel</a>
+      <button class="btn" type="submit"><%= editing ? 'Save Changes' : 'Create Link' %></button>
+    </div>
+  </form>
+</section>

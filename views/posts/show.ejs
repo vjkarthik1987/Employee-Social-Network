@@ -35,39 +35,6 @@
       <% } %>
     </div>
 
-    <div class="card-body" style="margin-bottom: 10px;">
-      <!-- Text body (hidden for pure image posts if you prefer) -->
-      <% if (post.richText) { %>
-        <div class="post-content"><%- post.richText %></div>
-      <% } %>
-
-      <!-- Image (Cloudinary/local safe) -->
-      <% if (post.firstAttachmentUrl) { 
-          const _u = String(post.firstAttachmentUrl || '');
-          const isCloud = _u.includes('/upload/');
-          const imgSrc = isCloud ? _u.replace('/upload/', '/upload/w_1200,h_800,c_fill,q_auto,f_auto/') : _u;
-      %>
-        <a href="<%= post.firstAttachmentUrl %>" target="_blank" rel="noopener noreferrer">
-          <img src="<%= imgSrc %>" alt="post image"
-               style="width:100%;height:auto;border-radius:10px;margin-top:.6rem;display:block;" />
-        </a>
-      <% } %>
-
-      <!-- Link preview (if present) -->
-      <% if (post.type === 'LINK' && post.linkPreview && post.linkPreview.url) { %>
-        <div class="card" style="margin-top:.6rem;">
-          <div class="card-body">
-            <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-              <div><strong><%= post.linkPreview.title || post.linkPreview.url %></strong></div>
-              <% if (post.linkPreview.description) { %>
-                <div style="color:#666; font-size:.9rem; margin-top:.2rem;"><%= post.linkPreview.description %></div>
-              <% } %>
-            </a>
-          </div>
-        </div>
-      <% } %>
-    </div>
-
     <!-- Reactions (single source of truth for counts + buttons) -->
     <%- include('../partials/_post_card', { company, user, post, compact: false }) %>
   </div>
