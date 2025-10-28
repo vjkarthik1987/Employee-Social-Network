@@ -26,3 +26,5 @@
 - Hashtags and Mentions
 - If profile pic is not given, use a circle with the first letter of the first name
 - Page reload without refresh
+- Moderator view 
+- Seperate area for polls and announcements

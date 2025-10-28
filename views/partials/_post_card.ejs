@@ -29,6 +29,10 @@
           <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight:bold;">
             <%= post.authorId?.fullName || 'Unknown User' %>
           </a>
+          <% if (post.type === 'ANNOUNCEMENT') { %>
+            <span class="badge" style="margin-left:6px;">📢 Announcement</span>
+            <% if (post.isPinned) { %><span class="badge" title="Pinned to top" style="margin-left:4px;">📌 Pinned</span><% } %>
+          <% } %>
         </div>
   
         <div class="post-time">
@@ -71,6 +75,9 @@
 
   <!-- Post Body -->
   <section class="post-body">
+    <% if (post.type === 'POLL' && post.poll && Array.isArray(post.poll.questions)) { %>
+      <%- include('./_post_card_poll', { company, user, post }) %>
+      <% } else { %> 
     <% /* Assume post.richText is sanitized HTML. */ %>
     <% if (post.richText) { %>
       <% if (isCompact) { %>
@@ -116,6 +123,7 @@
         </div>
       </div>
     <% } %>
+    <% } %> 
   </section>
 
   <!-- Post Footer -->
@@ -178,6 +186,8 @@
     document.addEventListener('click', function(e){
       // If the click is on a control (button, link, input, textarea, select, label), do nothing.
       const interactive = e.target.closest('a, button, input, textarea, select, label, summary, details');
+      // Also ignore clicks inside poll widgets
+      if (e.target.closest('.poll-form') || e.target.closest('.poll-result-q')) return;
       if (interactive) return;
   
       const card = e.target.closest('.post-card[data-href]');

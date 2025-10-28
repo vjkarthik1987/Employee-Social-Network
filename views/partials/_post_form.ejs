@@ -47,6 +47,35 @@
     </div>
   </div>
 
+  <!-- Type tabs -->
+  <div class="composer-types" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
+    <button type="button" class="btn tsel" data-type="TEXT">Text</button>
+    <button type="button" class="btn tsel" data-type="LINK">Link</button>
+    <button type="button" class="btn tsel" data-type="IMAGE">Image</button>
+    <button type="button" class="btn tsel" data-type="POLL">Poll</button>
+    <button type="button" class="btn tsel" data-type="ANNOUNCEMENT">Announcement</button>
+  </div>
+
+  <!-- Poll builder -->
+  <div id="pollBuilder" class="d-none" style="border:1px solid #eee;border-radius:8px;padding:10px;">
+    <input type="text" name="poll[title]" class="input" placeholder="Poll title (optional)" style="margin-bottom:8px;max-width:520px;">
+    <div id="pb-qs"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button type="button" class="btn" id="pb-add-q">+ Add question</button>
+      <span class="fineprint">Up to 10 questions; each with 2–10 options.</span>
+    </div>
+  </div>
+
+  <!-- Announcement options -->
+  <div id="announceRow" class="d-none" style="margin:8px 0;">
+    <label style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" name="isPinned" value="true">
+      <span>Pin to top</span>
+    </label>
+    <div class="fineprint">Only moderators/admins can actually pin; server enforces it.</div>
+  </div>
+
+
   <hr class="composer-sep"/>
 
   <!-- Actions -->
@@ -80,6 +109,10 @@
   const fileInp   = document.getElementById('composerFile');
   const postBtn   = document.getElementById('postBtn');
   const imageRow  = document.getElementById('imageRow');
+  const pollBuilder = document.getElementById('pollBuilder');
+  const announceRow = document.getElementById('announceRow');
+  const pbQs = document.getElementById('pb-qs');
+  const addQ = document.getElementById('pb-add-q');
 
   // Link preview nodes
   const linkPreview = document.getElementById('linkPreview');
@@ -100,6 +133,8 @@
     typeSel.value = t;
     linkPreview.classList.toggle('d-none', t !== 'LINK' || !linkUrlHidden.value);
     imageRow.classList.toggle('d-none', t !== 'IMAGE');
+    pollBuilder.classList.toggle('d-none', t !== 'POLL');
+    announceRow.classList.toggle('d-none', t !== 'ANNOUNCEMENT');
   }
 
   function autoGrow(el){
@@ -117,6 +152,9 @@
     const hasMedia = !!(fileInp.files && fileInp.files.length);
     const hasLink = !!(linkUrlHidden.value);
     postBtn.disabled = !(hasText || hasMedia || hasLink);
+    const hasPoll = (typeSel.value === 'POLL') && (pbQs.querySelectorAll('.pb-q').length > 0);
+    const hasAnnouncement = (typeSel.value === 'ANNOUNCEMENT') && hasText;
+    postBtn.disabled = !(hasText || hasMedia || hasLink || hasPoll || hasAnnouncement);
   }
 
   function resetMediaPreview(){
@@ -241,8 +279,97 @@
     postBtn.textContent = 'Posting…';
   });
 
+  // Type tab clicks
+  form.querySelectorAll('.tsel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-type');
+      setType(t);
+      if (t === 'POLL' && !pbQs.querySelector('.pb-q')) pbQs.appendChild(renderQuestion(0, null));
+      enableIfHasContent();
+    });
+  });
+
+  // Poll builder helpers
+  function qName(i, inner){ return `poll[questions][${i}]` + (inner ? `[${inner}]` : ''); }
+  function optName(i, j){ return `poll[questions][${i}][options][${j}]`; }
+  function renderQuestion(i, data){
+    const wrap = document.createElement('div');
+    wrap.className = 'pb-q';
+    wrap.style = 'border:1px dashed #ddd;border-radius:8px;padding:8px;margin:8px 0;';
+    wrap.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="font-weight:600;">Question ${i+1}</div>
+        <div>
+          <label style="font-size:12px;">
+            <input type="checkbox" name="${qName(i,'multiSelect')}" ${data?.multiSelect ? 'checked':''}>
+            Multiple answers allowed
+          </label>
+          <button type="button" class="btn" data-del-q>Remove</button>
+        </div>
+      </div>
+      <input type="text" name="${qName(i,'text')}" class="input" placeholder="Question text" value="${(data?.text||'').replace(/"/g,'&quot;')}" style="margin:6px 0;max-width:520px;">
+      <div class="pb-opts"></div>
+      <button type="button" class="btn" data-add-opt>+ Add option</button>
+    `;
+    const optsWrap = wrap.querySelector('.pb-opts');
+    const addOptBtn = wrap.querySelector('[data-add-opt]');
+    const delQBtn = wrap.querySelector('[data-del-q]');
+    function renderOpt(j, label){
+      const row = document.createElement('div');
+      row.className = 'pb-opt';
+      row.style = 'display:flex;gap:6px;align-items:center;margin:4px 0;';
+      row.innerHTML = `
+        <input type="text" class="input" name="${optName(i,j)}[label]" placeholder="Option ${j+1}"
+               value="${(label||'').replace(/"/g,'&quot;')}" style="max-width:420px;">
+        <button type="button" class="btn" data-del-opt title="Remove option">×</button>
+      `;
+      row.querySelector('[data-del-opt]').addEventListener('click', () => {
+        row.remove(); renumberOptions(); enableIfHasContent();
+      });
+      optsWrap.appendChild(row);
+    }
+    function renumberOptions(){
+      Array.from(optsWrap.querySelectorAll('.pb-opt')).forEach((row, j) => {
+        const inp = row.querySelector('input[type="text"]');
+        inp.name = `${optName(i,j)}[label]`;
+      });
+    }
+    addOptBtn.addEventListener('click', () => {
+      const count = optsWrap.querySelectorAll('.pb-opt').length;
+      if (count >= 10) { alert('Max 10 options per question.'); return; }
+      renderOpt(count, '');
+      enableIfHasContent();
+    });
+    delQBtn.addEventListener('click', () => {
+      wrap.remove(); renumberQuestions(); enableIfHasContent();
+    });
+    const seed = Array.isArray(data?.options) && data.options.length ? data.options.map(o=>o.label) : ['',''];
+    seed.forEach((lbl, j) => renderOpt(j, lbl||''));
+    return wrap;
+  }
+  function renumberQuestions(){
+    const qs = Array.from(pbQs.querySelectorAll('.pb-q'));
+    qs.forEach((qEl, i) => {
+      const data = {
+        text: qEl.querySelector(`input[name$="[text]"]`)?.value || '',
+        multiSelect: qEl.querySelector(`input[name$="[multiSelect]"]`)?.checked || false,
+        options: Array.from(qEl.querySelectorAll('.pb-opt input')).map(inp => ({ label: inp.value }))
+      };
+      const fresh = renderQuestion(i, data);
+      qEl.replaceWith(fresh);
+    });
+  }
+  addQ && addQ.addEventListener('click', () => {
+    const count = pbQs.querySelectorAll('.pb-q').length;
+    if (count >= 10) { alert('Max 10 questions per poll.'); return; }
+    pbQs.appendChild(renderQuestion(count, null));
+    enableIfHasContent();
+  });
+
   // Initial
   setType('TEXT');
   enableIfHasContent();
+
+  
 })();
 </script>

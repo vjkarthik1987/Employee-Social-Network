@@ -24,6 +24,7 @@ const reactionsApi = require('./api/reactions');
 const reportsApi = require('./api/reports');
 const postsApi = require('./api/posts');
 const usersApi = require('./api/users');
+const pollsApi = require('./api/polls');
 
 const pc = require('../controllers/postController');
 const moderation = require('../controllers/moderationController');
@@ -73,6 +74,7 @@ router.use('/api', postsApi);
 router.use('/api', reportsApi);
 router.use('/api', usersApi);
 router.use('/api', internalLinksApi);
+router.use('/api', pollsApi);
 
 // Org root → feed
 router.get('/', ensureAuth, (req, res) => {

@@ -73,7 +73,7 @@ async function attachGroupStubs(posts, companyId) {
 }
 
 function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople }) {
-  const allowed = new Set(['TEXT','IMAGE','LINK']);
+  const allowed = new Set(['TEXT','IMAGE','LINK','POLL','ANNOUNCEMENT']);
   const match = { companyId, deletedAt: null, status: 'PUBLISHED' };
 
   if (scope === 'GROUP' && groupId) match.groupId = groupId;
@@ -130,7 +130,7 @@ async function runFeedQuery({ req, scope, groupId = null }) {
         .sort({ createdAt: -1 });
     }
   } else {
-    findCursor = Post.find(match).sort({ createdAt: -1 });
+    findCursor = Post.find(match).sort({ isPinned: -1, createdAt: -1 });
   }
 
   const [items, total] = await Promise.all([
@@ -315,6 +315,58 @@ exports.create = async (req, res, next) => {
     const type = (req.body.type || 'TEXT').toUpperCase();
     const groupId = req.body.groupId && isObjId(req.body.groupId) ? req.body.groupId : null;
     const richText = (req.body.content || '').toString().slice(0, 10000);
+    const isAnnouncement = type === 'ANNOUNCEMENT';
+    const isPoll = type === 'POLL';
+    const canPin = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
+    const wantPinned = String(req.body.isPinned) === 'true' || req.body.isPinned === '1';
+
+  // --- normalize poll payload BEFORE create ---
+    let pollDoc = undefined;
+    if (isPoll) {
+      const raw = req.body.poll || {};
+      // questions may be Array or {"0":{...},"1":{...}}
+      let questions = raw.questions;
+      if (questions && !Array.isArray(questions) && typeof questions === 'object') {
+        questions = Object.values(questions);
+      }
+      if (!Array.isArray(questions)) questions = [];
+      if (questions.length < 1 || questions.length > 10) {
+        throw new Error('POLL_QUESTION_COUNT');
+      }
+      const normQs = questions.map((q, qi) => {
+        // options may be Array or object
+        let opts = q?.options;
+        if (opts && !Array.isArray(opts) && typeof opts === 'object') {
+          opts = Object.values(opts);
+        }
+        if (!Array.isArray(opts)) opts = [];
+        if (opts.length < 2 || opts.length > 10) {
+          throw new Error('POLL_OPTION_COUNT');
+        }
+        const qid = String(q?.qid || (qi + 1).toString(36));
+        const normOpts = opts.map((o, oi) => {
+          // support both {label:"..."} and "..."
+          const label = (typeof o === 'object' ? String(o.label || '') : String(o || '')).trim();
+          const oid = String((typeof o === 'object' ? (o.oid || (oi + 1).toString(36)) : (oi + 1).toString(36)));
+          return { oid, label, votesCount: 0 };
+        });
+        return {
+          qid,
+          text: String(q?.text || '').trim(),
+          options: normOpts,
+          multiSelect: !!q?.multiSelect
+        };
+      });
+      pollDoc = {
+        title: String(raw.title || '').trim(),
+        questions: normQs,
+        totalParticipants: 0,
+        voterIds: [],
+        isClosed: false,
+        closesAt: raw.closesAt ? new Date(raw.closesAt) : null
+      };
+    }
+
 
     const post = await Post.create({
       companyId,
@@ -323,7 +375,9 @@ exports.create = async (req, res, next) => {
       type,
       richText,
       status,
+      isPinned: isAnnouncement ? !!(canPin && wantPinned) : false,
       publishedAt: status === 'PUBLISHED' ? new Date() : null,
+      poll: pollDoc
     });
 
     if (req.file) {

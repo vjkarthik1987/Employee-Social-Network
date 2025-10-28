@@ -11,7 +11,7 @@ const SavedSearchSchema = new mongoose.Schema(
     name:      { type: String, required: true, trim: true, maxlength: 80 },
 
     q:         { type: String, default: '' },
-    type:      { type: String, enum: ['', 'TEXT', 'IMAGE', 'LINK'], default: '' },
+    type:      { type: String, enum: ['', 'TEXT', 'IMAGE', 'LINK','POLL','ANNOUNCEMENT'], default: '' },
     pinned:    { type: Boolean, default: false },
 
     authorId:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },

@@ -15,7 +15,7 @@ router.get('/posts', ensureAuth, async (req, res, next) => {
     const q     = (req.query.q || '').trim();
     const groupId = req.query.groupId || null;
     const type  = (req.query.type || '').toUpperCase();
-    const allowedTypes = new Set(['TEXT','IMAGE','LINK']);
+    const allowedTypes = new Set(['TEXT','IMAGE','LINK','POLL','ANNOUNCEMENT']);
 
     const match = { companyId: cid, deletedAt: null, status: 'PUBLISHED' };
     if (groupId) match.groupId = groupId;
@@ -52,12 +52,42 @@ router.get('/posts/:postId', ensureAuth, async (req, res, next) => {
 router.post('/posts', ensureAuth, async (req, res, next) => {
   try {
     const cid = req.companyId;
-    const { type = 'TEXT', richText = '', groupId = null } = req.body;
+    const { type = 'TEXT', richText = '', groupId = null, isPinned = false, poll = null } = req.body;
 
     // Policy: moderated orgs queue by default
     const mode = (req.company?.policies?.postingMode || 'OPEN').toUpperCase();
     const status = mode === 'MODERATED' ? 'QUEUED' : 'PUBLISHED';
 
+    const canPin = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
+    // build pollDoc if needed (normalize array/object)
+    let pollDoc = undefined;
+    if (String(type).toUpperCase() === 'POLL' && poll) {
+      let qs = poll.questions;
+      if (qs && !Array.isArray(qs) && typeof qs === 'object') qs = Object.values(qs);
+      if (!Array.isArray(qs)) qs = [];
+      if (qs.length < 1 || qs.length > 10) return res.status(400).json({ ok:false, error:'POLL_QUESTION_COUNT' });
+      const normQs = qs.map((q, qi) => {
+        let opts = q?.options;
+        if (opts && !Array.isArray(opts) && typeof opts === 'object') opts = Object.values(opts);
+        if (!Array.isArray(opts)) opts = [];
+        if (opts.length < 2 || opts.length > 10) throw new Error('POLL_OPTION_COUNT');
+        const qid = String(q?.qid || (qi + 1).toString(36));
+        const normOpts = opts.map((o, oi) => {
+          const label = (typeof o === 'object' ? String(o.label || '') : String(o || '')).trim();
+          const oid = String((typeof o === 'object' ? (o.oid || (oi + 1).toString(36)) : (oi + 1).toString(36)));
+          return { oid, label, votesCount: 0 };
+        });
+        return { qid, text: String(q?.text || '').trim(), options: normOpts, multiSelect: !!q?.multiSelect };
+      });
+      pollDoc = {
+        title: String(poll.title || '').trim(),
+        questions: normQs,
+        totalParticipants: 0,
+        voterIds: [],
+        isClosed: false,
+        closesAt: poll.closesAt ? new Date(poll.closesAt) : null
+      };
+    }
     const post = await Post.create({
       companyId: cid,
       authorId: req.user._id,
@@ -65,6 +95,7 @@ router.post('/posts', ensureAuth, async (req, res, next) => {
       type,
       richText,
       status,
+      isPinned: type === 'ANNOUNCEMENT' ? !!(canPin && isPinned) : false,
       publishedAt: status === 'PUBLISHED' ? new Date() : null,
     });
 

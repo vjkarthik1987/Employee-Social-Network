@@ -1,0 +1,132 @@
+<%
+// Expect:
+// - post.poll { title, questions[], totalParticipants, voterIds[], isClosed, closesAt? }
+// - user    (logged-in user)
+// - company (has slug)
+// - csrfToken available in locals (from your controllers)
+const userHasVoted = Array.isArray(post.poll?.voterIds) && post.poll.voterIds.some(id => String(id) === String(user?._id));
+const showResults  = post.poll?.isClosed || userHasVoted;
+const ts = new Date(post.createdAt || post.publishedAt || post.updatedAt || Date.now());
+%>
+
+<article class="post-card poll" data-post-id="<%= post._id %>">
+  <header class="post-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+    <div class="post-author">
+      <a href="/<%= company.slug %>/profile/<%= post.authorId?._id %>"><%= post.authorId?.fullName || 'User' %></a>
+      <span class="badge">POLL</span>
+      <% if (post.poll?.isClosed) { %><span class="badge muted">Closed</span><% } %>
+    </div>
+    <div class="post-meta">
+      <time datetime="<%= ts.toISOString() %>"><%= ts.toLocaleString() %></time>
+      <% if (post.groupId && post.group) { %> · in <a href="/<%= company.slug %>/g/<%= post.groupId %>"><%= post.group?.name %></a><% } %>
+    </div>
+  </header>
+
+  <% if (post.poll?.title) { %>
+    <h3 style="margin:6px 0 10px;"><%= post.poll.title %></h3>
+  <% } %>
+
+  <% if (!showResults) { %>
+    <!-- Voting form -->
+    <form class="poll-form" onsubmit="return submitPoll_<%= post._id %>(this)">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <% (post.poll?.questions || []).forEach(function(q, idx){ %>
+        <fieldset class="poll-q" style="margin:10px 0;">
+          <legend style="font-weight:600;"><%= idx+1 %>. <%= q.text %></legend>
+          <% (q.options || []).forEach(function(o){ %>
+            <label class="poll-opt" style="display:flex;align-items:center;gap:8px;margin:4px 0;">
+              <input type="<%= q.multiSelect ? 'checkbox' : 'radio' %>"
+                     name="q-<%= q.qid %>"
+                     value="<%= o.oid %>"
+                     <%= q.multiSelect ? '' : 'required' %> >
+              <span><%= o.label %></span>
+            </label>
+          <% }) %>
+        </fieldset>
+      <% }) %>
+      <div class="poll-actions" style="display:flex;align-items:center;gap:10px;justify-content:flex-start;">
+        <button type="submit" class="btn">Submit</button>
+        <div class="poll-stats"><%= Number(post.poll?.totalParticipants || 0) %> participants</div>
+      </div>
+    </form>
+  <% } else { %>
+    <!-- Results -->
+    <% (post.poll?.questions || []).forEach(function(q, idx){
+         const total = (q.options||[]).reduce((n,o)=>n+(o.votesCount||0),0) || 0; %>
+      <div class="poll-result-q" style="margin:12px 0;">
+        <div style="font-weight:600;margin-bottom:6px;"><%= idx+1 %>. <%= q.text %></div>
+        <% (q.options || []).forEach(function(opt){
+             const votes = Number(opt.votesCount||0);
+             const pct = total ? Math.round((votes/total)*100) : 0; %>
+          <div class="poll-opt" style="margin:6px 0;">
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span><%= opt.label %></span>
+              <span><%= votes %> (<%= pct %>%)</span>
+            </div>
+            <div class="bar" style="height:8px;background:#eee;border-radius:6px;overflow:hidden;">
+              <div style="height:8px;width:<%= pct %>%"></div>
+            </div>
+          </div>
+        <% }) %>
+        <div class="fineprint" style="margin-top:4px;">Total votes for this question: <%= total %></div>
+      </div>
+    <% }) %>
+    <div class="fineprint">Participants: <%= Number(post.poll?.totalParticipants||0) %><%= post.poll?.isClosed ? ' • Poll closed' : '' %></div>
+  <% } %>
+</article>
+
+<script>
+async function submitPoll_<%= post._id %>(form){
+  const card = form.closest('.post-card');
+  const postId = card?.getAttribute('data-post-id');
+  if(!postId) return false;
+  const ORG = "<%= company.slug %>";
+  const CSRF = form.querySelector('input[name="_csrf"]')?.value || '';
+
+  // collect answers (supports multiSelect & single)
+  const answers = [];
+  <% (post.poll?.questions || []).forEach(function(q){ %>
+    (function(){
+      const name = "q-<%= q.qid %>";
+      const nodes = form.querySelectorAll('input[name="'+name+'"]');
+      if (!nodes || !nodes.length) return;
+      const multi = <%= !!q.multiSelect %>;
+      if (multi) {
+        nodes.forEach(n => { if (n.checked) answers.push({ qid: "<%= q.qid %>", oid: n.value }); });
+      } else {
+        const chosen = form.querySelector('input[name="'+name+'"]:checked');
+        if (chosen) answers.push({ qid: "<%= q.qid %>", oid: chosen.value });
+      }
+    })();
+  <% }); %>
+
+  if (!answers.length) { alert('Please select an option.'); return false; }
+
+  const btn = form.querySelector('button[type="submit"]');
+  if (btn){ btn.disabled = true; btn.textContent='Submitting…'; }
+
+  try{
+    const res = await fetch(`/${ORG}/api/polls/${postId}/submit`,{
+      method:'POST',
+      headers: {
+        'Content-Type':'application/json',
+        'Accept':'application/json',
+        'CSRF-Token': CSRF
+      },
+      body: JSON.stringify({ answers, _csrf: CSRF })
+    });
+    const data = await res.json();
+    if(!data.ok){
+      alert(data.error || 'Failed to submit');
+      if (btn){ btn.disabled=false; btn.textContent='Submit'; }
+      return false;
+    }
+    location.reload(); // simplest: show results
+  }catch(err){
+    console.error(err);
+    alert('Network error. Try again.');
+    if (btn){ btn.disabled=false; btn.textContent='Submit'; }
+  }
+  return false;
+}
+</script>
