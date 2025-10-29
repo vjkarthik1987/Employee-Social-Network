@@ -1,5 +1,6 @@
 // routes/exports.js
 const express = require('express');
+const { Parser } = require('json2csv');
 const { ensureAuth, requireRole } = require('../middleware/auth');
 const Post = require('../models/Post');
 const User = require('../models/User');
@@ -206,6 +207,60 @@ router.get('/admin/export/backup.ndjson', ensureAuth, requireRole('ORG_ADMIN'), 
     }
 
     res.end();
+  } catch (e) { next(e); }
+});
+
+// Day 32 — Polls JSON
+router.get('/:org/admin/exports/polls.json', ensureAuth, requireRole(['MODERATOR','ORG_ADMIN']), async (req, res, next) => {
+  try {
+    const companyId = cid(req);
+    const polls = await Post.find({ companyId, deletedAt: null, type: 'POLL' })
+      .select('createdAt authorId poll title type')
+      .lean();
+    res.setHeader('Content-Type','application/json');
+    res.send(JSON.stringify({ ok:true, data: polls }));
+  } catch (e) { next(e); }
+});
+
+// Day 32 — Polls CSV (flattened)
+router.get('/:org/admin/exports/polls.csv', ensureAuth, requireRole(['MODERATOR','ORG_ADMIN']), async (req, res, next) => {
+  try {
+    const companyId = cid(req);
+    const posts = await Post.find({ companyId, deletedAt: null, type: 'POLL' })
+      .select('createdAt authorId poll')
+      .lean();
+    const rows = [];
+    for (const p of posts) {
+      const createdAt = p.createdAt ? new Date(p.createdAt).toISOString() : '';
+      const title = p.poll?.title || '';
+      const totalParticipants = Number(p.poll?.totalParticipants || 0);
+      const isClosed = !!p.poll?.isClosed;
+      const questions = Array.isArray(p.poll?.questions) ? p.poll.questions : [];
+      questions.forEach((q, qi) => {
+        const opts = Array.isArray(q.options) ? q.options : [];
+        const total = opts.reduce((n,o)=>n+(Number(o.votesCount||0)),0) || 0;
+        opts.forEach((o, oi) => {
+          rows.push({
+            postId: String(p._id),
+            createdAt,
+            title,
+            isClosed,
+            totalParticipants,
+            questionIndex: qi + 1,
+            questionText: q.text,
+            optionIndex: oi + 1,
+            optionLabel: o.label,
+            votes: Number(o.votesCount || 0),
+            pct: total ? Math.round((Number(o.votesCount||0)/total)*100) : 0
+          });
+        });
+      });
+    }
+    const parser = new Parser({ fields: ['postId','createdAt','title','isClosed','totalParticipants','questionIndex','questionText','optionIndex','optionLabel','votes','pct'] });
+    const csv = parser.parse(rows);
+    res.setHeader('Content-Type','text/csv');
+    res.setHeader('Content-Disposition','attachment; filename="polls.csv"');
+    res.send(csv);
   } catch (e) { next(e); }
 });
 

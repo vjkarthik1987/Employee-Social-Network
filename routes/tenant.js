@@ -14,6 +14,7 @@ const adminRetention = require('./adminRetention');
 const adminInternalLinks = require('./adminInternalLinks'); 
 const internalLinksApi = require('./api/internalLinks');
 const adminPerf = require('./adminPerf');
+const adminPolls = require('./adminPolls');
 const adminAudit = require('./adminAudit');
 const exportsRouter = require('./exports');
 
@@ -66,6 +67,7 @@ router.use('/saved-searches', savedSearches);
 router.use('/admin/retention', adminRetention);
 router.use('/admin/internal-links', adminInternalLinks);
 router.use('/admin/perf', ensureAuth, requireRole('ORG_ADMIN'), adminPerf);
+router.use('/admin/polls', ensureAuth, requireRole('ORG_ADMIN'), adminPolls)
 router.use('/', exportsRouter);
 router.use('/admin/audit', adminAudit);
 router.use('/api', commentsApi);

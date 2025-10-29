@@ -120,27 +120,69 @@ async function runFeedQuery({ req, scope, groupId = null }) {
 
   const t0 = performance.now();
 
-  let findCursor;
+  let items, total;
   if (filters.q) {
     try {
-      findCursor = Post.find({ ...match, $text: { $search: filters.q } }, { score: { $meta: 'textScore' } })
+      const findCursor = Post.find({ ...match, $text: { $search: filters.q } }, { score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' }, createdAt: -1 });
+      [items, total] = await Promise.all([
+        findCursor
+          .skip(filters.skip)
+          .limit(filters.limit)
+          .populate('authorId', 'fullName avatarUrl title')
+          .lean(),
+        Post.countDocuments(match),
+      ]);
     } catch {
-      findCursor = Post.find({ ...match, richText: { $regex: filters.q, $options: 'i' } })
+      const findCursor = Post.find({ ...match, richText: { $regex: filters.q, $options: 'i' } })
         .sort({ createdAt: -1 });
+      [items, total] = await Promise.all([
+        findCursor
+          .skip(filters.skip)
+          .limit(filters.limit)
+          .populate('authorId', 'fullName avatarUrl title')
+          .lean(),
+        Post.countDocuments(match),
+      ]);
     }
   } else {
-    findCursor = Post.find(match).sort({ isPinned: -1, createdAt: -1 });
+    // Day 32: Pinned > Active Polls > Recency
+    const pipeline = [
+       { $match: match },
+       { $addFields: {
+           isActivePoll: {
+             $cond: [
+               { $and: [ { $eq: ['$type','POLL'] }, { $ne: ['$poll.isClosed', true] } ] },
+               1, 0
+             ]
+           }
+         }
+       },
+       { $sort: { isPinned: -1, isActivePoll: -1, createdAt: -1 } },
+       { $skip: filters.skip },
+       { $limit: filters.limit }
+     ];
+     const aggItems = await Post.aggregate(pipeline);
+     total = await Post.countDocuments(match);
+ 
+     // manual "populate" for authorId (minimal fields like earlier)
+     const userIds = aggItems.map(p => p.authorId).filter(Boolean);
+     const users = await User.find({ _id: { $in: userIds } }, 'fullName avatarUrl title').lean();
+     const usersMap = new Map(users.map(u => [String(u._id), u]));
+     items = aggItems.map(p => {
+       if (p.authorId) p.authorId = usersMap.get(String(p.authorId)) || p.authorId;
+       return p;
+     });
   }
 
-  const [items, total] = await Promise.all([
-    findCursor
-      .skip(filters.skip)
-      .limit(filters.limit)
-      .populate('authorId', 'fullName avatarUrl title')
-      .lean(),
-    Post.countDocuments(match),
-  ]);
+  // const [items, total] = await Promise.all([
+  //   findCursor
+  //     .skip(filters.skip)
+  //     .limit(filters.limit)
+  //     .populate('authorId', 'fullName avatarUrl title')
+  //     .lean(),
+  //   Post.countDocuments(match),
+  // ]);
 
   const [withImg, withGroup] = await Promise.all([
     attachFirstImages(items, companyId),

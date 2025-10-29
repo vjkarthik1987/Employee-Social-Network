@@ -47,6 +47,9 @@ const ts = new Date(post.createdAt || post.publishedAt || post.updatedAt || Date
       <div class="poll-actions" style="display:flex;align-items:center;gap:10px;justify-content:flex-start;">
         <button type="submit" class="btn">Submit</button>
         <div class="poll-stats"><%= Number(post.poll?.totalParticipants || 0) %> participants</div>
+        <% if (user && ['MODERATOR','ORG_ADMIN'].includes(user.role)) { %>
+          <button type="button" class="btn muted" onclick="return closePoll_<%= post._id %>(this)">Close poll</button>
+        <% } %>
       </div>
     </form>
   <% } else { %>
@@ -127,6 +130,21 @@ async function submitPoll_<%= post._id %>(form){
     alert('Network error. Try again.');
     if (btn){ btn.disabled=false; btn.textContent='Submit'; }
   }
+  return false;
+}
+
+async function closePoll_<%= post._id %>(btn){
+  const ORG = "<%= company.slug %>";
+  btn.disabled = true; btn.textContent = 'Closing…';
+  try{
+    const res = await fetch(`/${ORG}/api/polls/<%= post._id %>/close`, {
+      method:'POST',
+      headers:{ 'Accept':'application/json','Content-Type':'application/json','CSRF-Token':'<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>' }
+    });
+    const data = await res.json();
+    if(!data.ok){ alert(data.error || 'Failed to close'); btn.disabled=false; btn.textContent='Close poll'; return false; }
+    location.reload();
+  }catch(e){ console.error(e); alert('Network error'); btn.disabled=false; btn.textContent='Close poll'; }
   return false;
 }
 </script>
