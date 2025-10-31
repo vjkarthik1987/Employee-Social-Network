@@ -3,6 +3,9 @@ const { Types } = require('mongoose');
 const Post = require('../models/Post');
 const audit = require('../services/auditService');
 const microcache = require('../middleware/microcache');
+const { sendMail, renderApprovalEmail } = require('../services/mailer');
+const User = require('../models/User');
+
 
 function cid(req) { return req.companyId || req.company?._id; }
 function isObjId(v) { return Types.ObjectId.isValid(v); }
@@ -68,25 +71,63 @@ exports.approve = async (req, res, next) => {
     await microcache.bustPost(req.company.slug, post._id);
 
     req.flash('success', 'Post approved and published.');
+
+    // inside exports.approve, after microcache busts and BEFORE res.redirect:
+    try {
+      const company = req.company;
+      if (company?.policies?.notificationsEnabled) {
+        const author = await User.findById(post.authorId).lean();
+        if (author?.email) {
+          const html = renderApprovalEmail({
+            company,
+            post,
+            decision: 'approved',
+            note: '' // no moderator note on approve
+          });
+          await sendMail({
+            to: author.email,
+            subject: `Post approved on ${company.name}`,
+            html
+          });
+        }
+      }
+    } catch (e) {
+      req.logger && req.logger.warn('[moderation mail][approve] failed', e);
+    }
+
     return res.redirect(`/${req.params.org}/mod/queue`);
   } catch (e) { next(e); }
 };
 
 // POST /:org/posts/mod/reject   (body: postId, reason?)
+// POST /:org/posts/mod/reject   (body: postId, reason?)
 exports.reject = async (req, res, next) => {
   try {
     const companyId = cid(req);
     const { postId } = req.body || {};
-    if (!postId || !isObjId(postId)) { req.flash('error','Invalid id'); return res.redirect('back'); }
+    if (!postId || !isObjId(postId)) {
+      req.flash('error', 'Invalid id');
+      return res.redirect('back');
+    }
 
     const post = await Post.findOne({ _id: postId, companyId, deletedAt: null });
-    if (!post) { req.flash('error','Not found'); return res.redirect('back'); }
+    if (!post) {
+      req.flash('error', 'Not found');
+      return res.redirect('back');
+    }
 
-    // Two common patterns: "REJECTED" status or soft-delete.
-    // We’ll mark as REJECTED (keeps an audit trail without showing on feeds).
+    // Mark as REJECTED (keeps audit trail without showing on feeds)
     post.status = 'REJECTED';
     await post.save();
 
+    // Audit: high-level decision (use the imported 'audit' service)
+    await audit.record(req.user._id, 'POST_MODERATION_DECISION', {
+      companyId: req.companyId,
+      postId: post._id,
+      decision: 'rejected'
+    }).catch(() => {});
+
+    // Audit: detailed event (legacy/action-style)
     audit.record({
       companyId,
       actorUserId: req.user._id,
@@ -94,14 +135,40 @@ exports.reject = async (req, res, next) => {
       targetType: 'post',
       targetId: post._id,
       metadata: { reason: (req.body.reason || '').slice(0, 200) }
-    }).catch(()=>{});
+    }).catch(() => {});
 
-    // bust any cached lists that might include it (defensive)
+    // Bust any cached lists that might include it (defensive)
     await microcache.bustTenant(req.company.slug);
     if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
     await microcache.bustPost(req.company.slug, post._id);
 
+    // Notify author (only if tenant notifications are enabled)
+    try {
+      const company = req.company;
+      if (company?.policies?.notificationsEnabled) {
+        const author = await User.findById(post.authorId).lean();
+        if (author?.email) {
+          const html = renderApprovalEmail({
+            company,
+            post,
+            decision: 'rejected',
+            note: (req.body.reason || '').slice(0, 200)
+          });
+          await sendMail({
+            to: author.email,
+            subject: `Post rejected on ${company.name}`,
+            html
+          });
+        }
+      }
+    } catch (mailErr) {
+      req.logger && req.logger.warn('[moderation mail][reject] failed', mailErr);
+      // do not interrupt user flow
+    }
+
     req.flash('success', 'Post rejected.');
     return res.redirect(`/${req.params.org}/mod/queue`);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };

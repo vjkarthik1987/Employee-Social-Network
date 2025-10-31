@@ -1,0 +1,47 @@
+<% layout('layouts/_layout') %>
+<section style="max-width:1100px;margin:24px auto;">
+  <h2>Central: Licenses</h2>
+  <table class="table" style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th style="text-align:left;">Company</th>
+        <th>Plan</th>
+        <th>Trial Ends</th>
+        <th>Used/Seats</th>
+        <th>Valid Till</th>
+        <th style="width:300px;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% (companies||[]).forEach(c => { %>
+        <tr>
+          <td style="padding:8px 6px;"><strong><%= c.name %></strong><br/><small>/<%= c.slug %></small></td>
+          <td style="text-align:center;"><%= c.planState || 'FREE_TRIAL' %></td>
+          <td style="text-align:center;"><%= c.trialEndsAt ? new Date(c.trialEndsAt).toDateString() : '—' %></td>
+          <td style="text-align:center;"><%= (c.license?.used||0) %>/<%= (c.license?.seats||25) %></td>
+          <td style="text-align:center;"><%= c.license?.validTill ? new Date(c.license.validTill).toDateString() : '—' %></td>
+          <td>
+            <form method="POST" action="/admin-central/licenses/<%= c._id %>" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-items:center;">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <label>Seats <input type="number" name="seats" min="1" value="<%= c.license?.seats || 25 %>" style="width:100%"></label>
+              <label>Valid Till <input type="date" name="validTill" value="<%= c.license?.validTill ? new Date(c.license.validTill).toISOString().slice(0,10) : '' %>"></label>
+              <label>Plan
+                <select name="planState">
+                  <option value="FREE_TRIAL" <%= (c.planState==='FREE_TRIAL')?'selected':'' %>>FREE_TRIAL</option>
+                  <option value="ACTIVE" <%= (c.planState==='ACTIVE')?'selected':'' %>>ACTIVE</option>
+                  <option value="EXPIRED" <%= (c.planState==='EXPIRED')?'selected':'' %>>EXPIRED</option>
+                </select>
+              </label>
+              <label style="grid-column:1/-1;">Note
+                <input type="text" name="note" placeholder="Why change? (optional)" style="width:100%">
+              </label>
+              <div style="grid-column:1/-1;text-align:right;">
+                <button class="btn" type="submit">Save</button>
+              </div>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>

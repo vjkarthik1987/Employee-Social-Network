@@ -1,6 +1,7 @@
 // controllers/adminController.js
 const Company = require('../models/Company');
 const AuditLog = require('../models/AuditLog');
+const auditService = require('../services/auditService');
 
 function clampInt(v, def, min, max) {
   const n = parseInt((v ?? '').toString().trim(), 10);
@@ -104,5 +105,51 @@ exports.updateSettings = async (req, res, next) => {
 
     req.flash('success', 'Settings updated ✅');
     return res.redirect(`/${req.company.slug}/admin/settings`);
+  } catch (e) { next(e); }
+};
+
+exports.saveSettings = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.companyId);
+    const before = {
+      policies: { ...company.policies },
+      branding: { ...company.branding },
+    };
+
+    // Branding inputs (already there in your code)
+    company.branding = company.branding || {};
+    company.branding.theme = company.branding.theme || {};
+    company.branding.theme.primary = req.body.themePrimary || company.branding.theme.primary;
+    company.branding.theme.accent  = req.body.themeAccent  || company.branding.theme.accent;
+    company.branding.logoUrl       = req.body.logoUrl || company.branding.logoUrl;
+    company.productName            = req.body.productName || company.productName;
+    company.tagline                = req.body.tagline || company.tagline;
+
+    // Policies (existing)
+    company.policies = company.policies || {};
+    company.policies.postingMode = req.body.postingMode === 'MODERATED' ? 'MODERATED' : 'OPEN';
+    company.policies.blockedWords = (req.body.blockedWordsCSV || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+    const days = Number(req.body.retentionDays || company.policies.retentionDays || 730);
+    company.policies.retentionDays = Math.min(Math.max(days, 7), 3650);
+
+    // NEW: Email notifications toggle (1.6)
+    company.policies.notificationsEnabled = !!req.body.notificationsEnabled;
+
+    await company.save();
+
+    await auditService.record(req.user._id, 'SETTINGS_UPDATED', {
+      companyId: company._id,
+      before,
+      after: {
+        policies: company.policies,
+        branding: company.branding,
+      }
+    });
+
+    req.flash('success', 'Settings saved.');
+    res.redirect(`/${req.params.org}/admin/settings`);
   } catch (e) { next(e); }
 };

@@ -11,10 +11,13 @@ const passport = require('passport');
 const engine = require('ejs-mate');
 const csrf = require('csurf');
 const pkg = require('./package.json');
+const { licenseSweep } = require('./jobs/licenseSweep');
+setInterval(() => { licenseSweep().catch(err => console.warn('[licenseSweep] failed', err)); }, 6 * 60 * 60 * 1000); // every 6h
 
 // --- Routes ---
 const authRoutes = require('./routes/auth');
 const tenantRoutes = require('./routes/tenant');
+const adminCentral = require('./routes/adminCentral');
 
 // --- Middleware ---
 const timing = require('./middleware/timing');
@@ -119,6 +122,8 @@ app.get('/', (_req, res) => {
   res.render('pages/home', { title: 'Welcome', company: null, user: null });
   // Or: res.redirect('/yourorg/feed');
 });
+
+app.use('/', adminCentral);
 
 app.use('/:org', (req, res, next) => {
   res.locals.org = req.params.org;       // available in all EJS views

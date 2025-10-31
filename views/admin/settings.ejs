@@ -105,6 +105,19 @@
         </label>
       </div>
 
+      <!-- Email Notifications -->
+      <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e5e5e5;">
+        <div style="margin-bottom:6px;">Email Notifications</div>
+        <label style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" name="notificationsEnabled" value="1"
+                 <%= company.policies?.notificationsEnabled !== false ? 'checked' : '' %> />
+          <span>Enable emails for post approvals and @mentions</span>
+        </label>
+        <div style="color:#666;font-size:13px;margin-top:4px;">
+          Sent from the central mailer, branded with your logo and colors.
+        </div>
+      </div>
+
       <label style="display:block;">
         <div style="margin-bottom:6px;">Blocked Words (comma-separated)</div>
         <textarea name="blockedWordsCSV" rows="3"
@@ -118,6 +131,30 @@
                style="width:180px;padding:8px;border:1px solid #ddd;border-radius:8px;">
       </label>
     </div>
+
+        <!-- Plan & Usage (read-only) -->
+    <div class="card" style="padding:16px;display:grid;gap:8px;">
+      <h3 style="margin:0;">Plan & Usage</h3>
+      <div>Plan: <strong><%= company.planState || 'FREE_TRIAL' %></strong>
+        <% if (company.trialEndsAt) { %>
+          &nbsp;•&nbsp; Ends: <strong><%= new Date(company.trialEndsAt).toDateString() %></strong>
+        <% } %>
+      </div>
+      <div>Seats:
+        <strong><%= (company.license?.used || 0) %></strong> /
+        <strong><%= (company.license?.seats || 25) %></strong>
+        <% if (company.license?.validTill) { %>
+          &nbsp;•&nbsp; Valid till: <strong><%= new Date(company.license.validTill).toDateString() %></strong>
+        <% } %>
+      </div>
+      <div style="margin-top:8px;">
+        <form method="POST" action="/<%= company.slug %>/admin/support/upgrade">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <button class="btn" type="submit">Request upgrade</button>
+        </form>
+      </div>
+    </div>
+
 
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn" type="submit">Save Settings</button>

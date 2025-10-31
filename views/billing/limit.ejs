@@ -1,0 +1,12 @@
+<% layout('layouts/_layout') %>
+<section style="max-width:720px;margin:24px auto;">
+  <h2>Seat limit reached</h2>
+  <p>You’ve used all available seats for <strong><%= company.name %></strong>. To add more users, request an upgrade.</p>
+
+  <form method="POST" action="/<%= company.slug %>/admin/support/upgrade">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <button class="btn" type="submit">Request upgrade</button>
+  </form>
+
+  <p style="color:#666;margin-top:16px;">Existing users can continue using the app normally.</p>
+</section>

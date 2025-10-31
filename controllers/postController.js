@@ -8,12 +8,13 @@ const Group = require('../models/Group');
 const Attachment = require('../models/Attachment');
 const Comment = require('../models/Comment');
 
+const { extractMentionsFromHtml, makeSnippet } = require('../utils/mentions');
+const { sendMail, renderMentionEmail } = require('../services/mailer');
 const audit = require('../services/auditService');
 const perf = require('../services/perfService');
 const microcache = require('../middleware/microcache');
 const cacheStore = require('../services/cacheStore');
 const etag = require('../services/etag');
-
 
 function cid(req) { return req.companyId || req.company?._id; }
 function isObjId(v) { return Types.ObjectId.isValid(v); }
@@ -174,15 +175,6 @@ async function runFeedQuery({ req, scope, groupId = null }) {
        return p;
      });
   }
-
-  // const [items, total] = await Promise.all([
-  //   findCursor
-  //     .skip(filters.skip)
-  //     .limit(filters.limit)
-  //     .populate('authorId', 'fullName avatarUrl title')
-  //     .lean(),
-  //   Post.countDocuments(match),
-  // ]);
 
   const [withImg, withGroup] = await Promise.all([
     attachFirstImages(items, companyId),
@@ -450,10 +442,44 @@ exports.create = async (req, res, next) => {
     await microcache.bustTenant(req.company.slug);
     if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
 
+    // --- send @mention emails (only if tenant allows) ---
+    try {
+      const company = req.company;
+      if (company?.policies?.notificationsEnabled) {
+        const { handles, emails } = extractMentionsFromHtml(post.richText);
+        if (handles.length || emails.length) {
+          const usersByHandle = handles.length
+            ? await User.find({ companyId, handle: { $in: handles } }).lean()
+            : [];
+          const usersByEmail = emails.length
+            ? await User.find({ companyId, email: { $in: emails } }).lean()
+            : [];
+
+          const targets = [...usersByHandle, ...usersByEmail]
+            .filter(u => String(u._id) !== String(req.user._id))   // avoid emailing self
+            .filter(u => !!u.email);
+
+          if (targets.length) {
+            const snippet = makeSnippet(post.richText);
+            const link = `${process.env.APP_BASE_URL}/${company.slug}/p/${post._id}`;
+            const html = renderMentionEmail({ company, actor: req.user, snippet, link });
+
+            await Promise.allSettled(
+              targets.map(u => sendMail({ to: u.email, subject: `You were mentioned on ${company.name}`, html }))
+            );
+          }
+        }
+      }
+    } catch (e) {
+      req.logger && req.logger.warn('[post mention mail] failed', e);
+    }
+
+
     req.flash('success', status === 'PUBLISHED' ? 'Posted.' : 'Submitted for review.');
     return res.redirect(`/${req.params.org}/feed`);
   } catch (e) { next(e); }
 };
+
 
 // GET /:org/posts/:postId
 exports.getPost = async (req, res, next) => {

@@ -3,7 +3,10 @@ const path = require('path');
 const sanitizeHtml = require('sanitize-html');
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
+const User = require('../models/User');
 const ejs = require('ejs');
+
+
 
 function renderPartialToString(viewRelativePath, locals) {
   const file = path.join(__dirname, '..', 'views', viewRelativePath);
@@ -49,9 +52,9 @@ exports.destroy = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+// POST /:org/posts/:postId/comments (AJAX)
 exports.createAjax = async (req, res, next) => {
   try {
-
     const cid = companyIdOf(req);
     const { postId } = req.params;
     const { content = '', parentCommentId = null } = req.body;
@@ -60,16 +63,24 @@ exports.createAjax = async (req, res, next) => {
       return res.status(400).json({ ok: false, error: 'EMPTY' });
     }
 
+    // Validate post
     const post = await Post.findOne({ _id: postId, companyId: cid, deletedAt: null });
     if (!post) return res.status(404).json({ ok: false });
 
+    // Parent/level
     let level = 0, parent = null;
     if (parentCommentId) {
-      parent = await Comment.findOne({ _id: parentCommentId, postId, companyId: cid, status: { $ne: 'deleted' } });
+      parent = await Comment.findOne({
+        _id: parentCommentId,
+        postId,
+        companyId: cid,
+        status: { $ne: 'deleted' }
+      });
       if (!parent) return res.status(400).json({ ok: false, error: 'BAD_PARENT' });
       level = 1;
     }
 
+    // Create comment
     const comment = await Comment.create({
       companyId: cid,
       postId,
@@ -79,19 +90,16 @@ exports.createAjax = async (req, res, next) => {
       content: clean(content),
     });
 
-    // denorm counters
+    // Denorm counters
     await Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } });
     if (parent) await Comment.updateOne({ _id: parent._id }, { $inc: { repliesCount: 1 } });
 
-    // hydrate for view
+    // Hydrate for view
     const doc = await Comment.findById(comment._id)
       .populate('authorId', 'fullName title avatarUrl')
       .lean();
 
-    // Render server-side HTML snippet for the new item
-
-
-
+    // Render SSR HTML partial
     const view = level === 0 ? 'partials/_comment' : 'partials/_reply';
     const locals = {
       layout: false,
@@ -101,12 +109,50 @@ exports.createAjax = async (req, res, next) => {
       comment: level === 0 ? doc : undefined,
       replies: level === 0 ? [] : undefined,
       r: level === 1 ? doc : undefined,
-      csrfToken: req.csrfToken(),            // ✅ ADD THIS
+      csrfToken: req.csrfToken && req.csrfToken(),
     };
-
     const file = path.join(__dirname, '..', 'views', `${view}.ejs`);
     const html = await ejs.renderFile(file, locals, { async: true });
 
+    // --- send @mention emails (non-blocking UX; scoped to this handler) ---
+    try {
+      const company = req.company;
+      if (company?.policies?.notificationsEnabled) {
+        const { handles, emails } = extractMentionsFromHtml(comment.content);
+
+        if (handles.length || emails.length) {
+          const usersByHandle = handles.length
+            ? await User.find({ companyId: cid, handle: { $in: handles } }).lean()
+            : [];
+          const usersByEmail = emails.length
+            ? await User.find({ companyId: cid, email: { $in: emails } }).lean()
+            : [];
+
+          const targets = [...usersByHandle, ...usersByEmail]
+            .filter(u => String(u._id) !== String(req.user._id))   // avoid emailing self
+            .filter(u => !!u.email);
+
+          if (targets.length) {
+            const snippet = makeSnippet(comment.content);
+            const link = `${process.env.APP_BASE_URL}/${company.slug}/p/${post._id}#c-${comment._id}`;
+            const mailHtml = renderMentionEmail({ company, actor: req.user, snippet, link });
+
+            await Promise.allSettled(
+              targets.map(u => sendMail({
+                to: u.email,
+                subject: `You were mentioned on ${company.name}`,
+                html: mailHtml
+              }))
+            );
+          }
+        }
+      }
+    } catch (mailErr) {
+      if (req.logger) req.logger.warn('[comment mention mail] failed', mailErr);
+      // swallow mail errors so UI flow is not blocked
+    }
+
+    // Respond to client
     return res.json({
       ok: true,
       html,
@@ -115,8 +161,11 @@ exports.createAjax = async (req, res, next) => {
       commentsCountDelta: 1,
       postId: String(postId)
     });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
+
 
 exports.destroyAjax = async (req, res, next) => {
   try {

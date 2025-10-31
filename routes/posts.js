@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const csrf = require('csurf');
 const csrfProtection = csrf();
+const User = require('../models/User');
 
 /** Auth middleware */
 const auth = require('../middleware/auth');
@@ -25,6 +26,38 @@ const upload = require('../services/storage');
 if (typeof pc?.companyFeed !== 'function') {
   throw new Error('postController.companyFeed is not a function (check your exports).');
 }
+
+router.get('/mentions', ensureAuth, async (req, res, next) => {
+  try {
+    const companyId = req.company?._id || req.companyId;
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.json({ ok: true, users: [] });
+
+    const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rx  = new RegExp('^' + esc(q), 'i');
+
+    const users = await User.find({
+      companyId,
+      $or: [{ handle: rx }, { fullName: rx }, { email: rx }]
+    })
+    .select('_id fullName handle email avatarUrl title')
+    .limit(8)
+    .lean();
+
+    res.json({
+      ok: true,
+      users: users.map(u => ({
+        id: String(u._id),
+        fullName: u.fullName,
+        handle: u.handle || null,
+        email: u.email,
+        avatarUrl: u.avatarUrl || null,
+        subtitle: u.title || ''
+      }))
+    });
+  } catch (e) { next(e); }
+});
+
 router.get('/feed', ensureAuth, csrfProtection, pc.companyFeed);
 
 if (typeof pc?.groupFeed !== 'function') {

@@ -28,3 +28,4 @@
 - Page reload without refresh
 - Moderator view 
 - Seperate area for polls and announcements
+- Correct the poll admin page

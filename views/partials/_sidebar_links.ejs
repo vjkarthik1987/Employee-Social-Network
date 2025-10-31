@@ -16,12 +16,27 @@
   <% } %>
   
   <script>
-  document.addEventListener('click', (e) => {
-    const a = e.target.closest('.il-tile');
-    if (!a) return;
-    const id = a.getAttribute('data-link-id');
-    if (!id) return;
-    fetch(`/<%= company.slug %>/api/links/${id}/click`, { method: 'POST', headers: { 'Accept': 'application/json' } });
-  });
-  </script>
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[data-link-id]');
+      if (!a) return;
+    
+      const id = a.getAttribute('data-link-id');
+      if (!id) return;
+    
+      // Try to resolve org slug from available locals injected into the page
+      var orgSlug = '<%= (company && company.slug) ? company.slug
+                     : (typeof org !== "undefined" && org && org.slug) ? org.slug
+                     : (typeof slug !== "undefined" && slug) ? slug
+                     : "" %>';
+    
+      // If we still don't have a slug (e.g., login page), skip the tracking call
+      if (!orgSlug) return;
+    
+      fetch(`/${orgSlug}/api/links/${id}/click`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+    });
+    </script>
+    
   

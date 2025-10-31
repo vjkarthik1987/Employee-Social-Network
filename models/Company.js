@@ -20,12 +20,20 @@ const companySchema = new mongoose.Schema({
   policies: {
     postingMode: { type: String, enum: ['OPEN','MODERATED'], default: 'OPEN' },
     blockedWords: [String],
-    retentionDays: { type: Number, default: 730 }
+    retentionDays: { type: Number, default: 730 },
+    notificationsEnabled: { type: Boolean, default: true },
   },
   integrations: {
     linkedinCompanyId: String,
     enableLinkedInSync: { type: Boolean, default: false },
     lastLinkedInSyncAt: Date
+  },
+  planState: { type: String, enum: ['FREE_TRIAL','ACTIVE','EXPIRED'], default: 'FREE_TRIAL' },
+  trialEndsAt: { type: Date },
+  license: {
+    seats: { type: Number, default: 25 },
+    used: { type: Number, default: 0 },
+    validTill: { type: Date }
   },
   status: { type: String, enum: ['active','suspended'], default: 'active' },
 }, { timestamps: true });

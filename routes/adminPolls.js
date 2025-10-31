@@ -7,7 +7,7 @@ const Post = require('../models/Post');
 
 function cid(req){ return req.companyId || req.company?._id; }
 
-router.get('/polls', ensureAuth, requireRole(['MODERATOR','ORG_ADMIN']), async (req, res, next) => {
+router.get('/', ensureAuth, requireRole(['MODERATOR','ORG_ADMIN']), async (req, res, next) => {
   try {
     const companyId = cid(req);
     const polls = await Post.aggregate([

@@ -1,0 +1,11 @@
+<% layout('layouts/_layout') %>
+<section style="max-width:720px;margin:24px auto;">
+  <h2>Trial ended</h2>
+  <p>Your free trial for <strong><%= company.name %></strong> ended on <strong><%= new Date(company.trialEndsAt).toDateString() %></strong>.</p>
+  <p>New invites are paused. Request an extension or upgrade to continue adding users.</p>
+
+  <form method="POST" action="/<%= company.slug %>/admin/support/upgrade">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <button class="btn" type="submit">Request upgrade</button>
+  </form>
+</section>
