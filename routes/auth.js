@@ -63,8 +63,12 @@ router.post('/register-org', async (req, res) => {
 
 
 // GET: login
-router.get('/login', (_req, res) => {
-  res.render('auth/login');
+router.get('/login', (req, res) => {
+  res.render('auth/login', {
+    title: 'Login — Engage',
+    auth: true,                // tells layout it's an auth page (no navbar/right bar)
+    csrfToken: req.csrfToken?.()
+  });
 });
 
 // POST: login (local)
