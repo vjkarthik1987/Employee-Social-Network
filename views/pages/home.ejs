@@ -8,6 +8,7 @@
   <link rel="icon" href="/img/logo.ico" sizes="any">
   <link rel="icon" type="/img/image/png" sizes="32x32" href="/logo-32x32.png?v=1">
   <link rel="icon" type="/img/image/png" sizes="16x16" href="/logo-16x16.png?v=1">
+  <link rel="stylesheet" href="/css/main.css">
   <meta property="og:title" content="Jaango.club">
   <meta property="og:description" content="Where voices meet and ideas ripen.">
   <meta property="og:image" content="/img/logo.png">
@@ -41,229 +42,14 @@
         --ring: rgba(255,195,58,.28);
       }
     }
-    html,body{margin:0;background:var(--paper);color:var(--ink-900);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;}
-
-    /* ---- Top bar ---- */
-    .topbar{
-      position:sticky; top:0; z-index:10;
-      backdrop-filter: saturate(140%) blur(6px);
-      background: color-mix(in oklab, var(--paper) 86%, transparent);
-      border-bottom: 1px solid rgba(0,0,0,.06);
-    }
-    .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:12px;justify-content:space-between;}
-    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;font-weight:800;letter-spacing:-.2px;}
-    .brand img{height:28px;width:auto}
-    .top-links a{color:var(--ink-500);text-decoration:none;margin-left:14px}
-    .top-links a:hover{color:var(--ink-700)}
-
-    /* ---- Page layout ---- */
-    .home-wrap{ max-width: var(--maxw); margin: 0 auto; padding: 24px; }
-    .hero{
-      display:grid; gap: var(--gap);
-      grid-template-columns: 1.1fr .9fr;
-      align-items:center; padding: clamp(24px,5vw,48px) 0 8px;
-    }
-    .hero h1{
-      font-size: clamp(28px, 5vw, 56px);
-      line-height:1.02; letter-spacing:-.5px;
-      margin: 0 0 12px; color: var(--ink-900);
-    }
-    .hero p{
-      font-size: clamp(16px, 2.2vw, 20px);
-      color: var(--ink-500); margin: 0 0 22px;
-    }
-    .hero-logo{
-      display:flex; align-items:center; justify-content:center;
-    }
-    .hero-logo img{
-      width: clamp(180px, 36vw, 320px);
-      height:auto; filter: drop-shadow(0 8px 18px rgba(0,0,0,.08));
-    }
-
-    /* ---- Buttons ---- */
-    .btn-row{ display:flex; flex-wrap:wrap; gap:12px; }
-    .btn{
-      appearance:none; border:none; cursor:pointer;
-      padding: 12px 18px; border-radius: 12px;
-      font-weight: 600; font-size: 15px; line-height:1;
-      transition: transform .04s ease, box-shadow .2s ease, background .2s ease;
-      box-shadow: 0 6px 16px rgba(60,164,107,.15);
-      text-decoration:none; display:inline-block;
-    }
-    .btn:focus{ outline: 3px solid var(--ring); outline-offset: 2px; }
-    .btn-primary{ background: var(--jaango-yellow); color:#171717; }
-    .btn-primary:hover{ transform: translateY(-1px); }
-    .btn-ghost{ background: var(--paper-2); color: var(--ink-700); }
-    .btn-ghost:hover{ background: #eef2f6; }
-
-    /* ---- Sections ---- */
-    .section{ padding: clamp(28px,6vw,64px) 0; }
-    .kicker{ color: var(--jaango-green); font-weight:700; letter-spacing:.2px; margin:0 0 8px; }
-    .h2{ font-size: clamp(22px,3.4vw,36px); margin:0 0 12px; color: var(--ink-900); }
-    .sub{ color: var(--ink-500); max-width: 720px; margin: 0 0 18px; }
-
-    .features{ display:grid; gap: var(--gap); grid-template-columns: repeat(3, minmax(0,1fr)); }
-    .card{ background: var(--paper-2); border-radius: var(--radius); padding: 18px; border: 1px solid rgba(0,0,0,.06); }
-    .card h3{ margin: 0 0 6px; font-size: 18px; color: var(--ink-900); }
-    .card p{ margin: 0; color: var(--ink-500); }
-
-    .split{ display:grid; gap: var(--gap); grid-template-columns: 1fr 1fr; align-items:center; }
-    .pill{ display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 12px; background: var(--paper-2); color: var(--ink-500); font-weight:600; border:1px solid rgba(0,0,0,.06); }
-
-    .quote{ background: var(--paper-2); border: 1px solid rgba(0,0,0,.06); border-radius: var(--radius); padding: 18px; font-size: 16px; color: var(--ink-700); }
-    .cta{ text-align:center; padding: clamp(32px,7vw,80px) 0; border-radius: var(--radius);
-      background:
-        radial-gradient(1200px 300px at 50% -20%, rgba(255,195,58,.18), transparent 60%),
-        radial-gradient(1000px 200px at 100% 120%, rgba(60,164,107,.12), transparent 60%); }
-    .cta .h2{ margin-bottom: 8px; }
-    .muted{ color: var(--ink-300); }
-
-    /* ---- Footer ---- */
-    footer{ border-top:1px solid rgba(0,0,0,.06); }
-    .foot{ max-width:1120px; margin:0 auto; padding:28px 24px; text-align:center; color:var(--ink-300); }
-    .foot a{ color:var(--ink-500); text-decoration:none; margin:0 6px; }
-    .foot a:hover{ color:var(--ink-700); }
-
-    /* ---- Responsive ---- */
-    @media (max-width: 900px){
-      .hero, .features, .split{ grid-template-columns: 1fr; }
-      .hero{ text-align:center; }
-      .hero .btn-row{ justify-content:center; }
-    }
-
-    /* === Testimonials Slider === */
-.t-wrap{ position:relative; overflow:hidden; border-radius:var(--radius); }
-.t-track{
-  display:flex;
-  transition: transform .45s cubic-bezier(.22,.61,.36,1);
-  will-change: transform;
-}
-
-.t-card{
-  flex: 0 0 100%;
-  padding: 18px;
-  display:grid; gap:14px; align-content:center;
-  background: var(--paper-2);
-  border:1px solid rgba(0,0,0,.06);
-  min-height: 210px;
-}
-.t-head{ display:flex; align-items:center; gap:12px; }
-.t-avatar{
-  width:44px; height:44px; border-radius:50%;
-  object-fit:cover; border:1px solid rgba(0,0,0,.08);
-  background:#eee;
-}
-.t-name{ font-weight:700; color:var(--ink-900); }
-.t-role{ color:var(--ink-300); font-size:14px; }
-.t-quote{ color:var(--ink-700); font-size:16px; line-height:1.65; margin:0; }
-
-/* nav */
-.t-nav{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:12px; }
-.t-btn{
-  appearance:none; border:none; cursor:pointer;
-  padding:8px 12px; border-radius:10px;
-  background:var(--paper-2); color:var(--ink-700);
-  border:1px solid rgba(0,0,0,.06);
-}
-.t-btn:focus{ outline:3px solid var(--ring); outline-offset:2px; }
-
-.t-dots{ display:flex; gap:6px; align-items:center; }
-.t-dot{
-  width:8px; height:8px; border-radius:999px;
-  background:var(--ink-300); opacity:.6;
-}
-.t-dot[aria-current="true"]{ background:var(--jaango-yellow); opacity:1; }
-
-/* layout on wider screens */
-@media (min-width: 860px){
-  .t-card{ grid-template-columns: 80px 1fr; align-items:center; }
-  .t-head{ grid-column: 1 / 2; flex-direction:column; align-items:flex-start; }
-  .t-quote{ grid-column: 2 / 3; }
-}
-
-/* motion respect */
-@media (prefers-reduced-motion: reduce){
-  .t-track{ transition: none; }
-}
-/* --- Mobile nav (hamburger) --- */
-.hamburger{
-  display:none; background:var(--paper-2); border:1px solid rgba(0,0,0,.06);
-  padding:8px 10px; border-radius:10px; cursor:pointer; color:var(--ink-700);
-}
-.hamburger:focus{ outline:3px solid var(--ring); outline-offset:2px; }
-
-@media (max-width: 900px){
-  .topbar-inner{ flex-wrap:wrap; }
-  .top-links{ display:none; width:100%; padding:8px 0 2px; }
-  .top-links a{ display:block; padding:10px 0; margin:0; }
-  .top-links.is-open{ display:block; }
-  .hamburger{ display:inline-block; }
-
-  /* hero tweaks */
-  .hero{ grid-template-columns:1fr; padding: 18px 0 0; }
-  .hero-logo img{ max-width:220px; }
-
-  /* sections */
-  .features{ grid-template-columns:1fr; }
-  .section{ padding: 22px 0; }
-  .card{ padding:16px; }
-  .sub{ max-width:none; }
-
-  /* buttons */
-  .btn{ width:auto; }
-  .btn-row{ gap:10px; }
-
-  /* testimonial slider cards a bit taller on small */
-  .t-card{ min-height: 180px; }
-}
-
-/* Better tap targets */
-.t-btn, .btn, .top-links a { min-height: 44px; }
-
-/* Images shouldn't overflow */
-img{ max-width:100%; height:auto; }
-
-/* --- Fix button extra bottom padding on mobile --- */
-.btn{
-  display:inline-flex;           /* centers text & emoji vertically */
-  align-items:center;
-  justify-content:center;
-  line-height:1;                 /* no extra line box */
-  min-height:auto;               /* undo global tap-target min-height */
-  padding:12px 18px;             /* keep your intended padding */
-  vertical-align:middle;         /* fix baseline wiggle */
-}
-
-/* keep larger tap targets for other controls, not .btn */
-.t-btn, .top-links a { min-height:44px; }
-
-@media (max-width:480px){
-  .btn-row .btn{ width:100%; }
-}
-
-
+    
   </style>
 </head>
+
 <body>
 
   <!-- TOPBAR (no user data) -->
-  <div class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="/">
-        <img src="/img/logo.png" alt="Jaango logo">
-        <span>Jaango.club</span>
-      </a>
-      <button class="hamburger" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">☰</button>
-      <nav id="nav-links" class="top-links" role="navigation">
-        <a href="#how">How it works</a>
-        <a href="/features">Features</a>
-        <a href="/about-us">About Us</a>
-        <a href="/pricing">Pricing</a>
-        <a class="btn btn-primary" href="/auth/register-org">Start your Club</a>
-      </nav>
-
-    </div>
-  </div>
+  <%- include('../partials/_topbar')%>
 
   <main class="home-wrap">
 
@@ -278,7 +64,7 @@ img{ max-width:100%; height:auto; }
           A familiar, secure space where voices meet, ideas ripen, and teams stay connected.
         </p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="/signup">🍋 Start your Club</a>
+          <a class="btn btn-primary" href="/auth/register-org">🍋 Start your Club</a>
           <a class="btn btn-ghost" href="#how">🌿 See how it works</a>
         </div>
       </div>
@@ -344,61 +130,60 @@ img{ max-width:100%; height:auto; }
     </section>
 
     <!-- TESTIMONIALS (Slider) -->
-<section class="section" aria-labelledby="love-title">
-  <h2 id="love-title" class="h2">Loved by small, cosy clubs</h2>
-  <p class="sub">Real words from early Jaango folks.</p>
+    <section class="section" aria-labelledby="love-title">
+      <h2 id="love-title" class="h2">Loved by small, cosy clubs</h2>
+      <p class="sub">Real words from early Jaango folks.</p>
 
-  <div class="t-wrap" data-t-slider>
-    <div class="t-track">
-      <!-- Slide 1 -->
-      <article class="t-card" role="group" aria-roledescription="slide" aria-label="1 of 3">
-        <div class="t-head">
-          <img class="t-avatar" src="/img/avatars/a1.jpg" alt="Maya P." onerror="this.src='/img/logo.png'">
-          <div>
-            <div class="t-name">Maya P.</div>
-            <div class="t-role">Community host, Book Circle</div>
-          </div>
+      <div class="t-wrap" data-t-slider>
+        <div class="t-track">
+          <!-- Slide 1 -->
+          <article class="t-card" role="group" aria-roledescription="slide" aria-label="1 of 3">
+            <div class="t-head">
+              <img class="t-avatar" src="/img/avatars/a1.jpg" alt="Maya P." onerror="this.src='/img/logo.png'">
+              <div>
+                <div class="t-name">Maya P.</div>
+                <div class="t-role">Community host, Book Circle</div>
+              </div>
+            </div>
+            <p class="t-quote">“It feels like Facebook, but for our own little world. Calm, familiar, and it actually gets people talking.”</p>
+          </article>
+
+          <!-- Slide 2 -->
+          <article class="t-card" role="group" aria-roledescription="slide" aria-label="2 of 3">
+            <div class="t-head">
+              <img class="t-avatar" src="/img/avatars/a2.jpg" alt="Ravi K." onerror="this.src='/img/logo.png'">
+              <div>
+                <div class="t-name">Ravi K.</div>
+                <div class="t-role">Product lead, Tiny Startup</div>
+              </div>
+            </div>
+            <p class="t-quote">“We use it every day — not because we have to, but because we want to. The team vibe improved in a week.”</p>
+          </article>
+
+          <!-- Slide 3 -->
+          <article class="t-card" role="group" aria-roledescription="slide" aria-label="3 of 3">
+            <div class="t-head">
+              <img class="t-avatar" src="/img/avatars/a3.jpg" alt="Sara L." onerror="this.src='/img/logo.png'">
+              <div>
+                <div class="t-name">Sara L.</div>
+                <div class="t-role">Maker Club Organizer</div>
+              </div>
+            </div>
+            <p class="t-quote">“There’s a mango emoji in our hearts now. 🥭 Jaango makes appreciation so easy.”</p>
+          </article>
         </div>
-        <p class="t-quote">“It feels like Facebook, but for our own little world. Calm, familiar, and it actually gets people talking.”</p>
-      </article>
 
-      <!-- Slide 2 -->
-      <article class="t-card" role="group" aria-roledescription="slide" aria-label="2 of 3">
-        <div class="t-head">
-          <img class="t-avatar" src="/img/avatars/a2.jpg" alt="Ravi K." onerror="this.src='/img/logo.png'">
-          <div>
-            <div class="t-name">Ravi K.</div>
-            <div class="t-role">Product lead, Tiny Startup</div>
+        <div class="t-nav" aria-label="testimonial controls">
+          <button class="t-btn" data-prev aria-label="Previous testimonial">‹</button>
+          <div class="t-dots" role="tablist" aria-label="testimonial pagination">
+            <span class="t-dot" role="tab" data-dot="0" aria-current="true"></span>
+            <span class="t-dot" role="tab" data-dot="1"></span>
+            <span class="t-dot" role="tab" data-dot="2"></span>
           </div>
+          <button class="t-btn" data-next aria-label="Next testimonial">›</button>
         </div>
-        <p class="t-quote">“We use it every day — not because we have to, but because we want to. The team vibe improved in a week.”</p>
-      </article>
-
-      <!-- Slide 3 -->
-      <article class="t-card" role="group" aria-roledescription="slide" aria-label="3 of 3">
-        <div class="t-head">
-          <img class="t-avatar" src="/img/avatars/a3.jpg" alt="Sara L." onerror="this.src='/img/logo.png'">
-          <div>
-            <div class="t-name">Sara L.</div>
-            <div class="t-role">Maker Club Organizer</div>
-          </div>
-        </div>
-        <p class="t-quote">“There’s a mango emoji in our hearts now. 🥭 Jaango makes appreciation so easy.”</p>
-      </article>
-    </div>
-
-    <div class="t-nav" aria-label="testimonial controls">
-      <button class="t-btn" data-prev aria-label="Previous testimonial">‹</button>
-      <div class="t-dots" role="tablist" aria-label="testimonial pagination">
-        <span class="t-dot" role="tab" data-dot="0" aria-current="true"></span>
-        <span class="t-dot" role="tab" data-dot="1"></span>
-        <span class="t-dot" role="tab" data-dot="2"></span>
       </div>
-      <button class="t-btn" data-next aria-label="Next testimonial">›</button>
-    </div>
-  </div>
-</section>
-
+    </section>
 
     <!-- CTA -->
     <section class="cta">
@@ -408,7 +193,7 @@ img{ max-width:100%; height:auto; }
         Jaango doesn’t need a manual — it just feels right.
       </p>
       <div class="btn-row" style="justify-content:center;">
-        <a class="btn btn-primary" href="/signup">🍋 Create My Club</a>
+        <a class="btn btn-primary" href="/auth/register-org">🍋 Create My Club</a>
         <a class="btn btn-ghost" href="/about">🌿 Explore a Demo</a>
       </div>
     </section>
@@ -451,70 +236,45 @@ img{ max-width:100%; height:auto; }
       </div>
     </section>
 
+    <!-- WHO IT’S FOR -->
+    <section class="section">
+      <h2 class="h2">Who Jaango is for</h2>
+      <p class="sub">Not a “one-size-fits-all” network — it’s your small, meaningful space.</p>
+      <div class="features">
+        <article class="card">
+          <h3>Startup & Product Teams</h3>
+          <p>Daily ideas, decisions, launches, and appreciation in one friendly feed.</p>
+        </article>
+        <article class="card">
+          <h3>Communities & Clubs</h3>
+          <p>Book circles, maker groups, alumni — a cosy corner to stay connected.</p>
+        </article>
+        <article class="card">
+          <h3>Internal Company Spaces</h3>
+          <p>Like Facebook for work: groups, kudos, polls, and respectful moderation.</p>
+        </article>
+      </div>
+    </section>
 
-<!-- WHO IT’S FOR -->
-<section class="section">
-  <h2 class="h2">Who Jaango is for</h2>
-  <p class="sub">Not a “one-size-fits-all” network — it’s your small, meaningful space.</p>
-  <div class="features">
-    <article class="card">
-      <h3>Startup & Product Teams</h3>
-      <p>Daily ideas, decisions, launches, and appreciation in one friendly feed.</p>
-    </article>
-    <article class="card">
-      <h3>Communities & Clubs</h3>
-      <p>Book circles, maker groups, alumni — a cosy corner to stay connected.</p>
-    </article>
-    <article class="card">
-      <h3>Internal Company Spaces</h3>
-      <p>Like Facebook for work: groups, kudos, polls, and respectful moderation.</p>
-    </article>
-  </div>
-</section>
-
-<!-- TRUST, SAFETY & PRIVACY -->
-<section class="section">
-  <h2 class="h2">Trust, safety, and privacy</h2>
-  <p class="sub">Built to feel safe and simple from day one.</p>
-  <div class="features">
-    <article class="card">
-      <h3>Private by design</h3>
-      <p>No ads, no tracking, no algorithmic drama. You own your club and members.</p>
-    </article>
-    <article class="card">
-      <h3>Moderation that respects</h3>
-      <p>Open or moderated posting, flags for review, soft-delete, and clear audit trails.</p>
-    </article>
-    <article class="card">
-      <h3>Data care</h3>
-      <p>Reasonable retention, export on request, and regional hosting options on our roadmap.</p>
-    </article>
-  </div>
-</section>
-
-
-  <!-- WHO IT’S FOR -->
-  <section class="section">
-    <h2 class="h2">Who Jaango is for</h2>
-    <p class="sub">Not a “one-size-fits-all” network — it’s your small, meaningful space.</p>
-    <div class="features">
-      <article class="card">
-        <h3>Startup & Product Teams</h3>
-        <p>Daily ideas, decisions, launches, and appreciation in one friendly feed.</p>
-      </article>
-      <article class="card">
-        <h3>Communities & Clubs</h3>
-        <p>Book circles, maker groups, alumni — a cosy corner to stay connected.</p>
-      </article>
-      <article class="card">
-        <h3>Internal Company Spaces</h3>
-        <p>Like Facebook for work: groups, kudos, polls, and respectful moderation.</p>
-      </article>
-    </div>
-  </section>
-
-
-
+      <!-- TRUST, SAFETY & PRIVACY -->
+    <section class="section">
+      <h2 class="h2">Trust, safety, and privacy</h2>
+      <p class="sub">Built to feel safe and simple from day one.</p>
+      <div class="features">
+        <article class="card">
+          <h3>Private by design</h3>
+          <p>No ads, no tracking, no algorithmic drama. You own your club and members.</p>
+        </article>
+        <article class="card">
+          <h3>Moderation that respects</h3>
+          <p>Open or moderated posting, flags for review, soft-delete, and clear audit trails.</p>
+        </article>
+        <article class="card">
+          <h3>Data care</h3>
+          <p>Reasonable retention, export on request, and regional hosting options on our roadmap.</p>
+        </article>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -524,18 +284,18 @@ img{ max-width:100%; height:auto; }
     </div>
   </footer>
 
-  <script>
-    // Smooth scroll for in-page anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(a=>{
-      a.addEventListener('click', e=>{
-        const id = a.getAttribute('href');
-        if(id.length > 1){
-          const el = document.querySelector(id);
-          if(el){ e.preventDefault(); el.scrollIntoView({behavior:'smooth', block:'start'}); }
-        }
-      });
+<script>
+  // Smooth scroll for in-page anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click', e=>{
+      const id = a.getAttribute('href');
+      if(id.length > 1){
+        const el = document.querySelector(id);
+        if(el){ e.preventDefault(); el.scrollIntoView({behavior:'smooth', block:'start'}); }
+      }
     });
-  </script>
+  });
+</script>
 
 <script>
   (function(){

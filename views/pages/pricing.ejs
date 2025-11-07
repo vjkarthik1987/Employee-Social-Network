@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Pricing — Jaango.club</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Simple, democratic pricing. One product, one price logic. Choose Cloud, Forever License, or Community self-host.">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    :root{
+    --jaango-yellow:#FFC33A;
+    --jaango-yellow-ink:#E59A00;
+    --jaango-green:#3CA46B;
+    --ink-900:#0E1116;
+    --ink-700:#1F232B;
+    --ink-500:#525866;
+    --ink-300:#8E95A3;
+    --paper:#ffffff;
+    --paper-2:#FAFBFC;
+    --ring: rgba(60,164,107,.35);
+    --radius: 16px;
+    --gap: clamp(16px, 3vw, 28px);
+    --maxw: 1120px;
+    }
+    @media (prefers-color-scheme: dark){
+    :root{
+        --paper:#0B0E14;
+        --paper-2:#0F131A;
+        --ink-900:#F7F8FA;
+        --ink-700:#E9EBEF;
+        --ink-500:#B8BFCC;
+        --ink-300:#99A1B1;
+        --ring: rgba(255,195,58,.28);
+    }
+    }
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:24px;}
+    .hero-center{text-align:center;padding:clamp(18px,5vw,40px) 0 10px;}
+    .plans{display:grid;gap:var(--gap);grid-template-columns:repeat(3,minmax(0,1fr));}
+    @media (max-width: 980px){ .plans{grid-template-columns:1fr} }
+
+    .plan{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:10px}
+    .plan h3{margin:0;color:var(--ink-900);font-size:20px}
+    .price{font-weight:800;font-size:28px;letter-spacing:-.3px;color:var(--ink-900)}
+    .meta{color:var(--ink-500);font-size:14px}
+    .list{margin:8px 0 0;padding-left:18px;color:var(--ink-700);line-height:1.7}
+    .badge{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(0,0,0,.06);padding:6px 10px;border-radius:999px;background:var(--paper)}
+    .accent-cloud{background:color-mix(in oklab,var(--jaango-yellow) 16%, transparent)}
+    .accent-forever{background:color-mix(in oklab,var(--jaango-green) 14%, transparent)}
+    .accent-community{background:color-mix(in oklab,var(--ink-300) 14%, transparent)}
+
+    .calc{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:18px;margin-top:12px}
+    .calc-row{display:grid;gap:12px;grid-template-columns:1fr 1fr 1fr}
+    @media (max-width: 900px){ .calc-row{grid-template-columns:1fr} }
+    .calc label{display:block;font-weight:600;margin-bottom:6px;color:var(--ink-700)}
+    .calc input[type="number"]{width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:var(--paper);color:var(--ink-900)}
+    .calc .out{background:var(--paper);border:1px dashed rgba(0,0,0,.12);padding:10px;border-radius:12px;min-height:44px;display:flex;align-items:center}
+
+    .manifesto{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:18px}
+    .faq{display:grid;gap:var(--gap);grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width: 980px){ .faq{grid-template-columns:1fr} }
+    .qa{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:16px}
+    .qa h4{margin:0 0 6px}
+
+    .table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid rgba(0,0,0,.06);border-radius:12px;overflow:hidden}
+    .table th,.table td{padding:12px 14px;text-align:left}
+    .table thead{background:var(--paper-2)}
+    .table tbody tr:not(:last-child) td{border-bottom:1px solid rgba(0,0,0,.06)}
+  </style>
+</head>
+<body>
+
+  <%- include('../partials/_topbar') %>
+
+  <main class="wrap" id="top">
+    <!-- Hero -->
+    <section class="hero-center">
+      <span class="pill">Jaango.club</span>
+      <h1 class="h2" style="font-size:clamp(28px,4vw,42px);margin:8px 0 6px;">One product. One price logic.</h1>
+      <p class="sub" style="max-width:760px;margin:0 auto;">
+        We don’t sell tiers or gate features. Everyone gets the same Jaango. You only choose how to run it:
+        <strong>Cloud</strong>, <strong>Forever</strong>, or <strong>Community</strong>.
+      </p>
+      <div class="btn-row" style="justify-content:center;margin-top:12px;">
+        <a class="btn btn-primary" href="/auth/register-org">🍋 Start your Club</a>
+        <a class="btn btn-ghost" href="#plans">See plans</a>
+      </div>
+    </section>
+
+    <!-- Plans -->
+    <section id="plans" class="section" style="padding-top:10px;">
+      <div class="plans">
+        <!-- Cloud -->
+        <article class="plan accent-cloud">
+          <div class="badge">Managed SaaS · Updates included</div>
+          <h3>Jaango Cloud</h3>
+          <div class="price">₹100<span class="meta">/user/year</span></div>
+          <p class="meta">Hosted & supported by us. Same version as everyone else.</p>
+          <ul class="list">
+            <li>Fast onboarding, backups, monitoring</li>
+            <li>All features: posts, groups, kudos, moderation, analytics</li>
+            <li>Email support</li>
+          </ul>
+          <div class="btn-row" style="margin-top:auto">
+            <a class="btn btn-primary" href="/auth/register-org">Choose Cloud</a>
+          </div>
+        </article>
+
+        <!-- Forever -->
+        <article class="plan accent-forever">
+          <div class="badge">Own it · 10-year usage rights</div>
+          <h3>Jaango Forever</h3>
+          <div class="price">₹400<span class="meta">/user (one-time)</span></div>
+          <p class="meta">Optional maintenance: <strong>₹10,000/year</strong> for updates & support.</p>
+          <ul class="list">
+            <li>Deploy on your infra or cloud</li>
+            <li>Same codebase, same features, same upgrades (with maintenance)</li>
+            <li>BYO DB/SMTP/Cloudinary or our guidance</li>
+          </ul>
+          <div class="btn-row" style="margin-top:auto">
+            <a class="btn btn-ghost" href="#calculator">Estimate cost</a>
+          </div>
+        </article>
+
+        <!-- Community -->
+        <article class="plan accent-community">
+          <div class="badge">Source-available · Self-host</div>
+          <h3>Jaango Community</h3>
+          <div class="price">₹0<span class="meta"> self-host</span></div>
+          <p class="meta">Bring your own infra (DB, SMTP, Cloudinary). “Powered by Jaango” attribution required.</p>
+          <ul class="list">
+            <li>Same product, self-managed</li>
+            <li>Optional updates/support: ₹10,000/year</li>
+            <li>Best for internal IT teams</li>
+          </ul>
+          <div class="btn-row" style="margin-top:auto">
+            <a class="btn btn-ghost" href="/about-us">Learn more</a>
+          </div>
+        </article>
+      </div>
+
+      <!-- Examples table -->
+      <div class="section" style="padding-top:18px;">
+        <h2 class="h2">Real-world examples</h2>
+        <table class="table" aria-label="Pricing examples by user count">
+          <thead>
+            <tr>
+              <th>Users</th>
+              <th>Cloud (annual)</th>
+              <th>Forever (one-time)</th>
+              <th>Maintenance (optional)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>100</td><td>₹10,000 / year</td><td>₹40,000 one-time</td><td>₹10,000 / year</td></tr>
+            <tr><td>500</td><td>₹50,000 / year</td><td>₹2,00,000 one-time</td><td>₹10,000 / year</td></tr>
+            <tr><td>1,000</td><td>₹1,00,000 / year</td><td>₹4,00,000 one-time</td><td>₹10,000 / year</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Calculator -->
+      <section id="calculator" class="calc" aria-labelledby="calc-title">
+        <h2 id="calc-title" class="h2" style="margin-bottom:6px;">Quick calculator</h2>
+        <p class="sub" style="margin-top:0">Enter your user count to compare Cloud vs Forever.</p>
+        <div class="calc-row" role="group" aria-label="Pricing calculator">
+          <div>
+            <label for="users">Users</label>
+            <input id="users" type="number" min="1" step="1" value="500" inputmode="numeric" aria-describedby="users-help">
+            <div id="users-help" class="meta" style="margin-top:6px;">No floor. No ceiling. Fair for everyone.</div>
+          </div>
+          <div>
+            <label>Cloud (₹100/user/year)</label>
+            <div id="cloudOut" class="out" aria-live="polite">—</div>
+          </div>
+          <div>
+            <label>Forever (₹400/user one-time) + optional maintenance</label>
+            <div id="foreverOut" class="out" aria-live="polite">—</div>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- Manifesto -->
+    <section class="section manifesto">
+      <h2 class="h2">We’re breaking the enterprise mould</h2>
+      <p style="color:var(--ink-700);margin:6px 0 0;">
+        Enterprise HR tools are usually expensive, gated, and joyless. Jaango chooses a different path:
+        <strong>social-democratic software</strong>. One product for all. Transparent per-user pricing.
+        No artificial tiers. Everyone rides the same upgrade train.
+      </p>
+      <ul class="list">
+        <li><strong>No feature gating:</strong> Every plan gets the same features.</li>
+        <li><strong>One codebase:</strong> Faster fixes, safer upgrades, shared progress.</li>
+        <li><strong>Privacy first:</strong> No ads, no tracking, no algorithmic chaos.</li>
+      </ul>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section">
+      <h2 class="h2">FAQ</h2>
+      <div class="faq">
+        <article class="qa">
+          <h4>Is there a minimum user count?</h4>
+          <p class="meta">No. If you have 27 users, you pay for 27 — fair and simple.</p>
+        </article>
+        <article class="qa">
+          <h4>Can I move from Cloud to Forever later?</h4>
+          <p class="meta">Yes. You can start on Cloud and switch to a Forever license anytime.</p>
+        </article>
+        <article class="qa">
+          <h4>Do all plans receive updates?</h4>
+          <p class="meta">Yes. Cloud always. Forever & Community get updates with the optional maintenance.</p>
+        </article>
+        <article class="qa">
+          <h4>What about support?</h4>
+          <p class="meta">Cloud includes email support. Forever/Community get support with maintenance.</p>
+        </article>
+        <article class="qa">
+          <h4>Any add-ons or “Enterprise” tier?</h4>
+          <p class="meta">No tiers. No add-ons. One product for everyone.</p>
+        </article>
+        <article class="qa">
+          <h4>Can we self-host for free?</h4>
+          <p class="meta">Yes, via Community. Bring your own DB/SMTP/Cloudinary and keep the “Powered by Jaango” badge.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" style="margin-top:28px;text-align:center;">
+      <h2 class="h2">Ready to roll out Jaango?</h2>
+      <p class="sub" style="margin:0 auto 18px;">Pick the path that fits your org. Same Jaango, different runways.</p>
+      <div class="btn-row" style="justify-content:center;">
+        <a class="btn btn-primary" href="/auth/register-org">🍋 Create My Club</a>
+        <a class="btn btn-ghost" href="/features">🌿 Explore Features</a>
+      </div>
+    </section>
+
+    <!-- Back to top (mobile-friendly) -->
+    <a href="#top" class="backtotop" aria-label="Back to top" style="display:none;position:fixed;right:16px;bottom:16px;z-index:20;" >↑</a>
+  </main>
+
+  <footer>
+    <div class="foot">
+      <p>© <%= new Date().getFullYear() %> Jaango.club · Made where voices meet and ideas ripen.</p>
+      <p><a href="/about">About</a> · <a href="/blog">Blog</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // INR format
+    const fmt = n => new Intl.NumberFormat('en-IN',{maximumFractionDigits:0}).format(n);
+
+    // Calculator
+    (function(){
+      const users = document.getElementById('users');
+      const cloud = document.getElementById('cloudOut');
+      const forever = document.getElementById('foreverOut');
+      const MAINT = 10000;
+
+      function calc(){
+        const u = Math.max(1, Math.floor(+users.value||0));
+        const cloudCost = u * 100;
+        const foreverCost = u * 400;
+        cloud.textContent = `₹${fmt(cloudCost)} / year`;
+        forever.textContent = `₹${fmt(foreverCost)} one-time  ·  Maintenance: ₹${fmt(MAINT)}/year`;
+      }
+      users.addEventListener('input', calc);
+      calc();
+    })();
+
+    // Back to top visibility
+    (function(){
+      const btt = document.querySelector('.backtotop');
+      if(!btt) return;
+      const showAt = 360;
+      const onScroll = () => btt.style.display = (window.scrollY > showAt) ? 'inline-flex' : 'none';
+      window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+    })();
+
+    // Mobile menu toggle
+    (function(){
+      const btn = document.querySelector('.hamburger');
+      const nav = document.getElementById('nav-links');
+      if(!btn || !nav) return;
+  
+      function toggle(open){
+        const isOpen = (open !== undefined) ? open : !nav.classList.contains('is-open');
+        nav.classList.toggle('is-open', isOpen);
+        btn.setAttribute('aria-expanded', String(isOpen));
+      }
+  
+      btn.addEventListener('click', ()=> toggle());
+      document.addEventListener('click', (e)=>{
+        if(!nav.classList.contains('is-open')) return;
+        if(!nav.contains(e.target) && e.target !== btn) toggle(false);
+      });
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggle(false); });
+    })();
+  </script>
+</body>
+</html>

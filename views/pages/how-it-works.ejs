@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>How it works — Jaango.club</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="What Jaango is, how a Club works, and how it benefits your organization. Setup steps, roles, moderation, adoption playbook, and outcomes.">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    :root{
+    --jaango-yellow:#FFC33A;
+    --jaango-yellow-ink:#E59A00;
+    --jaango-green:#3CA46B;
+    --ink-900:#0E1116;
+    --ink-700:#1F232B;
+    --ink-500:#525866;
+    --ink-300:#8E95A3;
+    --paper:#ffffff;
+    --paper-2:#FAFBFC;
+    --ring: rgba(60,164,107,.35);
+    --radius: 16px;
+    --gap: clamp(16px, 3vw, 28px);
+    --maxw: 1120px;
+    }
+    @media (prefers-color-scheme: dark){
+    :root{
+        --paper:#0B0E14;
+        --paper-2:#0F131A;
+        --ink-900:#F7F8FA;
+        --ink-700:#E9EBEF;
+        --ink-500:#B8BFCC;
+        --ink-300:#99A1B1;
+        --ring: rgba(255,195,58,.28);
+    }
+    }
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:24px;}
+    .quickjump{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .qj-link{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;text-decoration:none;color:var(--ink-700);background:var(--paper-2);border:1px solid rgba(0,0,0,.06)}
+    .grid{display:grid;gap:var(--gap);grid-template-columns:280px 1fr}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+
+    .toc{position:sticky;top:70px;align-self:start;background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:14px}
+    .toc h3{margin:0 0 8px;font-size:14px;color:var(--ink-500);letter-spacing:.3px;text-transform:uppercase;}
+    .toc a{display:block;padding:8px 10px;margin:4px 0;color:var(--ink-700);text-decoration:none;border-radius:10px}
+    .toc a:hover{background:#eef2f6}
+    .toc a[aria-current="true"]{background:var(--jaango-yellow);color:#171717;font-weight:700;}
+
+    .section-tight{padding:clamp(18px,4vw,28px) 0}
+    .feature-kicker{color:var(--jaango-green);font-weight:700;letter-spacing:.2px;margin:0 0 8px}
+    .cards{display:grid;gap:var(--gap);grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media (max-width:900px){ .cards{grid-template-columns:1fr} }
+    .card{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:18px}
+    .card h3{margin:0 0 6px;font-size:18px;color:var(--ink-900)}
+    .card p{margin:0;color:var(--ink-500)}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:var(--paper-2);border:1px solid rgba(0,0,0,.06);color:var(--ink-500);font-weight:600}
+    .bullet{margin:10px 0 0;padding-left:18px;color:var(--ink-700);line-height:1.65}
+    .notice{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:14px;color:var(--ink-700)}
+    .table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid rgba(0,0,0,.06);border-radius:12px;overflow:hidden}
+    .table th,.table td{padding:12px 14px;text-align:left}
+    .table thead{background:var(--paper-2)}
+    .table tbody tr:not(:last-child) td{border-bottom:1px solid rgba(0,0,0,.06)}
+    .backtotop{display:none;position:fixed;right:16px;bottom:16px;z-index:20;padding:10px 12px;border-radius:999px;background:var(--paper-2);border:1px solid rgba(0,0,0,.08);text-decoration:none;color:var(--ink-700)}
+  </style>
+</head>
+<body>
+
+  <%- include('../partials/_topbar') %>
+
+  <main class="wrap" id="top">
+    <!-- Page header -->
+    <section class="section" style="padding-top:18px;">
+      <span class="pill">Jaango.club</span>
+      <h1 class="h2" style="font-size:clamp(28px,4vw,42px);margin:8px 0 6px;">How Jaango works</h1>
+      <p class="sub" style="max-width:760px">
+        Jaango is a calm, internal social space for real collaboration. Think Facebook’s simplicity—without ads or algorithms—remixed for teams, projects, and communities inside your organization.
+      </p>
+      <div class="quickjump" role="navigation" aria-label="Quick jumps">
+        <a class="qj-link" href="#what">What is a Club?</a>
+        <a class="qj-link" href="#setup">Setup in 10 minutes</a>
+        <a class="qj-link" href="#anatomy">Anatomy of Jaango</a>
+        <a class="qj-link" href="#roles">Roles & responsibilities</a>
+        <a class="qj-link" href="#moderation">Moderation flow</a>
+        <a class="qj-link" href="#privacy">Privacy & hosting</a>
+        <a class="qj-link" href="#adoption">30-day adoption playbook</a>
+        <a class="qj-link" href="#outcomes">Outcomes & signals</a>
+        <a class="qj-link" href="#cta">Start now</a>
+      </div>
+    </section>
+
+    <div class="grid">
+      <!-- TOC -->
+      <nav class="toc" id="toc" aria-label="How it works navigation">
+        <h3>Browse</h3>
+        <a href="#what">What is a Club?</a>
+        <a href="#setup">Setup in 10 minutes</a>
+        <a href="#anatomy">Anatomy of Jaango</a>
+        <a href="#roles">Roles & responsibilities</a>
+        <a href="#moderation">Moderation flow</a>
+        <a href="#privacy">Privacy & hosting</a>
+        <a href="#adoption">30-day adoption</a>
+        <a href="#outcomes">Outcomes & signals</a>
+        <a href="#cta">Get started</a>
+      </nav>
+
+      <!-- Content -->
+      <div style="padding-left:10px">
+        <!-- What is a Club -->
+        <section id="what" class="section-tight">
+          <p class="feature-kicker">The model</p>
+          <h2 class="h2">What is a Jaango “Club”?</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Your private social space</h3>
+              <p>Each organization runs a Club—its own walled garden—with posts, comments, reactions, and groups.</p>
+              <ul class="bullet">
+                <li>No ads, no tracking, no external noise</li>
+                <li>Clean, chronological feed</li>
+                <li>Belonging through lightweight rituals (kudos, polls)</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Built for momentum</h3>
+              <p>Small, familiar interactions drive clarity and connection.</p>
+              <ul class="bullet">
+                <li>Announce, decide, appreciate—in one place</li>
+                <li>Groups for projects, chapters, or interests</li>
+                <li>Signals (not surveillance) to see what lands</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>One product for everyone</h3>
+              <p>We maintain a single version for all customers—democratic upgrades, faster fixes.</p>
+              <ul class="bullet">
+                <li>Same codebase across plans</li>
+                <li>Updates land for everyone</li>
+                <li>Lower total cost of ownership</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <!-- Setup -->
+        <section id="setup" class="section-tight">
+          <p class="feature-kicker">From zero to hello</p>
+          <h2 class="h2">Setup in 10 minutes</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>1) Create your Club</h3>
+              <p>Name it, add logo/color accents, invite your core team.</p>
+              <ul class="bullet"><li>Cloud: instant. Forever/Community: quick deploy guide.</li></ul>
+            </article>
+            <article class="card">
+              <h3>2) Create groups</h3>
+              <p>Start with 3–5 high-signal groups (All Hands, Product, People, Fun, Announcements).</p>
+            </article>
+            <article class="card">
+              <h3>3) Seed the feed</h3>
+              <p>Post a welcome note, a small poll, and 1–2 kudos. Make participation easy and rewarding.</p>
+            </article>
+          </div>
+          <div class="notice" style="margin-top:12px">
+            Tip: Declare <strong>two weekly rituals</strong>—“Wins Wednesday” (kudos) and “Friday Focus” (what’s next). Rituals beat nudges.
+          </div>
+        </section>
+
+        <!-- Anatomy -->
+        <section id="anatomy" class="section-tight">
+          <p class="feature-kicker">What’s inside</p>
+          <h2 class="h2">Anatomy of Jaango</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Feeds</h3>
+              <p>Organization feed + group feeds. Clean chronology; no algorithmic reordering.</p>
+            </article>
+            <article class="card">
+              <h3>Posts & polls</h3>
+              <p>Rich text, images, link previews, and quick polls (2–6 options).</p>
+            </article>
+            <article class="card">
+              <h3>Engagement</h3>
+              <p>Kudos & badges, threaded comments, gentle notifications.</p>
+            </article>
+            <article class="card">
+              <h3>Moderation</h3>
+              <p>Flags, soft-delete, audit log. Open or pre-moderated groups.</p>
+            </article>
+            <article class="card">
+              <h3>Light analytics</h3>
+              <p>Signals on post resonance, group pulse, and kudos trends.</p>
+            </article>
+            <article class="card">
+              <h3>Admin</h3>
+              <p>Branding, member roles, exports, retention controls.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Roles -->
+        <section id="roles" class="section-tight">
+          <p class="feature-kicker">Clarity creates safety</p>
+          <h2 class="h2">Roles & responsibilities</h2>
+          <table class="table" aria-label="Roles and responsibilities">
+            <thead><tr><th>Role</th><th>What they do</th><th>Why it helps</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Owner/Admin</td>
+                <td>Branding, groups, member invites, retention/export, announcements.</td>
+                <td>Clear governance, low friction rollout.</td>
+              </tr>
+              <tr>
+                <td>Moderators</td>
+                <td>Approve posts (if pre-mod), resolve flags, pin posts, set tone.</td>
+                <td>Psychological safety without heavy policing.</td>
+              </tr>
+              <tr>
+                <td>Members</td>
+                <td>Post, comment, react, give kudos, answer polls.</td>
+                <td>Everyday participation builds culture.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- Moderation -->
+        <section id="moderation" class="section-tight">
+          <p class="feature-kicker">Respect by default</p>
+          <h2 class="h2">Moderation flow (simple & transparent)</h2>
+          <ol class="bullet" style="margin-top:0">
+            <li><strong>Flag</strong> — Any member can flag a post or comment.</li>
+            <li><strong>Review</strong> — Moderators get a queue; they can soft-delete (reversible) or keep.</li>
+            <li><strong>Trace</strong> — Audit log records who did what, when.</li>
+            <li><strong>Tone</strong> — Gentle nudges for civility; pre-mod optional per group.</li>
+          </ol>
+          <div class="notice" style="margin-top:10px">
+            Guidance beats enforcement: publish a 5-line “Club Code” in your All-Hands group.
+          </div>
+        </section>
+
+        <!-- Privacy & hosting -->
+        <section id="privacy" class="section-tight">
+          <p class="feature-kicker">Private by design</p>
+          <h2 class="h2">Privacy & hosting options</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Jaango Cloud</h3>
+              <p>Managed SaaS by us. No ads or tracking. Same version as everyone.</p>
+              <ul class="bullet"><li>Best for quick start and zero-ops.</li></ul>
+            </article>
+            <article class="card">
+              <h3>Jaango Forever</h3>
+              <p>Own your deployment (10-year usage). Optional maintenance for updates/support.</p>
+              <ul class="bullet"><li>Best for long-term control with our upgrade path.</li></ul>
+            </article>
+            <article class="card">
+              <h3>Community self-host</h3>
+              <p>Code at ₹0 with attribution. Bring your DB/SMTP/Cloudinary.</p>
+              <ul class="bullet"><li>Best for IT teams that prefer full DIY.</li></ul>
+            </article>
+          </div>
+        </section>
+
+        <!-- Adoption Playbook -->
+        <section id="adoption" class="section-tight">
+          <p class="feature-kicker">Make it stick</p>
+          <h2 class="h2">30-day adoption playbook</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Week 1 · Seed & signal</h3>
+              <ul class="bullet">
+                <li>Launch note from leadership (why Jaango, how we’ll use it)</li>
+                <li>Create 3–5 groups and pin a “how to participate” post</li>
+                <li>Run a fun ice-breaker poll + 3 kudos posts</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Week 2 · Rituals</h3>
+              <ul class="bullet">
+                <li>“Wins Wednesday” (kudos) and “Friday Focus” (what’s next)</li>
+                <li>One short update per team per week</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Week 3 · Empower mods</h3>
+              <ul class="bullet">
+                <li>Nominate 3–6 moderators across functions</li>
+                <li>Agree simple Code (tone, flags, pinning)</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Week 4 · Reflect & tune</h3>
+              <ul class="bullet">
+                <li>Look at Light Analytics: posts that resonated, groups with momentum</li>
+                <li>Adjust group list; promote 1–2 member stories</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <!-- Outcomes -->
+        <section id="outcomes" class="section-tight">
+          <p class="feature-kicker">Measure what matters</p>
+          <h2 class="h2">Outcomes & signals (no surveillance)</h2>
+          <table class="table" aria-label="Outcome signals">
+            <thead><tr><th>Outcome</th><th>Jaango signal</th><th>What to do with it</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Alignment</td>
+                <td>Resonance on all-hands updates (replies, reactions)</td>
+                <td>Double-down on formats that land; keep posts short & frequent.</td>
+              </tr>
+              <tr>
+                <td>Belonging</td>
+                <td>Kudos trends by team/time</td>
+                <td>Spot under-recognized crews; nudge managers to amplify.</td>
+              </tr>
+              <tr>
+                <td>Momentum</td>
+                <td>Group pulse (weekly activity)</td>
+                <td>Unblock slow projects; celebrate progress in feed.</td>
+              </tr>
+              <tr>
+                <td>Clarity</td>
+                <td>Poll response rates</td>
+                <td>Prefer polls for small decisions; archive old ones.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <!-- CTA -->
+        <section id="cta" class="cta" style="margin-top:28px;text-align:center;">
+          <h2 class="h2">Ready to start your own Club?</h2>
+          <p class="sub" style="margin:0 auto 18px;text-wrap:balance;">
+            Name your Club, invite your people, and begin. Jaango doesn’t need a manual—just everyday participation.
+          </p>
+          <div class="btn-row" style="justify-content:center;">
+            <a class="btn btn-primary" href="/auth/register-org">🍋 Create My Club</a>
+            <a class="btn btn-ghost" href="/pricing">🌿 See Pricing</a>
+          </div>
+        </section>
+
+        <!-- Back to top -->
+        <a href="#top" class="backtotop" aria-label="Back to top">↑</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="foot">
+      <p>© <%= new Date().getFullYear() %> Jaango.club · Made where voices meet and ideas ripen.</p>
+      <p><a href="/about">About</a> · <a href="/blog">Blog</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // TOC active state
+    (function(){
+      const links=[...document.querySelectorAll('#toc a')];
+      const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+      const obs=new IntersectionObserver((entries)=>{
+        const top=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+        if(!top) return;
+        links.forEach(a=>a.removeAttribute('aria-current'));
+        const active=links.find(a=>a.getAttribute('href')==='#'+top.target.id);
+        if(active) active.setAttribute('aria-current','true');
+      },{rootMargin:'-40% 0px -50% 0px',threshold:[0,.2,.5,1]});
+      secs.forEach(s=>obs.observe(s));
+    })();
+
+    // Back to top
+    (function(){
+      const btt=document.querySelector('.backtotop');
+      if(!btt) return;
+      const showAt=360;
+      const onScroll=()=>{ btt.style.display=(window.scrollY>showAt)?'inline-flex':'none'; };
+      window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+    })();
+
+    //Mobile nav
+    (function(){
+      const btn = document.querySelector('.hamburger');
+      const nav = document.getElementById('nav-links');
+      if(!btn || !nav) return;
+  
+      function toggle(open){
+        const isOpen = (open !== undefined) ? open : !nav.classList.contains('is-open');
+        nav.classList.toggle('is-open', isOpen);
+        btn.setAttribute('aria-expanded', String(isOpen));
+      }
+  
+      btn.addEventListener('click', ()=> toggle());
+      document.addEventListener('click', (e)=>{
+        if(!nav.classList.contains('is-open')) return;
+        if(!nav.contains(e.target) && e.target !== btn) toggle(false);
+      });
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggle(false); });
+    })();
+  </script>
+</body>
+</html>

@@ -1,29 +1,383 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Register Organization</title></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Create your organization — Jaango.club</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Create your Jaango club in minutes. Name your org, choose a handle, and invite your first admin.">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+
+    /* ---- Jaango minimal design tokens ---- */
+    :root{
+      --jaango-yellow:#FFC33A;
+      --jaango-yellow-ink:#E59A00;
+      --jaango-green:#3CA46B;
+      --ink-900:#0E1116;
+      --ink-700:#1F232B;
+      --ink-500:#525866;
+      --ink-300:#8E95A3;
+      --paper:#ffffff;
+      --paper-2:#FAFBFC;
+      --ring: rgba(60,164,107,.35);
+      --radius: 16px;
+      --gap: clamp(16px, 3vw, 28px);
+      --maxw: 1120px;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --paper:#0B0E14;
+        --paper-2:#0F131A;
+        --ink-900:#F7F8FA;
+        --ink-700:#E9EBEF;
+        --ink-500:#B8BFCC;
+        --ink-300:#99A1B1;
+        --ring: rgba(255,195,58,.28);
+      }
+    }
+    /* Page-scoped helpers (keeps your token scale) */
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:24px;}
+    .auth-grid{display:grid;gap:var(--gap);grid-template-columns:1.1fr .9fr;align-items:start}
+    @media (max-width: 960px){ .auth-grid{grid-template-columns:1fr} }
+    .card{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:18px}
+    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:var(--paper-2);border:1px solid rgba(0,0,0,.06);color:var(--ink-500);font-weight:600}
+    .form-row{display:grid;gap:6px;margin:12px 0}
+    .form-row.inline{grid-template-columns: 1fr 1fr;gap:12px}
+    .label{font-weight:600;color:var(--ink-700)}
+    .hint{color:var(--ink-300);font-size:13px}
+    .input, .select{
+      width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:var(--paper);color:var(--ink-900)
+    }
+    .input:focus{outline:3px solid var(--ring);outline-offset:2px;border-color:transparent}
+    .row-split{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+    .toggle-btn{appearance:none;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--ink-700)}
+    .meter{height:8px;border-radius:999px;background:#e8edf3;overflow:hidden}
+    .meter-fill{height:100%;width:0%;background:var(--jaango-green);transition:width .25s ease}
+    .terms{display:flex;gap:10px;align-items:flex-start;margin-top:6px}
+    .btn{appearance:none;border:none;cursor:pointer;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 6px 16px rgba(60,164,107,.15);text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+    .btn-primary{background:var(--jaango-yellow);color:#171717}
+    .btn-ghost{background:var(--paper-2);color:var(--ink-700)}
+    .muted{color:var(--ink-300)}
+    .notice{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:14px;color:var(--ink-700)}
+    /* Fix two-up input row overlap */
+    .form-row.inline{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      align-items:start;
+    }
+
+    /* Allow grid children to actually shrink within their column */
+    .form-row.inline > *{ min-width: 0; }
+
+    /* Belt-and-suspenders: ensure inputs size inside their cell */
+    .input, .select{ width:100%; box-sizing:border-box; }
+
+    /* Optional: stack on narrow screens */
+    @media (max-width: 640px){
+      .form-row.inline{ grid-template-columns: 1fr; }
+    }
+
+  </style>
+</head>
 <body>
+
+  <%- include('../partials/_topbar') %>
   <%- include('../partials/flash') %>
-  <h1>Create your organization</h1>
-  <form method="POST" action="/auth/register-org">
-    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-    <label>Company Name</label><br/>
-    <input name="companyName" required /><br/><br/>
 
-    <label>Company Slug (org handle)</label><br/>
-    <input name="companySlug" required placeholder="acme" /><br/><br/>
+  <main class="wrap">
+    <!-- Header -->
+    <section class="section" style="padding-top:18px">
+      <span class="pill">Jaango.club</span>
+      <h1 class="h2" style="font-size:clamp(28px,4vw,42px);margin:8px 0 6px;">Create your organization</h1>
+      <p class="sub" style="max-width:760px">
+        Spin up your private Club in minutes. One product for everyone, democratic upgrades, zero ads or tracking.
+      </p>
+    </section>
 
-    <label>Admin Full Name</label><br/>
-    <input name="fullName" required /><br/><br/>
+    <div class="auth-grid">
+      <!-- Form -->
+      <section class="card" aria-labelledby="create-org-title">
+        <h2 id="create-org-title" class="h2" style="font-size:22px;margin:0 0 8px">Organization details</h2>
 
-    <label>Admin Email</label><br/>
-    <input type="email" name="email" required /><br/><br/>
+        <form method="POST" action="/auth/register-org" novalidate>
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
-    <label>Password</label><br/>
-    <input type="password" name="password" required minlength="8" /><br/><br/>
+          <div class="form-row">
+            <label class="label" for="companyName">Company name</label>
+            <input class="input" id="companyName" name="companyName" required autocomplete="organization"
+                   placeholder="Acme Labs Pvt Ltd">
+          </div>
 
-    <button type="submit">Create Organization</button>
-  </form>
+          <div class="form-row">
+            <label class="label" for="companySlug">Company slug (org handle)</label>
+            <input class="input" id="companySlug" name="companySlug" required
+                   pattern="^[a-z0-9-]{3,32}$" inputmode="lowercase" autocapitalize="off" spellcheck="false"
+                   placeholder="acme">
+            <div class="hint">Lowercase letters, numbers, and hyphens only (3–32 chars). Your URL will look like: <code>jaango.club/<span id="slugPreview">acme</span>/feed</code></div>
+          </div>
 
-  <p><a href="/auth/login">Already have an org? Log in</a></p>
+          <div class="form-row inline">
+            <div>
+              <label class="label" for="fullName">Admin full name</label>
+              <input class="input" id="fullName" name="fullName" required autocomplete="name" placeholder="Anita Kumar">
+            </div>
+            <div>
+              <label class="label" for="email">Admin email</label>
+              <input class="input" id="email" type="email" name="email" required autocomplete="email" placeholder="anita@acme.com">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="label" for="password">Password</label>
+            <div class="row-split">
+              <input class="input" id="password" type="password" name="password" required minlength="8"
+                     autocomplete="new-password" placeholder="At least 8 characters">
+              <button type="button" class="toggle-btn" id="togglePwd" aria-controls="password" aria-pressed="false">Show</button>
+            </div>
+            <div class="hint" id="pwdHint">Use 8+ characters with a mix of letters and numbers.</div>
+            <div class="meter" aria-hidden="true" style="margin-top:8px">
+              <div class="meter-fill" id="pwdMeter"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label class="label" for="plan">Plan (you can change later)</label>
+            <select name="plan" id="plan" class="select">
+              <option value="cloud">Jaango Cloud — $0.10/user/month (no minimums) · 1st month free</option>
+              <option value="perpetual">Perpetual (10-yr) — $4/user one-time (+ optional $120/yr SLA)</option>
+              <option value="byo">Self-host (BYO infra) — $0 license</option>
+            </select>
+          </div>
+
+          <div class="form-row inline">
+            <div>
+              <label class="label" for="users">Expected users (for estimate)</label>
+              <input class="input" id="users" type="number" min="1" step="1" placeholder="e.g., 53">
+            </div>
+            <div>
+              <label class="label" for="currency">Currency</label>
+              <select id="currency" class="select">
+                <option value="USD" selected>USD ($)</option>
+                <option value="INR">INR (₹)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="notice" id="estBox" style="display:none">
+            <div id="estLine1" style="font-weight:700"></div>
+            <div id="estLine2" class="muted" style="margin-top:4px"></div>
+            <div id="trialMsg" class="hint" style="margin-top:6px; font-weight:600; color:var(--jaango-green)">
+              First month is free on Jaango Cloud. You won’t be charged today.
+            </div>
+          </div>
+          
+          
+
+          <div class="terms">
+            <input id="agree" name="agree" type="checkbox" required style="margin-top:4px">
+            <label for="agree" class="hint" style="line-height:1.6">
+              I agree to the <a href="/terms" target="_blank" rel="noopener">Terms</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy</a>.
+            </label>
+          </div>
+
+          <div class="form-row" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" type="submit">🍋 Create Organization</button>
+            <a class="btn btn-ghost" href="/auth/login">Already have an org? Log in</a>
+          </div>
+        </form>
+      </section>
+
+      <!-- Sidebar info -->
+      <aside class="card" aria-label="What you get">
+        <h3 style="margin:0 0 8px">What you get on day one</h3>
+        <ul class="hint" style="line-height:1.8;margin:0;padding-left:18px">
+          <li>Clean org feed + group feeds</li>
+          <li>Posts, comments, reactions, polls</li>
+          <li>Kudos & badges (lightweight recognition)</li>
+          <li>Flags, soft-delete, and audit log</li>
+          <li>Branding, roles, and exports</li>
+          <li>Signals (post resonance, group pulse)</li>
+        </ul>
+
+        <div class="notice" style="margin-top:14px">
+          <strong>One product for everyone.</strong> We maintain a single version—every customer gets the same democratic upgrades.
+        </div>
+
+        <p class="muted" style="margin-top:10px">
+          Need help? <a href="/about-us">About us</a> · <a href="/how-it-works">How it works</a> · <a href="/pricing">Pricing</a>
+        </p>
+      </aside>
+    </div>
+  </main>
+
+  <footer>
+    <div class="foot">
+      <p>© <%= new Date().getFullYear() %> Jaango.club · Made where voices meet and ideas ripen.</p>
+      <p><a href="/about">About</a> · <a href="/blog">Blog</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Slugify company name -> slug (only if user hasn't typed slug yet or it matches prior auto)
+    (function(){
+      const nameEl = document.getElementById('companyName');
+      const slugEl = document.getElementById('companySlug');
+      const prevEl = document.getElementById('slugPreview');
+      let lastAuto = slugEl.value || '';
+      const slugify = s => (s||'')
+        .toLowerCase()
+        .trim()
+        .replace(/&/g,' and ')
+        .replace(/[^a-z0-9]+/g,'-')
+        .replace(/^-+|-+$/g,'')
+        .slice(0,32);
+
+      function maybeAuto(){
+        const typed = slugEl.value.trim();
+        if (!typed || typed === lastAuto){
+          const s = slugify(nameEl.value);
+          slugEl.value = s;
+          lastAuto = s;
+          if (prevEl) prevEl.textContent = s || 'acme';
+        } else {
+          if (prevEl) prevEl.textContent = typed;
+        }
+      }
+      if (nameEl && slugEl){ nameEl.addEventListener('input', maybeAuto); slugEl.addEventListener('input', ()=>{ prevEl && (prevEl.textContent = slugEl.value || 'acme'); }); maybeAuto(); }
+    })();
+
+    // Password show/hide + simple strength meter
+    (function(){
+      const pwd = document.getElementById('password');
+      const btn = document.getElementById('togglePwd');
+      const meter = document.getElementById('pwdMeter');
+      const hint = document.getElementById('pwdHint');
+
+      function score(s){
+        let n = 0;
+        if(!s) return 0;
+        if(s.length >= 8) n += 1;
+        if(/[A-Z]/.test(s)) n += 1;
+        if(/[a-z]/.test(s)) n += 1;
+        if(/[0-9]/.test(s)) n += 1;
+        if(/[^A-Za-z0-9]/.test(s)) n += 1;
+        return Math.min(n,5);
+      }
+      function paint(){
+        const s = score(pwd.value);
+        const pct = [0,20,40,60,80,100][s];
+        if(meter) meter.style.width = pct + '%';
+        if(hint){
+          const labels = ['Too weak','Weak','Okay','Good','Strong','Excellent'];
+          hint.textContent = (pwd.value ? labels[s] : 'Use 8+ characters with a mix of letters and numbers.') ;
+        }
+      }
+      if (btn && pwd){
+        btn.addEventListener('click', ()=>{
+          const show = pwd.type === 'password';
+          pwd.type = show ? 'text' : 'password';
+          btn.setAttribute('aria-pressed', String(show));
+          btn.textContent = show ? 'Hide' : 'Show';
+        });
+        pwd.addEventListener('input', paint); paint();
+      }
+    })();
+
+    // Client-side guard for slug pattern (nice error if invalid)
+    (function(){
+      const form = document.querySelector('form[action="/auth/register-org"]');
+      const slug = document.getElementById('companySlug');
+      if(!form || !slug) return;
+      form.addEventListener('submit', (e)=>{
+        const ok = /^[a-z0-9-]{3,32}$/.test(slug.value || '');
+        if(!ok){
+          e.preventDefault();
+          alert('Please use only lowercase letters, numbers, and hyphens for the slug (3–32 characters).');
+          slug.focus();
+        }
+      });
+    })();
+  </script>
+
+<script>
+  (function(){
+    const plan = document.getElementById('plan');
+    const users = document.getElementById('users');
+    const currency = document.getElementById('currency');
+    const estBox = document.getElementById('estBox');
+    const est1 = document.getElementById('estLine1');
+    const est2 = document.getElementById('estLine2');
+    const trial = document.getElementById('trialMsg');
+  
+    // Tweaked manually if FX moves
+    const FX = 83; // 1 USD ≈ ₹83 (adjust anytime)
+  
+    function fmt(n, cur){
+      return (cur === 'INR') ? `₹${n.toLocaleString('en-IN')}` : `$${n.toFixed(2)}`;
+    }
+  
+    function calc(){
+      const u = Math.max(0, parseInt(users.value || '0', 10));
+      const cur = currency.value;
+      if(!u){ estBox.style.display = 'none'; return; }
+  
+      // Base USD numbers
+      const cloudMonthlyUSD = 0.10 * u;
+      const cloudAnnualUSD  = cloudMonthlyUSD * 12;
+      const perpetualUSD    = 4 * u;
+      const slaUSD          = 120;
+  
+      // convert if INR
+      const to = (x)=> cur === 'INR' ? x * FX : x;
+  
+      let line1 = '';
+      let line2 = '';
+      const p = plan.value;
+  
+      if(p === 'cloud'){
+        line1 = `Cloud · ${u} users → ${fmt(to(cloudMonthlyUSD), cur)}/month`;
+        line2 = `≈ ${fmt(to(cloudAnnualUSD), cur)}/year · due today: ${fmt(0, cur)} (1-month free)`;
+        trial.style.display = '';
+      } else if (p === 'perpetual'){
+        line1 = `Perpetual (10-yr) · ${u} users → one-time ${fmt(to(perpetualUSD), cur)}`;
+        line2 = `Optional SLA: ${fmt(to(slaUSD), cur)}/year`;
+        trial.style.display = 'none';
+      } else {
+        line1 = `Self-host (BYO infra) → ${fmt(0, cur)} license`;
+        line2 = `You bring DB, Cloudinary, email, etc.`;
+        trial.style.display = 'none';
+      }
+  
+      est1.textContent = line1;
+      est2.textContent = line2;
+      estBox.style.display = 'block';
+    }
+  
+    ['change','input'].forEach(ev=>{
+      plan.addEventListener(ev, calc);
+      users.addEventListener(ev, calc);
+      currency.addEventListener(ev, calc);
+    });
+  })();
+  </script>
+  <script>
+    (function(){
+      const form = document.querySelector('form[action="/auth/register-org"]');
+      const agree = document.getElementById('agree');
+      if(!form || !agree) return;
+    
+      form.addEventListener('submit', (e)=>{
+        if(!agree.checked){
+          e.preventDefault();
+          alert('Please agree to the Terms and Privacy Policy before continuing.');
+          agree.focus();
+        }
+      });
+    })();
+    </script>
+    
+  
 </body>
 </html>

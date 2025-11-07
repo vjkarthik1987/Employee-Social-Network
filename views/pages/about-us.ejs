@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>About Us — Jaango.club</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Why Jaango exists — a calm, democratic alternative to noisy social networks and costly enterprise HR software.">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+
+  <style>
+    :root{
+    --jaango-yellow:#FFC33A;
+    --jaango-yellow-ink:#E59A00;
+    --jaango-green:#3CA46B;
+    --ink-900:#0E1116;
+    --ink-700:#1F232B;
+    --ink-500:#525866;
+    --ink-300:#8E95A3;
+    --paper:#ffffff;
+    --paper-2:#FAFBFC;
+    --ring: rgba(60,164,107,.35);
+    --radius: 16px;
+    --gap: clamp(16px, 3vw, 28px);
+    --maxw: 1120px;
+    }
+    @media (prefers-color-scheme: dark){
+    :root{
+        --paper:#0B0E14;
+        --paper-2:#0F131A;
+        --ink-900:#F7F8FA;
+        --ink-700:#E9EBEF;
+        --ink-500:#B8BFCC;
+        --ink-300:#99A1B1;
+        --ring: rgba(255,195,58,.28);
+    }
+    }
+    .wrap{max-width:var(--maxw);margin:0 auto;padding:24px;}
+    .section{padding:clamp(32px,6vw,72px) 0;}
+    .h2{font-size:clamp(26px,4vw,40px);margin:0 0 14px;color:var(--ink-900);}
+    .sub{color:var(--ink-500);max-width:720px;margin:0 0 18px;}
+    .pill{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 12px;background:var(--paper-2);color:var(--ink-500);font-weight:600;border:1px solid rgba(0,0,0,.06);}
+    .quote{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:20px;font-size:17px;line-height:1.65;color:var(--ink-700);}
+    .grid{display:grid;gap:var(--gap);grid-template-columns:1fr 1fr;align-items:center;}
+    @media(max-width:900px){.grid{grid-template-columns:1fr;text-align:center;}}
+    .values{display:grid;gap:var(--gap);grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin-top:32px;}
+    .card{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:20px;}
+    .card h3{margin:0 0 6px;font-size:18px;color:var(--ink-900);}
+    .card p{margin:0;color:var(--ink-500);}
+    .cta{text-align:center;padding:clamp(32px,7vw,80px) 0;border-radius:var(--radius);
+      background:radial-gradient(1200px 300px at 50% -20%,rgba(255,195,58,.18),transparent 60%),
+                 radial-gradient(1000px 200px at 100% 120%,rgba(60,164,107,.12),transparent 60%);}
+    .cta .h2{margin-bottom:8px;}
+  </style>
+</head>
+<body>
+
+  <%- include('../partials/_topbar') %>
+
+  <main class="wrap">
+
+    <!-- Intro -->
+    <section class="section">
+      <span class="pill">About Jaango</span>
+      <h1 class="h2">Breaking the mould of enterprise social</h1>
+      <p class="sub">
+        Jaango began as a small rebellion. We were tired of watching great organizations struggle
+        with bloated HR systems, expensive licenses, and engagement tools that felt more like control panels than communities.
+        So we built something different — a social platform that’s simple, democratic, and delightfully human.
+      </p>
+    </section>
+
+    <!-- Origin story -->
+    <section class="section grid">
+      <div>
+        <h2 class="h2">From enterprise fatigue to social democracy</h2>
+        <p class="sub">
+          Every modern company talks about culture, yet most rely on tools designed for compliance, not connection.
+          HR suites measure engagement like they measure payroll — in numbers, not voices.
+          Jaango was born from the idea that connection at work should feel natural, like a good conversation —
+          not another workflow.
+        </p>
+        <p class="sub">
+          We’re not trying to gamify belonging. We’re trying to make it visible, breathable, and inclusive.
+          Jaango treats every employee — from intern to CEO — as an equal voice in the social fabric of an organization.
+        </p>
+      </div>
+      <div class="quote">
+        “Technology should flatten hierarchies, not reinforce them.
+        Jaango is our attempt to make the workplace feel less like a stack of systems and more like a community.”
+      </div>
+    </section>
+
+    <!-- What we stand for -->
+    <section class="section">
+      <h2 class="h2">Our values</h2>
+      <p class="sub">Three simple principles guide every decision we make.</p>
+
+      <div class="values">
+        <article class="card">
+          <h3>1. Social, not superficial</h3>
+          <p>
+            Real engagement isn’t about dashboards or vanity metrics.
+            It’s about everyday sharing, appreciation, and belonging — things that can’t be automated.
+          </p>
+        </article>
+        <article class="card">
+          <h3>2. Democratize access</h3>
+          <p>
+            We believe community shouldn’t be a line item in your HR budget.
+            Jaango is designed to be affordable, transparent, and equitable — whether you’re 20 or 20,000 people strong.
+          </p>
+        </article>
+        <article class="card">
+          <h3>3. Calm by design</h3>
+          <p>
+            We strip away notifications, ads, and noise so people can think before they post,
+            read before they react, and find meaning instead of metrics.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- The contrast -->
+    <section class="section grid">
+      <div>
+        <h2 class="h2">Why we exist</h2>
+        <p class="sub">
+          The world doesn’t need another “employee engagement platform.”
+          It needs spaces where people actually want to engage —
+          where culture isn’t pushed top-down but grows from the middle.
+        </p>
+        <p class="sub">
+          We see Jaango as a kind of social democracy for the workplace:
+          one person, one voice, many circles.
+          A product that replaces hierarchy with humanity.
+        </p>
+      </div>
+      <div class="quote">
+        “If enterprise tools are empires, Jaango is a town square —
+        small enough for everyone to be heard, big enough for ideas to grow.”
+      </div>
+    </section>
+
+    <!-- The bigger vision -->
+    <section class="section">
+      <h2 class="h2">The bigger vision</h2>
+      <p class="sub">
+        Jaango is more than software — it’s a belief that work can feel like community again.
+        We’re creating a platform where curiosity replaces compliance,
+        and where engagement comes from freedom, not friction.
+      </p>
+
+      <div class="values">
+        <article class="card">
+          <h3>Open collaboration</h3>
+          <p>We listen, we iterate, and we co-create with our early users.
+             Your club’s feedback literally shapes the product roadmap.</p>
+        </article>
+        <article class="card">
+          <h3>Ethical growth</h3>
+          <p>No dark patterns. No addictive loops. Growth at the speed of trust.</p>
+        </article>
+        <article class="card">
+          <h3>Local-first global</h3>
+          <p>We’re building for global teams but staying mindful of data sovereignty and regional hosting.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <h2 class="h2">We’re building a quieter revolution</h2>
+      <p class="sub" style="margin:0 auto 18px;max-width:680px;">
+        Join us if you believe work should feel more human, fair, and connected.
+        Let’s make organizations less mechanical and more meaningful — one club at a time.
+      </p>
+      <div class="btn-row" style="justify-content:center;">
+        <a class="btn btn-primary" href="/auth/register-org">🍋 Start your Club</a>
+        <a class="btn btn-ghost" href="/features">🌿 Explore the Features</a>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="foot">
+      <p>© <%= new Date().getFullYear() %> Jaango.club · Made where voices meet and ideas ripen.</p>
+      <p><a href="/about">About</a> · <a href="/blog">Blog</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu toggle
+    (function(){
+      const btn = document.querySelector('.hamburger');
+      const nav = document.getElementById('nav-links');
+      if(!btn || !nav) return;
+  
+      function toggle(open){
+        const isOpen = (open !== undefined) ? open : !nav.classList.contains('is-open');
+        nav.classList.toggle('is-open', isOpen);
+        btn.setAttribute('aria-expanded', String(isOpen));
+      }
+  
+      btn.addEventListener('click', ()=> toggle());
+      document.addEventListener('click', (e)=>{
+        if(!nav.classList.contains('is-open')) return;
+        if(!nav.contains(e.target) && e.target !== btn) toggle(false);
+      });
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggle(false); });
+    })();
+</script>
+</body>
+</html>

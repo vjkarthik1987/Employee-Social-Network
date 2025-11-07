@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Features — Jaango.club</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Everything Jaango can do for your org — posts, groups, kudos, privacy, moderation, analytics and more.">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  
+  <style>
+
+    :root{
+    --jaango-yellow:#FFC33A;
+    --jaango-yellow-ink:#E59A00;
+    --jaango-green:#3CA46B;
+    --ink-900:#0E1116;
+    --ink-700:#1F232B;
+    --ink-500:#525866;
+    --ink-300:#8E95A3;
+    --paper:#ffffff;
+    --paper-2:#FAFBFC;
+    --ring: rgba(60,164,107,.35);
+    --radius: 16px;
+    --gap: clamp(16px, 3vw, 28px);
+    --maxw: 1120px;
+    }
+    @media (prefers-color-scheme: dark){
+    :root{
+        --paper:#0B0E14;
+        --paper-2:#0F131A;
+        --ink-900:#F7F8FA;
+        --ink-700:#E9EBEF;
+        --ink-500:#B8BFCC;
+        --ink-300:#99A1B1;
+        --ring: rgba(255,195,58,.28);
+    }
+    }
+    /* Features page add-ons (keeps your existing tokens & scale) */
+    .wrap{max-width: var(--maxw); margin: 0 auto; padding: 24px;}
+    .toc{
+      position:sticky; top:70px; align-self:start;
+      background:var(--paper-2); border:1px solid rgba(0,0,0,.06);
+      border-radius: var(--radius); padding:14px;
+    }
+    .toc h3{margin:0 0 8px; font-size:14px; color:var(--ink-500); letter-spacing:.3px; text-transform:uppercase;}
+    .toc a{display:block; padding:8px 10px; margin:4px 0; color:var(--ink-700); text-decoration:none; border-radius:10px;}
+    .toc a:hover{background:#eef2f6}
+    .toc a[aria-current="true"]{background:var(--jaango-yellow); color:#171717; font-weight:700;}
+
+    .grid{display:grid; gap: var(--gap); grid-template-columns: 280px 1fr;}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} .toc{position:static;} }
+
+    .feature-section{padding: clamp(22px, 3vw, 28px) 0; scroll-margin-top: 80px;}
+    .feature-section .h2{margin-bottom:6px}
+    .feature-kicker{color: var(--jaango-green); font-weight:700; letter-spacing:.2px; margin:0 0 8px;}
+    .cards{display:grid; gap:var(--gap); grid-template-columns: repeat(3, minmax(0,1fr));}
+    @media (max-width: 900px){ .cards{grid-template-columns:1fr} }
+
+    .card{background:var(--paper-2); border:1px solid rgba(0,0,0,.06); border-radius:var(--radius); padding:18px;}
+    .card h3{margin:0 0 6px; font-size:18px; color:var(--ink-900);}
+    .card p{margin:0; color:var(--ink-500);}
+    .bullet{margin:10px 0 0; padding-left:18px; color:var(--ink-700); line-height:1.65}
+    .pill{display:inline-flex; gap:8px; align-items:center; padding:8px 12px; border-radius:999px; background:var(--paper-2); border:1px solid rgba(0,0,0,.06); color:var(--ink-500); font-weight:600;}
+    .notice{background: var(--paper-2); border:1px solid rgba(0,0,0,.06); border-radius: var(--radius); padding:14px; color:var(--ink-700);}
+    .top-links .btn.btn-primary{
+    background: var(--jaango-yellow);
+    color: #171717;
+    box-shadow: 0 6px 16px rgba(60,164,107,.15);
+    }
+
+    /* Keep hover consistent in the nav too */
+    .top-links .btn.btn-primary:hover{
+    transform: translateY(-1px);
+    }
+
+    /* Mobile menu: make the CTA full-width and aligned like other items */
+    @media (max-width: 900px){
+    .top-links .btn{
+        display:block;
+        width: calc(100% - 24px);  /* same inner gutter as links */
+        margin: 10px auto 0;
+        text-align:center;
+        border-radius:12px;
+        padding: 12px 18px;        /* keep button sizing */
+    }
+    }
+  </style>
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+
+  <!-- Topbar -->
+  <%- include('../partials/_topbar') %>
+
+  <main class="home-wrap">
+    <!-- Header -->
+    <section class="section" style="padding-top:18px;">
+      <span class="pill">Jaango.club</span>
+      <h1 class="h2" style="font-size:clamp(28px,4vw,42px);margin:8px 0 6px;">Everything Jaango can do</h1>
+      <p class="sub">A calm, internal social space for organizations — familiar like Facebook, minus ads and algorithmic chaos. Browse the features below or jump via the mini-TOC.</p>
+    </section>
+
+    <!-- Grid: TOC + Content -->
+    <div class="grid">
+      <!-- TOC -->
+      <nav class="toc" id="toc" aria-label="Features navigation">
+        <h3>Browse</h3>
+        <a href="#core">Core social</a>
+        <a href="#groups">Groups & circles</a>
+        <a href="#engage">Kudos & engagement</a>
+        <a href="#privacy">Privacy & data</a>
+        <a href="#moderation">Moderation & trust</a>
+        <a href="#analytics">Light analytics</a>
+        <a href="#profiles">Profiles & directory</a>
+        <a href="#onboarding">Onboarding & adoption</a>
+        <a href="#integrations">Integrations</a>
+        <a href="#security">Security & compliance</a>
+        <a href="#mobile">Mobile & apps</a>
+        <a href="#api">API & extensibility</a>
+        <a href="#admin">Admin controls</a>
+        <a href="#perf">Performance & access</a>
+        <a href="#roadmap">Roadmap</a>
+      </nav>
+      
+
+      <!-- Content -->
+      <div style="padding-left: 10px;">
+
+        <!-- Core -->
+        <section id="core" class="feature-section">
+          <p class="feature-kicker">Start simple, stay human</p>
+          <h2 class="h2">Core social</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Feed & posts</h3>
+              <p>Clean, chronological feed for text, images, and links.</p>
+              <ul class="bullet">
+                <li>Rich text, inline images, link previews</li>
+                <li>Reactions & threaded comments</li>
+                <li>Polls for quick decisions</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Search & discovery</h3>
+              <p>Find people, posts, and groups quickly.</p>
+              <ul class="bullet">
+                <li>Keyword search across posts & comments</li>
+                <li>Hashtags (optional) and filters</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Notifications (lightweight)</h3>
+              <p>Only the essentials — replies, mentions, and kudos.</p>
+              <ul class="bullet">
+                <li>Email summaries (opt-in)</li>
+                <li>In-app toast & badge cues</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <!-- Groups -->
+        <section id="groups" class="feature-section">
+          <p class="feature-kicker">Your corners of the club</p>
+          <h2 class="h2">Groups & circles</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Open, closed, or moderated</h3>
+              <p>Pick how people join and post.</p>
+              <ul class="bullet">
+                <li>Owner/mod roles</li>
+                <li>Join by invite or directory</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Group feeds</h3>
+              <p>Project updates, communities of practice, hobby circles — all in their own calm feeds.</p>
+            </article>
+            <article class="card">
+              <h3>Tags & pinned posts</h3>
+              <p>Keep what matters at the top; organize the rest with tags.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Engagement -->
+        <section id="engage" class="feature-section">
+          <p class="feature-kicker">Make appreciation easy</p>
+          <h2 class="h2">Kudos & engagement</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Kudos & badges</h3>
+              <p>Say thanks in public — lightweight recognition that sticks.</p>
+              <ul class="bullet">
+                <li>Custom badge labels</li>
+                <li>Kudos stream on profiles</li>
+              </ul>
+            </article>
+            <article class="card">
+              <h3>Polls</h3>
+              <p>Quick temperature checks (2–6 options, 1–10 questions per poll).</p>
+            </article>
+            <article class="card">
+              <h3>Events (light)</h3>
+              <p>Announce town halls, launches, and club meets with RSVP emojis.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Moderation -->
+        <section id="moderation" class="feature-section">
+          <p class="feature-kicker">Respect by default</p>
+          <h2 class="h2">Moderation & trust</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Flag & review</h3>
+              <p>Members can flag content for moderator review; soft-delete with audit trail.</p>
+            </article>
+            <article class="card">
+              <h3>Post rules</h3>
+              <p>Open or pre-moderated posting per group; gentle nudges for tone.</p>
+            </article>
+            <article class="card">
+              <h3>Audit log</h3>
+              <p>Who did what, when — for admins’ peace of mind.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Privacy -->
+        <section id="privacy" class="feature-section">
+          <p class="feature-kicker">Private by design</p>
+          <h2 class="h2">Privacy & data</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>No ads, no tracking</h3>
+              <p>Jaango is your org’s private space. Members and content belong to you.</p>
+            </article>
+            <article class="card">
+              <h3>Retention & export</h3>
+              <p>Reasonable defaults; organization-level export available on request.</p>
+            </article>
+            <article class="card">
+              <h3>Regional hosting (roadmap)</h3>
+              <p>Pick a region for data residency as we expand infra.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Analytics -->
+        <section id="analytics" class="feature-section">
+          <p class="feature-kicker">Signals, not surveillance</p>
+          <h2 class="h2">Light analytics</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Post resonance</h3>
+              <p>See which posts spark replies and reactions — not dashboards of people.</p>
+            </article>
+            <article class="card">
+              <h3>Group pulse</h3>
+              <p>Weekly activity view to spot momentum or lulls.</p>
+            </article>
+            <article class="card">
+              <h3>Kudos trends</h3>
+              <p>Know what’s being appreciated across the org.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Admin -->
+        <section id="admin" class="feature-section">
+          <p class="feature-kicker">Simple knobs, clear outcomes</p>
+          <h2 class="h2">Admin controls</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Branding</h3>
+              <p>Logo, name, and color accents that make it yours.</p>
+            </article>
+            <article class="card">
+              <h3>User management</h3>
+              <p>Invite by email, CSV import (roadmap), roles: owner, admin, moderator, member.</p>
+            </article>
+            <article class="card">
+              <h3>Compliance helpers</h3>
+              <p>Downloadable exports, audit log, and retention settings.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Performance & access -->
+        <section id="perf" class="feature-section">
+          <p class="feature-kicker">Fast & friendly</p>
+          <h2 class="h2">Performance & accessibility</h2>
+          <div class="cards">
+            <article class="card">
+              <h3>Responsive & keyboard-friendly</h3>
+              <p>Mobile-first layout, large tap targets, and ARIA where it matters.</p>
+            </article>
+            <article class="card">
+              <h3>Low-noise UI</h3>
+              <p>Soft shadows, generous spacing, and zero dark patterns — consistent with your design system.</p>
+            </article>
+            <article class="card">
+              <h3>Internationalization (roadmap)</h3>
+              <p>Language packs with RTL support planned.</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Roadmap -->
+        <section id="roadmap" class="feature-section">
+          <p class="feature-kicker">What’s coming next</p>
+          <h2 class="h2">Roadmap</h2>
+          <div class="notice">
+            ✅ In progress: regional hosting, CSV user import, profile fields, event RSVP counts<br>
+            🔜 Exploring: SSO/SAML, webhooks, mobile apps, AI-assisted summaries (opt-in)
+          </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta" style="margin-top:28px;">
+          <h2 class="h2">Ready to start your own club?</h2>
+          <p class="sub" style="margin:0 auto 18px;">Name your club, invite your people, and begin. No manuals needed.</p>
+          <div class="btn-row" style="justify-content:center;">
+            <a class="btn btn-primary" href="/auth/register-org">🍋 Create My Club</a>
+            <a class="btn btn-ghost" href="/about">🌿 Explore a Demo</a>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="foot">
+      <p>© <%= new Date().getFullYear() %> Jaango.club · Made where voices meet and ideas ripen.</p>
+      <p><a href="/about">About</a> · <a href="/blog">Blog</a> · <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+    </div>
+  </footer>
+
+  <!-- Set active link in TOC while scrolling -->
+  <script>
+    (function(){
+      const links=[...document.querySelectorAll('#toc a')];
+      const secs=links.map(a=>document.querySelector(a.getAttribute('href'))).filter(Boolean);
+      const obs=new IntersectionObserver((entries)=>{
+        const top = entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+        if(!top) return;
+        links.forEach(a=>a.removeAttribute('aria-current'));
+        const active = links.find(a=>a.getAttribute('href') === '#' + top.target.id);
+        if(active) active.setAttribute('aria-current','true');
+      }, {rootMargin:'-40% 0px -50% 0px', threshold:[0, .2, .5, 1]});
+      secs.forEach(s=>obs.observe(s));
+    })();
+  </script>
+
+<script>
+    // Mobile menu toggle
+    (function(){
+      const btn = document.querySelector('.hamburger');
+      const nav = document.getElementById('nav-links');
+      if(!btn || !nav) return;
+  
+      function toggle(open){
+        const isOpen = (open !== undefined) ? open : !nav.classList.contains('is-open');
+        nav.classList.toggle('is-open', isOpen);
+        btn.setAttribute('aria-expanded', String(isOpen));
+      }
+  
+      btn.addEventListener('click', ()=> toggle());
+      document.addEventListener('click', (e)=>{
+        if(!nav.classList.contains('is-open')) return;
+        if(!nav.contains(e.target) && e.target !== btn) toggle(false);
+      });
+      document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggle(false); });
+    })();
+</script>
+</body>
+</html>

@@ -120,8 +120,23 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 // If you don't have views/pages/home.ejs, consider redirecting to a default org or render a tiny page.
 app.get('/', (_req, res) => {
   res.render('pages/home', { title: 'Welcome', company: null, user: null });
-  // Or: res.redirect('/yourorg/feed');
 });
+
+app.get('/features', (_req, res) => {
+  res.render('pages/features', {title: "Features of Jaango", company: null, user: null})
+})
+
+app.get('/about-us', (_req, res) => {
+  res.render('pages/about-us', {title: "About us", company: null, user: null})
+})
+
+app.get('/pricing', (_req, res) => {
+  res.render('pages/pricing', {title: "A world of single price", company: null, user: null})
+})
+
+app.get('/how-it-works', (_req, res) => {
+  res.render('pages/how-it-works', {title: "How it works", company: null, user: null})
+})
 
 app.use('/', adminCentral);
 
