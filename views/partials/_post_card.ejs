@@ -24,6 +24,16 @@
     const ts = new Date(tsRaw);
     const inGroup = !!(post.groupId && post.group);
   %>
+
+  <%
+    // Safe autolink for plain text (used in compact excerpt)
+    function autolink(txt=''){
+      const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+      const urlRx = /(https?:\/\/[^\s<]+)/g;
+      return esc(txt).replace(urlRx, m => `<a class="inline-link" href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
+    }
+  %>
+
   
   <article class="post-card"
            data-post-id="<%= post._id %>"
@@ -93,72 +103,112 @@
       <% /* Content (sanitized HTML); compact shows excerpt */ %>
       <% if (post.richText) { %>
         <% if (isCompact) { %>
-          <div class="post-content compact"><%= shortText %></div>
+          <div class="post-content compact"><%- autolink(shortText) %></div>
         <% } else { %>
           <div class="post-content"><%- post.richText %></div>
         <% } %>
-      <% } %>
+      <% } %>      
   
-      <% /* First image (feed) with Cloudinary smart transform */ %>
-      <% if (post.firstAttachmentUrl) {
-           const _u = String(post.firstAttachmentUrl || '');
-           const isCloudinary = _u.includes('/upload/');
-           const imgSrc = isCloudinary
-             ? _u.replace('/upload/', '/upload/w_1200,h_800,c_fill,q_auto,f_auto/')
-             : _u;
+      <%
+        // Prefer: detail view → full attachments; feed/compact → _thumbs; fallback → firstAttachmentUrl
+        let imgs = [];
+        if (Array.isArray(post.attachments) && post.attachments.length) {
+          imgs = post.attachments.map(a => ({ storageUrl: a.storageUrl || a }));
+        } else if (Array.isArray(post._thumbs) && post._thumbs.length) {
+          imgs = post._thumbs.map(u => ({ storageUrl: u }));
+        } else if (post.firstAttachmentUrl) {
+          imgs = [{ storageUrl: post.firstAttachmentUrl }];
+        }
+        const count = imgs.length;
       %>
-        <div class="post-image-wrap">
-          <a href="/<%= company.slug %>/posts/<%= post._id %>" class="post-image-link" aria-label="Open post">
-            <img
-              class="post-image"
-              src="<%= imgSrc %>"
-              alt="<%= post.imageAlt || 'Attached image' %>"
-              loading="lazy"
-              decoding="async"
-              onerror="this.closest('a').removeAttribute('href'); this.alt='Image failed to load';"
-            />
-          </a>
-          <% const extra = Math.max((post.attachmentsCount || 0) - 1, 0); %>
-          <% if (extra > 0) { %>
-            <div class="multi-overlay">+<%= extra %></div>
-          <% } %>
-        </div>
-      <% } %>
-  
-      <% /* Carousel (detail view only) when we have all attachments populated */ %>
-      <% if (!isCompact && Array.isArray(post.attachments) && post.attachments.length > 1) { %>
-        <div class="gallery" data-gallery>
-          <button class="g-nav g-prev" type="button" aria-label="Previous image">‹</button>
-          <div class="g-track">
-            <% post.attachments.forEach(function(att){
-                 const u = String(att.storageUrl || '');
-                 const isC = u.includes('/upload/');
-                 const slideSrc = isC ? u.replace('/upload/', '/upload/w_1400,h_900,c_fill,q_auto,f_auto/') : u;
-            %>
-              <div class="g-slide">
-                <img src="<%= slideSrc %>" alt="" loading="lazy" decoding="async" />
+
+      <% if (count > 0) { %>
+        <div class="media-grid" data-lightbox-group="<%= post._id %>">
+          <% imgs.forEach(function(att, i){
+              const u = String(att.storageUrl || '');
+              const isC = u.includes('/upload/');
+              const thumb = isC
+                ? u.replace('/upload/', '/upload/w_240,h_240,c_fill,q_auto,f_auto/')
+                : u;
+              const full = isC
+                ? u.replace('/upload/', '/upload/w_1600,h_1200,c_fit,q_auto,f_auto/')
+                : u;
+              const extra = (post.attachmentsCount || count) - 9; // respects true count if denorm exists
+          %>
+            <% if (i < 9) { %>
+              <div class="media-thumb-wrap">
+                <img
+                  src="<%= thumb %>"
+                  data-full="<%= full %>"
+                  alt="<%= post.imageAlt || 'Attached image' %>"
+                  class="media-thumb"
+                  loading="lazy"
+                  decoding="async"
+                  onclick="openLightbox(event, this)"
+                >
+                <% if (i === 8 && extra > 0) { %>
+                  <div class="multi-overlay">+<%= extra %></div>
+                <% } %>
               </div>
-            <% }) %>
-          </div>
-          <button class="g-nav g-next" type="button" aria-label="Next image">›</button>
+            <% } %>
+          <% }) %>
         </div>
       <% } %>
+
+  
   
       <% /* Link preview */ %>
-      <% if (post.type === 'LINK' && post.linkPreview?.url) { %>
-        <div class="link-preview" role="group" aria-label="Link preview">
-          <% if (post.linkPreview.imageUrl) { %>
-            <img class="link-thumb" src="<%= post.linkPreview.imageUrl %>" alt="" loading="lazy" decoding="async" />
-          <% } %>
-          <div class="link-info">
-            <div class="link-title"><%= post.linkPreview.title || post.linkPreview.url %></div>
-            <div class="link-desc"><%= post.linkPreview.description || '' %></div>
-            <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener noreferrer" class="link-open" aria-label="Open linked page">
-              Open link
-            </a>
-          </div>
-        </div>
-      <% } %>
+      <% if (post.type === 'LINK' && post.linkPreview?.url) { 
+        const url      = String(post.linkPreview.url || '');
+        const host     = (()=>{ try { return new URL(url).hostname.replace(/^www\./,''); } catch(_e){ return url; } })();
+        const title    = post.linkPreview.title || host;
+        const desc     = post.linkPreview.description || '';
+        const imgUrl   = post.linkPreview.imageUrl || ''; // may be empty
+        const isCloud  = imgUrl.includes('/upload/');
+        const thumb    = imgUrl
+           ? (isCloud ? imgUrl.replace('/upload/','/upload/w_640,h_360,c_fill,q_auto,f_auto/') : imgUrl)
+           : ''; // fallback handled in markup
+   %>
+     <a class="link-preview <%= isCompact ? 'lp--compact' : 'lp--full' %>"
+        href="<%= url %>"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Open linked page: <%= title %>">
+        
+       <% /* IMAGE (optional) */ %>
+       <% if (!isCompact) { %>
+         <div class="lp-media">
+           <% if (thumb) { %>
+             <img class="lp-img" src="<%= thumb %>" alt="" loading="lazy" decoding="async">
+           <% } else { %>
+             <div class="lp-img lp-img--fallback">🔗</div>
+           <% } %>
+         </div>
+       <% } else { %>
+         <% /* compact: small square thumb at left */ %>
+         <div class="lp-media lp-media--sm">
+           <% if (thumb) { %>
+             <img class="lp-img lp-img--sm" src="<%= thumb %>" alt="" loading="lazy" decoding="async">
+           <% } else { %>
+             <div class="lp-img lp-img--sm lp-img--fallback">🔗</div>
+           <% } %>
+         </div>
+       <% } %>
+   
+       <% /* TEXT META */ %>
+       <div class="lp-body">
+         <div class="lp-host">
+           <span class="lp-fav" aria-hidden="true">🌐</span>
+           <span class="lp-hostname"><%= host %></span>
+         </div>
+         <div class="lp-title"><%= title %></div>
+         <% if (!isCompact && desc) { %>
+           <div class="lp-desc"><%= desc %></div>
+         <% } %>
+       </div>
+     </a>
+   <% } %>
+   
   
       <% } /* end non-poll */ %>
     </section>
@@ -196,13 +246,17 @@
     (function(){
       // Card click → open detail (ignore interactive elements & polls)
       document.addEventListener('click', function(e){
-        const interactive = e.target.closest('a, button, input, textarea, select, label, summary, details');
+        const interactive = e.target.closest(
+          'a, button, input, textarea, select, label, summary, details, .media-thumb, .media-thumb-wrap, .link-preview'
+        );
+
         if (interactive || e.target.closest('.poll-form') || e.target.closest('.poll-result-q')) return;
         const card = e.target.closest('.post-card[data-href]');
         if (!card) return;
         const url = card.getAttribute('data-href');
         if (url) window.location.href = url;
       }, {passive:true});
+
   
       // Carousel (if present in this card)
       const card = document.currentScript.previousElementSibling;
@@ -241,3 +295,43 @@
   
   <% })(); %>
   
+  <script>
+    (function(){
+      // Linkify plain text nodes inside non-compact .post-content without breaking existing HTML
+      const card = document.currentScript.previousElementSibling;
+      if (!card) return;
+      const content = card.querySelector('.post-content:not(.compact)');
+      if (!content) return;
+    
+      const urlRx = /(https?:\/\/[^\s<]+)/g;
+    
+      function linkifyNode(node){
+        const parts = node.textContent.split(urlRx);
+        if (parts.length === 1) return; // no URLs
+        const frag = document.createDocumentFragment();
+        for (let i=0; i<parts.length; i++){
+          if (i % 2 === 0) {
+            frag.appendChild(document.createTextNode(parts[i]));
+          } else {
+            const a = document.createElement('a');
+            a.href = parts[i];
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'inline-link';
+            a.textContent = parts[i];
+            frag.appendChild(a);
+          }
+        }
+        node.replaceWith(frag);
+      }
+    
+      // Walk text nodes (skip inside existing links)
+      const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
+        acceptNode: (n) => n.parentElement && n.parentElement.closest('a') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+      });
+      const texts = [];
+      while (walker.nextNode()) texts.push(walker.currentNode);
+      texts.forEach(linkifyNode);
+    })();
+    </script>
+    

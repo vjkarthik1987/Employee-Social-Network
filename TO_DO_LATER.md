@@ -23,9 +23,10 @@
 - Birthdays and anniversaries should come in the feed
 - Follow Feature
 - Add Links
-- Hashtags and Mentions
+- Hashtags and ~~Mentions~~
 - If profile pic is not given, use a circle with the first letter of the first name
 - Page reload without refresh
-- Moderator view 
+- Moderator view improve
 - Seperate area for polls and announcements
 - Correct the poll admin page
+- Moderation queue should come

@@ -62,5 +62,127 @@
   <div class="rightBar">
     <%- include('../partials/_sidebar_links', { company, internalLinks: (typeof internalLinks !== 'undefined' ? internalLinks : []) }) %>
   </div>
+  <div id="lightbox" class="lightbox hidden" onclick="closeLightbox(event)">
+    <div class="lightbox-content">
+      <img id="lightbox-img" src="" alt="">
+    </div>
+    <button class="lightbox-close" onclick="closeLightbox(event)">×</button>
+  </div>
+  
 </body>
 </html>
+
+<script>
+  // Open: from a thumbnail inside a card
+  function openLightbox(ev, imgEl) {
+    // stop card navigation
+    if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+  
+    // resolve URL
+    var full = imgEl && (imgEl.dataset.full || imgEl.getAttribute('src'));
+    if (!full) return;
+  
+    var lb = document.getElementById('lightbox');
+    var lbImg = document.getElementById('lightbox-img');
+  
+    lbImg.removeAttribute('src');          // reset to nudge reflow
+    lb.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  
+    // small delay to avoid paint race on some browsers
+    requestAnimationFrame(function(){ lbImg.setAttribute('src', full); });
+  }
+  
+  // Close on backdrop or ✕
+  function closeLightbox(e) {
+    // allow both (click backdrop or ✕) and programmatic ESC
+    if (!e || e.target.id === 'lightbox' || (e.target.classList && e.target.classList.contains('lightbox-close'))) {
+      var lb = document.getElementById('lightbox');
+      var lbImg = document.getElementById('lightbox-img');
+      if (lb) lb.classList.add('hidden');
+      if (lbImg) lbImg.removeAttribute('src');
+      document.body.style.overflow = '';
+    }
+  }
+  
+  // Close on ESC
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeLightbox();
+  });
+  </script>
+
+<script>
+  (function(){
+    const URL_RX = /(https?:\/\/[^\s<]+)/g;
+  
+    function linkifyElement(root){
+      if (!root || root.dataset.linkified === '1') return;
+  
+      // Walk text nodes that are NOT already inside an <a>
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode: (n) => {
+          const p = n.parentElement;
+          if (!p) return NodeFilter.FILTER_REJECT;
+          if (p.closest('a')) return NodeFilter.FILTER_REJECT;
+          if (!URL_RX.test(n.textContent)) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
+  
+      const toProcess = [];
+      while (walker.nextNode()) toProcess.push(walker.currentNode);
+  
+      toProcess.forEach(node => {
+        const parts = node.textContent.split(URL_RX);
+        if (parts.length === 1) return;
+  
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < parts.length; i++) {
+          if (i % 2 === 0) {
+            if (parts[i]) frag.appendChild(document.createTextNode(parts[i]));
+          } else {
+            const a = document.createElement('a');
+            a.href = parts[i];
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'inline-link';
+            a.textContent = parts[i];
+            frag.appendChild(a);
+          }
+        }
+        node.replaceWith(frag);
+      });
+  
+      root.dataset.linkified = '1'; // idempotent
+    }
+  
+    function linkifyAll(){
+      document.querySelectorAll('.post-card .post-content:not(.compact)').forEach(linkifyElement);
+    }
+  
+    // Initial pass
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', linkifyAll);
+    } else {
+      linkifyAll();
+    }
+  
+    // Handle posts added later (infinite scroll, AJAX renders)
+    const mo = new MutationObserver((muts)=>{
+      for (const m of muts) {
+        m.addedNodes && m.addedNodes.forEach(n => {
+          if (!(n instanceof HTMLElement)) return;
+          if (n.matches && n.matches('.post-card .post-content:not(.compact)')) {
+            linkifyElement(n);
+          } else {
+            n.querySelectorAll && n.querySelectorAll('.post-card .post-content:not(.compact)').forEach(linkifyElement);
+          }
+        });
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+  })();
+  </script>
+  
+  
+  

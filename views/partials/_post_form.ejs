@@ -26,17 +26,6 @@
 
   <!-- Inline Previews -->
   <div class="composer-previews">
-    <!-- Link preview -->
-    <div id="linkPreview" class="link-preview d-none" aria-live="polite">
-      <div class="lp-body">
-        <div class="lp-text">
-          <div class="lp-title">Link</div>
-          <div class="lp-url" id="lpUrl"></div>
-        </div>
-        <button class="lp-remove" type="button" id="removeLinkPreview" title="Remove link">×</button>
-      </div>
-      <input type="hidden" name="linkUrl" id="linkUrlHidden">
-    </div>
 
     <!-- Media preview -->
     <div id="mediaPreview" class="media-preview d-none">
@@ -48,7 +37,6 @@
   <!-- Type tabs -->
   <div class="composer-types" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
     <button type="button" class="btn tsel" data-type="TEXT">Text</button>
-    <button type="button" class="btn tsel" data-type="LINK">Link</button>
     <button type="button" class="btn tsel" data-type="IMAGE">Image</button>
     <button type="button" class="btn tsel" data-type="POLL">Poll</button>
     <button type="button" class="btn tsel" data-type="ANNOUNCEMENT">Announcement</button>
@@ -114,10 +102,7 @@
   const addQ = document.getElementById('pb-add-q');
 
   // Link preview nodes
-  const linkPreview = document.getElementById('linkPreview');
   const lpUrl       = document.getElementById('lpUrl');
-  const linkUrlHidden = document.getElementById('linkUrlHidden');
-  const removeLinkPreview = document.getElementById('removeLinkPreview');
 
   // Media preview nodes
   const mediaPreview = document.getElementById('mediaPreview');
@@ -129,7 +114,6 @@
   // —————————————————————————————
   function setType(t){
     typeSel.value = t;
-    linkPreview.classList.toggle('d-none', t !== 'LINK' || !linkUrlHidden.value);
     imageRow.classList.toggle('d-none', t !== 'IMAGE');
     pollBuilder.classList.toggle('d-none', t !== 'POLL');
     announceRow.classList.toggle('d-none', t !== 'ANNOUNCEMENT');
@@ -140,15 +124,10 @@
     el.style.height = Math.min(el.scrollHeight, 320) + 'px';
   }
 
-  function firstUrlFromText(text){
-    const m = text.match(/https?:\/\/[^\s]+/i);
-    return m ? m[0] : '';
-  }
 
   function enableIfHasContent(){
     const hasText = (textarea.value || '').trim().length > 0;
     const hasMedia = !!(fileInp.files && fileInp.files.length);
-    const hasLink = !!(linkUrlHidden.value);
     postBtn.disabled = !(hasText || hasMedia || hasLink);
     const hasPoll = (typeSel.value === 'POLL') && (pbQs.querySelectorAll('.pb-q').length > 0);
     const hasAnnouncement = (typeSel.value === 'ANNOUNCEMENT') && hasText;
@@ -162,12 +141,6 @@
    if (typeSel.value === 'IMAGE') setType('TEXT');
   }
 
-  function resetLinkPreview(){
-    linkUrlHidden.value = '';
-    lpUrl.textContent = '';
-    linkPreview.classList.add('d-none');
-    if (typeSel.value === 'LINK') setType('TEXT');
-  }
 
   // —————————————————————————————
   // Textarea auto-expand + link detect
@@ -175,16 +148,6 @@
   autoGrow(textarea);
   textarea.addEventListener('input', () => {
     autoGrow(textarea);
-    const found = firstUrlFromText(textarea.value);
-    if (found && !fileInp.files.length) {
-      // only show link preview if not in IMAGE mode
-      linkUrlHidden.value = found;
-      lpUrl.textContent = found;
-      setType('LINK');
-    } else if (!found && typeSel.value === 'LINK') {
-      resetLinkPreview();
-      setType('TEXT');
-    }
     enableIfHasContent();
   });
 

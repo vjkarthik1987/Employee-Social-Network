@@ -73,6 +73,26 @@ async function attachGroupStubs(posts, companyId) {
   return posts;
 }
 
+async function attachThumbs(posts, companyId, limit = 9) {
+  if (!posts?.length) return posts;
+  const ids = posts.map(p => p._id);
+
+  const rows = await Attachment.aggregate([
+    { $match: { companyId, targetType: 'post', targetId: { $in: ids } } },
+    { $sort: { createdAt: 1 } },                         // oldest → newest (change if you want newest first)
+    { $group: { _id: '$targetId', urls: { $push: '$storageUrl' } } }
+  ]);
+
+  const map = new Map(rows.map(r => [String(r._id), r.urls.slice(0, limit)]));
+  posts.forEach(p => {
+    const urls = map.get(String(p._id)) || [];
+    p._thumbs = urls;                                     // for compact feed
+    if (!p.firstAttachmentUrl && urls[0]) p.firstAttachmentUrl = urls[0];
+  });
+  return posts;
+}
+
+
 function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople }) {
   const allowed = new Set(['TEXT','IMAGE','LINK','POLL','ANNOUNCEMENT']);
   const match = { companyId, deletedAt: null, status: 'PUBLISHED' };
@@ -177,7 +197,7 @@ async function runFeedQuery({ req, scope, groupId = null }) {
   }
 
   const [withImg, withGroup] = await Promise.all([
-    attachFirstImages(items, companyId),
+    attachThumbs(items, companyId, 9),
     attachGroupStubs(items, companyId),
   ]);
 
