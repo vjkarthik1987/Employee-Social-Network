@@ -1,201 +1,243 @@
-<!-- views/partials/_post_card.ejs -->
-<%
-  const isCompact = typeof compact !== 'undefined' && compact;
-  const maxLength = 200;
-  const plainText = (post.richText || '').replace(/<[^>]*>/g, ''); // strip HTML
-  const shortText = plainText.length > maxLength ? plainText.slice(0, maxLength) + '…' : plainText;
-%>
-<article class="post-card"
-         data-post-id="<%= post._id %>"
-         data-href="/<%= company.slug %>/posts/<%= post._id %>"
-         aria-labelledby="post-title-<%= post._id %>">  
-  <!-- Header -->
-  <header class="post-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-    <!-- LEFT: Avatar + meta -->
-    <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
-      <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
-        <img
-          class="post-avatar"
-          src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
-          alt=""
-          loading="lazy"
-          decoding="async"
-          onerror="this.src='/img/avatar.png'; this.onerror=null;"
-        />
-      </a>
+<% (function(){ %>
+  <!-- views/partials/_post_card.ejs -->
   
-      <div class="post-meta">
-        <div class="post-author">
-          <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight:bold;">
-            <%= post.authorId?.fullName || 'Unknown User' %>
-          </a>
-          <% if (post.type === 'ANNOUNCEMENT') { %>
-            <span class="badge" style="margin-left:6px;">📢 Announcement</span>
-            <% if (post.isPinned) { %><span class="badge" title="Pinned to top" style="margin-left:4px;">📌 Pinned</span><% } %>
-          <% } %>
-        </div>
+  <%
+    // ---- top-level derivations (compute once) ----
+    const isCompact = typeof compact !== 'undefined' && compact;
   
-        <div class="post-time">
-          <%
-            const tsRaw = post.createdAt || post.publishedAt || post.updatedAt || Date.now();
-            const ts = new Date(tsRaw);
-            const inGroup = !!(post.groupId && post.group);
-          %>
-          <time datetime="<%= ts.toISOString() %>" style="font-size:smaller;"><%= ts.toLocaleString() %></time>
-          <% if (inGroup) { %>
-            · in <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group?.name %></a>
-          <% } %>
+    const maxLength = 200;
+    const plainText = (post.richText || '').replace(/<[^>]*>/g, ''); // strip HTML
+    const shortText = plainText.length > maxLength ? plainText.slice(0, maxLength) + '…' : plainText;
+  
+    const _vals = Object.values(post.reactionsCountByType || {});
+    const __totalReactions = (typeof post.totalReactions === 'number')
+      ? post.totalReactions
+      : _vals.reduce((a,b) => a + (Number(b) || 0), 0);
+    const __views = Number(post.viewsCount || 0);
+    const __comments = Number(post.commentsCount || 0);
+    const __engRate = (typeof post.engagementRate === 'number')
+      ? post.engagementRate
+      : (((__totalReactions + __comments) / Math.max(__views, 1)) * 100);
+    const __viewed = (typeof viewedPostIds !== 'undefined') && viewedPostIds && viewedPostIds.has(String(post._id));
+  
+    const tsRaw = post.createdAt || post.publishedAt || post.updatedAt || Date.now();
+    const ts = new Date(tsRaw);
+    const inGroup = !!(post.groupId && post.group);
+  %>
+  
+  <article class="post-card"
+           data-post-id="<%= post._id %>"
+           data-href="/<%= company.slug %>/posts/<%= post._id %>"
+           aria-labelledby="post-title-<%= post._id %>">
+  
+    <!-- Header -->
+    <header class="post-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <!-- LEFT: Avatar + meta -->
+      <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
+        <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
+          <img
+            class="post-avatar"
+            src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            onerror="this.src='/img/avatar.png'; this.onerror=null;"
+          />
+        </a>
+  
+        <div class="post-meta">
+          <div class="post-author">
+            <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight:bold;">
+              <%= post.authorId?.fullName || 'Unknown User' %>
+            </a>
+            <% if (post.type === 'ANNOUNCEMENT') { %>
+              <span class="badge" style="margin-left:6px;">📢 Announcement</span>
+              <% if (post.isPinned) { %><span class="badge" title="Pinned to top" style="margin-left:4px;">📌 Pinned</span><% } %>
+            <% } %>
+          </div>
+  
+          <div class="post-time">
+            <time datetime="<%= ts.toISOString() %>" style="font-size:smaller;"><%= ts.toLocaleString() %></time>
+            <% if (inGroup) { %>
+              · in <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group?.name %></a>
+            <% } %>
+          </div>
         </div>
       </div>
-    </div>
   
-    <!-- RIGHT: Actions -->
-    <div class="post-header-actions" style="display:flex; align-items:center; gap:10px;">
-      <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
-        <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');">
-          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-          <button type="submit" title="Delete post" class="icon-btn danger" aria-label="Delete post">
-            🗑️
-          </button>
-        </form>
-      <% } %>
-  
-      <form method="POST" action="/<%= company.slug %>/report" style="display:inline;">
-        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-        <input type="hidden" name="targetType" value="post">
-        <input type="hidden" name="targetId" value="<%= post._id %>">
-        <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
-        <button type="submit" title="Report post" class="icon-btn" aria-label="Report post">
-          🚩
-        </button>
-      </form>
-    </div>
-  </header>
-  
-
-  <!-- Post Body -->
-  <section class="post-body">
-    <% if (post.type === 'POLL' && post.poll && Array.isArray(post.poll.questions)) { %>
-      <%- include('./_post_card_poll', { company, user, post }) %>
-      <% } else { %> 
-    <% /* Assume post.richText is sanitized HTML. */ %>
-    <% if (post.richText) { %>
-      <% if (isCompact) { %>
-        <div class="post-content compact"><%= shortText %></div>
-      <% } else { %>
-        <div class="post-content"><%- post.richText %></div>
-      <% } %>
-    <% } %>
-    
-
-    <% /* First attachment (image) with Cloudinary smart transform if relevant */ %>
-    <% if (post.firstAttachmentUrl) {
-         const _u = String(post.firstAttachmentUrl || '');
-         const isCloudinary = _u.includes('/upload/');
-         const imgSrc = isCloudinary
-           ? _u.replace('/upload/', '/upload/w_1200,h_800,c_fill,q_auto,f_auto/')
-           : _u;
-    %>
-      <a href="<%= post.firstAttachmentUrl %>" target="_blank" rel="noopener noreferrer" class="post-image-link" aria-label="Open attachment in a new tab">
-        <img
-          class="post-image"
-          src="<%= imgSrc %>"
-          alt="<%= post.imageAlt || 'Attached image' %>"
-          loading="lazy"
-          decoding="async"
-          onerror="this.closest('a').removeAttribute('href'); this.alt='Image failed to load';"
-        />
-      </a>
-    <% } %>
-
-    <% /* Link preview for LINK posts (thumb optional) */ %>
-    <% if (post.type === 'LINK' && post.linkPreview?.url) { %>
-      <div class="link-preview" role="group" aria-label="Link preview">
-        <% if (post.linkPreview.imageUrl) { %>
-          <img class="link-thumb" src="<%= post.linkPreview.imageUrl %>" alt="" loading="lazy" decoding="async" />
+      <!-- RIGHT: Actions -->
+      <div class="post-header-actions" style="display:flex; align-items:center; gap:10px;">
+        <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
+          <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <button type="submit" title="Delete post" class="icon-btn danger" aria-label="Delete post">🗑️</button>
+          </form>
         <% } %>
-        <div class="link-info">
-          <div class="link-title"><%= post.linkPreview.title || post.linkPreview.url %></div>
-          <div class="link-desc"><%= post.linkPreview.description || '' %></div>
-          <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener noreferrer" class="link-open" aria-label="Open linked page">
-            Open link
-          </a>
-        </div>
+  
+        <form method="POST" action="/<%= company.slug %>/report" style="display:inline;">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <input type="hidden" name="targetType" value="post">
+          <input type="hidden" name="targetId" value="<%= post._id %>">
+          <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
+          <button type="submit" title="Report post" class="icon-btn" aria-label="Report post">🚩</button>
+        </form>
       </div>
-    <% } %>
-    <% } %> 
-  </section>
-
-  <!-- Post Footer -->
-  <footer class="post-footer">
-    <% /* Derived helpers & safe fallbacks */ %>
-    <%
-      function __sumReactions(byType){
-        try { return Object.values(byType || {}).reduce((a,b)=> a + (Number(b)||0), 0); } catch(e){ return 0; }
-      }
-      const __totalReactions = (typeof post.totalReactions === 'number')
-        ? post.totalReactions
-        : __sumReactions(post.reactionsCountByType);
-      const __views = Number(post.viewsCount || 0);
-      const __comments = Number(post.commentsCount || 0);
-      const __engRate = (typeof post.engagementRate === 'number')
-        ? post.engagementRate
-        : (((__totalReactions + __comments) / Math.max(__views, 1)) * 100);
-      const __viewed = (typeof viewedPostIds !== 'undefined') && viewedPostIds && viewedPostIds.has(String(post._id));
-    %>
-
-    
-    <!-- Reactions -->
-    <div class="post-reactions reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
-      <%- include('./_reactions_bar', { company, user, post }) %>
-    </div>
-
-    <!-- <div class="card-metrics" aria-label="Post metrics">
-      <span title="Unique per session views">👁 <span data-count="views"><%= __views %></span> views</span>
-      <span title="(Reactions + Comments) / Views">↗️ <span data-rate="engagement"><%= __engRate.toFixed(1) %></span>% engagement</span>
-      <% if (__viewed) { %>
-        <span class="muted" aria-label="You viewed this post">👁 Viewed</span>
+    </header>
+  
+    <!-- Post Body -->
+    <section class="post-body">
+      <% if (post.type === 'POLL' && post.poll && Array.isArray(post.poll.questions)) { %>
+        <%- include('./_post_card_poll', { company, user, post }) %>
+      <% } else { %>
+  
+      <% /* Content (sanitized HTML); compact shows excerpt */ %>
+      <% if (post.richText) { %>
+        <% if (isCompact) { %>
+          <div class="post-content compact"><%= shortText %></div>
+        <% } else { %>
+          <div class="post-content"><%- post.richText %></div>
+        <% } %>
       <% } %>
-    </div> -->
-
-  </footer>
-</article>
-
-<script>
-  // Lightweight "time ago" enhancer + safe fallbacks
-  (function(){
-    var wrap = document.currentScript && document.currentScript.previousElementSibling?.querySelector?.('.post-time time');
-    if (!wrap) return;
-    try {
-      var dt = new Date(wrap.getAttribute('datetime'));
-      var diff = (Date.now() - dt.getTime()) / 1000; // seconds
-      var out;
-      if (diff < 60) out = 'just now';
-      else if (diff < 3600) out = Math.floor(diff/60) + 'm';
-      else if (diff < 86400) out = Math.floor(diff/3600) + 'h';
-      else if (diff < 604800) out = Math.floor(diff/86400) + 'd';
-      else out = dt.toLocaleDateString();
-      wrap.textContent = out;
-      wrap.setAttribute('title', dt.toLocaleString());
-    } catch(e){}
-  })();
-</script>
-
-<script>
-  (function(){
-    document.addEventListener('click', function(e){
-      // If the click is on a control (button, link, input, textarea, select, label), do nothing.
-      const interactive = e.target.closest('a, button, input, textarea, select, label, summary, details');
-      // Also ignore clicks inside poll widgets
-      if (e.target.closest('.poll-form') || e.target.closest('.poll-result-q')) return;
-      if (interactive) return;
   
-      const card = e.target.closest('.post-card[data-href]');
+      <% /* First image (feed) with Cloudinary smart transform */ %>
+      <% if (post.firstAttachmentUrl) {
+           const _u = String(post.firstAttachmentUrl || '');
+           const isCloudinary = _u.includes('/upload/');
+           const imgSrc = isCloudinary
+             ? _u.replace('/upload/', '/upload/w_1200,h_800,c_fill,q_auto,f_auto/')
+             : _u;
+      %>
+        <div class="post-image-wrap">
+          <a href="/<%= company.slug %>/posts/<%= post._id %>" class="post-image-link" aria-label="Open post">
+            <img
+              class="post-image"
+              src="<%= imgSrc %>"
+              alt="<%= post.imageAlt || 'Attached image' %>"
+              loading="lazy"
+              decoding="async"
+              onerror="this.closest('a').removeAttribute('href'); this.alt='Image failed to load';"
+            />
+          </a>
+          <% const extra = Math.max((post.attachmentsCount || 0) - 1, 0); %>
+          <% if (extra > 0) { %>
+            <div class="multi-overlay">+<%= extra %></div>
+          <% } %>
+        </div>
+      <% } %>
+  
+      <% /* Carousel (detail view only) when we have all attachments populated */ %>
+      <% if (!isCompact && Array.isArray(post.attachments) && post.attachments.length > 1) { %>
+        <div class="gallery" data-gallery>
+          <button class="g-nav g-prev" type="button" aria-label="Previous image">‹</button>
+          <div class="g-track">
+            <% post.attachments.forEach(function(att){
+                 const u = String(att.storageUrl || '');
+                 const isC = u.includes('/upload/');
+                 const slideSrc = isC ? u.replace('/upload/', '/upload/w_1400,h_900,c_fill,q_auto,f_auto/') : u;
+            %>
+              <div class="g-slide">
+                <img src="<%= slideSrc %>" alt="" loading="lazy" decoding="async" />
+              </div>
+            <% }) %>
+          </div>
+          <button class="g-nav g-next" type="button" aria-label="Next image">›</button>
+        </div>
+      <% } %>
+  
+      <% /* Link preview */ %>
+      <% if (post.type === 'LINK' && post.linkPreview?.url) { %>
+        <div class="link-preview" role="group" aria-label="Link preview">
+          <% if (post.linkPreview.imageUrl) { %>
+            <img class="link-thumb" src="<%= post.linkPreview.imageUrl %>" alt="" loading="lazy" decoding="async" />
+          <% } %>
+          <div class="link-info">
+            <div class="link-title"><%= post.linkPreview.title || post.linkPreview.url %></div>
+            <div class="link-desc"><%= post.linkPreview.description || '' %></div>
+            <a href="<%= post.linkPreview.url %>" target="_blank" rel="noopener noreferrer" class="link-open" aria-label="Open linked page">
+              Open link
+            </a>
+          </div>
+        </div>
+      <% } %>
+  
+      <% } /* end non-poll */ %>
+    </section>
+  
+    <!-- Post Footer -->
+    <footer class="post-footer">
+      <div class="post-reactions reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
+        <%- include('./_reactions_bar', { company, user, post }) %>
+      </div>
+  
+      <!-- If you want the metrics row visible, uncomment below
+      <div class="card-metrics" aria-label="Post metrics">
+        <span title="Unique per session views">👁 <span data-count="views"><%= __views %></span> views</span>
+        <span title="(Reactions + Comments) / Views">↗️ <span data-rate="engagement"><%= __engRate.toFixed(1) %></span>% engagement</span>
+        <% if (__viewed) { %>
+          <span class="muted" aria-label="You viewed this post">👁 Viewed</span>
+        <% } %>
+      </div>
+      -->
+    </footer>
+  </article>
+  
+  <script>
+    // Lightweight "time ago" enhancer (kept simple)
+    (function(){
+      var card = document.currentScript.previousElementSibling;
       if (!card) return;
-  
-      const url = card.getAttribute('data-href');
-      if (url) window.location.href = url;
-    }, {passive:true});
-  })();
+      var t = card.querySelector('.post-time time');
+      if (!t) return;
+      // You can plug your relative-time code here later if needed.
+    })();
   </script>
+  
+  <script>
+    (function(){
+      // Card click → open detail (ignore interactive elements & polls)
+      document.addEventListener('click', function(e){
+        const interactive = e.target.closest('a, button, input, textarea, select, label, summary, details');
+        if (interactive || e.target.closest('.poll-form') || e.target.closest('.poll-result-q')) return;
+        const card = e.target.closest('.post-card[data-href]');
+        if (!card) return;
+        const url = card.getAttribute('data-href');
+        if (url) window.location.href = url;
+      }, {passive:true});
+  
+      // Carousel (if present in this card)
+      const card = document.currentScript.previousElementSibling;
+      if (!card) return;
+      const root = card.querySelector('.gallery');
+      if (!root) return;
+  
+      const track = root.querySelector('.g-track');
+      const slides = Array.from(root.querySelectorAll('.g-slide'));
+      const prev = root.querySelector('.g-prev');
+      const next = root.querySelector('.g-next');
+      if (!track || !slides.length) return;
+  
+      let i = 0;
+      function go(k){
+        i = (k + slides.length) % slides.length;
+        track.style.transform = 'translateX(' + (-i * 100) + '%)';
+      }
+      prev && prev.addEventListener('click', ()=>go(i-1));
+      next && next.addEventListener('click', ()=>go(i+1));
+  
+      root.tabIndex = 0;
+      root.addEventListener('keydown', (e)=>{
+        if (e.key === 'ArrowLeft') go(i-1);
+        if (e.key === 'ArrowRight') go(i+1);
+      });
+  
+      let sx=0, dx=0;
+      root.addEventListener('touchstart', e=>{ sx = e.touches[0].clientX; dx=0; }, {passive:true});
+      root.addEventListener('touchmove', e=>{ dx = e.touches[0].clientX - sx; }, {passive:true});
+      root.addEventListener('touchend', ()=>{ if (Math.abs(dx) > 40) go(i + (dx<0 ? 1 : -1)); });
+  
+      go(0);
+    })();
+  </script>
+  
+  <% })(); %>
   

@@ -3,8 +3,10 @@
 
 :root{
   --primary: #0a66c2;
+  --jaango-yellow:#FFC33A;
   --bg: #e9ebee;
   --text: #111;
+  --ink-900:#0E1116;
 
   /* layout */
   --leftW: 20vw;           /* left nav width */
@@ -31,8 +33,8 @@ html, body{
   left: 0;
   width: 20vw;                   /* or use var(--leftW) if defined */
   height: 100vh;
-  background: var(--primary);
-  color: #fff;
+  background: var(--jaango-yellow);
+  color: var(--ink-900);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -53,7 +55,7 @@ html, body{
 .brand {
   font-weight: 700;
   font-size: 1.1rem;
-  color: #fff;
+  color: brown;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -72,7 +74,7 @@ html, body{
 }
 
 .nav-links a {
-  color: rgba(255,255,255,0.92);
+  color: black;
   text-decoration: none;
   font-weight: 600;
   padding: 8px 10px;
@@ -105,7 +107,7 @@ html, body{
 .hamburger,
 #nav-drawer,
 #nav-backdrop {
-  display: none !important;
+  display: none ;
 }
 
 /* ===== Right Sidebar (fixed) ===== */
@@ -116,7 +118,7 @@ html, body{
   height: 100vh;
   overflow-y: auto;
   z-index: 900;
-  background: #eef3ff;          /* tweak */
+  background: #c8daff;          /* tweak */
   border-left: 1px solid #dde3f0;
   padding: 16px;
 }
@@ -811,3 +813,272 @@ h1,h2,h3{ line-height: 1.25; }
   .auth-wrap { width: min(96vw, 440px); padding: 16px; }
   .auth-card { padding: 18px; }
 }
+
+/* ===== Mobile header (≤768px): top-aligned navbar with dropdown ===== */
+@media (max-width: 768px) {
+  /* Turn sidebar into a top bar */
+  .navbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--navH, 56px);
+    width: 100%;
+    background: var(--jaango-yellow);
+    color: brown;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    z-index: 1101;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    overflow: visible;        /* allow dropdown to render below */
+  }
+
+  /* Brand row becomes horizontal */
+  .nav-inner {
+    display: flex;
+    flex-direction: row; /* made this small change and the same happened */
+    align-items: center;
+    justify-content: space-between;   /* brand left, hamburger right */
+    width: 100%;
+    height: var(--navH, 56px);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: brown;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .brand-logo {
+    height: 26px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .brand-name {
+    font-size: 1.05rem;
+    line-height: 1;
+    margin-top: 1px; /* fine-tune vertical centering */
+  }
+
+  /* Hamburger visible on mobile, sits at far left */
+  .hamburger {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  .hamburger span {
+    width: 20px;
+    height: 2px;
+    background: #fff;
+    margin: 3px 0;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+  /* (optional) animate to "X" on open */
+  .navbar.open .hamburger span:nth-child(1){ transform:rotate(45deg) translate(4px,4px); }
+  .navbar.open .hamburger span:nth-child(2){ opacity:0; }
+  .navbar.open .hamburger span:nth-child(3){ transform:rotate(-45deg) translate(4px,-4px); }
+
+  /* Links become a dropdown panel under the top bar */
+  .nav-links {
+    position: fixed;
+    top: var(--navH, 56px);
+    left: 0; right: 0;
+    display: none;            /* hidden until open */
+    flex-direction: column;
+    gap: 6px;
+    background: #fff;
+    color: #111;
+    border-bottom: 1px solid #e6e6e6;
+    box-shadow: 0 8px 18px rgba(0,0,0,.10);
+    padding: 10px 12px;
+    z-index: 1101;
+    margin-top: 0;                  /* eliminate gap */
+    border-top: none;
+  }
+  .nav-links a {
+    color: #111;
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+  .nav-links a:hover { background: #f6f7fb; }
+
+  /* Show dropdown when navbar has .open */
+  .navbar.open .nav-links { display: flex; }
+
+  /* Backdrop covers page (below the bar) when menu is open */
+  #nav-backdrop {
+    display: block !important;
+    position: fixed;
+    inset: calc(var(--navH, 56px)) 0 0 0;  /* start below the header */
+    background: rgba(0,0,0,.4);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s ease;
+    z-index: 1100;
+  }
+  #nav-backdrop.show { opacity: 1; pointer-events: auto; }
+
+  /* Content shifts down to clear the fixed header */
+  .page-container {
+    margin: 0;
+    width: 100%;
+    padding: calc(var(--navH, 56px) + 12px) 12px 20px;
+  }
+
+  /* Hide right bar on mobile (we're focusing on top nav) */
+  .rightBar { display: none; }
+  .page-container {
+    margin-top: 50px;
+  }
+}
+
+
+/* ===== Mobile bottom bar (RightBar becomes bottom-fixed) ===== */
+@media (max-width: 768px) {
+  .rightBar {
+    position: fixed !important;
+    bottom: 0; left: 0; right: 0;
+    top: auto;
+    height: var(--bottomH, 64px);
+    background: #c8daff;
+    width: 100%;
+    border-top: 1px solid #e6e6e6;
+    box-shadow: 0 -8px 18px rgba(0,0,0,.08);
+    z-index: 1102;
+    padding: 6px 8px;
+    display: block !important;
+    overflow: hidden; /* the row inside will scroll horizontally */
+    margin-top: 30px;
+  }
+
+  .rightBar .card {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .rightBar .card > div:first-child {
+    display: none !important;
+  }
+
+  /* Horizontal scroll container */
+  .rightBar .il-grid {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    padding: 0 6px;
+  }
+  .rightBar .il-grid::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }
+
+  /* Compact, tappable pills */
+  .rightBar .il-tile {
+    flex: 0 0 auto;              /* don't shrink; stay inline */
+    border: 1px solid #e6e6e6;
+    background: #fff;
+    border-radius: 999px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .rightBar .il-tile:hover {
+    background: #f8f8f8;
+  }
+
+  .rightBar .il-text {
+    font-weight: 700;
+    font-size: .92rem;
+  }
+
+  /* Keep page content visible above the bar */
+  .page-container {
+    padding-bottom: calc(var(--bottomH, 64px) + 16px) !important;
+  }
+}
+
+/* --- Prevent rightBar from blocking clicks on small screens --- */
+@media (max-width: 900px) {
+  .page-container { 
+    /* reserve space so content doesn't sit under the bottom bar */
+    padding-bottom: var(--bottomH, 72px); 
+  }
+  .rightBar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--bottomH, 72px);
+    background: #fff;
+    border-top: 1px solid #e6e6e6;
+    /* keep this *below* interactive content like the composer */
+    z-index: 10;
+  }
+  /* ensure the composer can float above the bar */
+  .composer-card { position: relative; z-index: 50; }
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.media-grid img {
+  width: 100%; height: 96px; object-fit: cover; border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+/* feed first-image container + +N overlay */
+.post-image-wrap { position: relative; }
+.multi-overlay{
+  position:absolute; bottom:8px; right:8px;
+  background: rgba(0,0,0,.55); color:#fff; font-weight:700;
+  padding: 4px 8px; border-radius: 12px; font-size: .9rem;
+}
+
+/* simple carousel for detail view */
+.gallery { position: relative; overflow: hidden; border-radius: 12px; }
+.g-track { display: flex; transition: transform .25s ease; }
+.g-slide { min-width: 100%; }
+.g-slide img { display:block; width:100%; height:auto; object-fit: cover; border-radius: 12px; }
+.g-nav{
+  position:absolute; top:50%; transform: translateY(-50%);
+  background: rgba(0,0,0,.45); color:#fff; border:0; width:36px; height:36px; border-radius:50%;
+  cursor:pointer; display:grid; place-items:center; font-size: 20px;
+}
+.g-prev{ left:8px; } .g-next{ right:8px; }
+.g-nav:hover{ background: rgba(0,0,0,.6); }
+
+.gallery { position: relative; overflow: hidden; width: 100%; border-radius: 12px; }
+.g-track { display: flex; transition: transform .25s ease; width: 100%; }
+.g-slide { flex: 0 0 100%; }          /* ← one full-width slide at a time */
+.g-slide img { width: 100%; height: auto; display: block; object-fit: cover; border-radius: 12px; }
+
+/* Nav as before */
+.g-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(0,0,0,.45); color: #fff; border: 0;
+  width: 36px; height: 36px; border-radius: 50%;
+  cursor: pointer; display: grid; place-items: center; font-size: 20px;
+}
+.g-prev { left: 8px; } .g-next { right: 8px; }
+.g-nav:hover { background: rgba(0,0,0,.6); }
+
+

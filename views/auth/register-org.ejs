@@ -8,7 +8,6 @@
   <link rel="icon" href="/img/logo.ico" sizes="any">
   <link rel="stylesheet" href="/css/main.css">
   <style>
-
     /* ---- Jaango minimal design tokens ---- */
     :root{
       --jaango-yellow:#FFC33A;
@@ -36,47 +35,99 @@
         --ring: rgba(255,195,58,.28);
       }
     }
-    /* Page-scoped helpers (keeps your token scale) */
+
+    /* ---- Page layout ---- */
     .wrap{max-width:var(--maxw);margin:0 auto;padding:24px;}
-    .auth-grid{display:grid;gap:var(--gap);grid-template-columns:1.1fr .9fr;align-items:start}
-    @media (max-width: 960px){ .auth-grid{grid-template-columns:1fr} }
-    .card{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:18px}
-    .pill{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:var(--paper-2);border:1px solid rgba(0,0,0,.06);color:var(--ink-500);font-weight:600}
-    .form-row{display:grid;gap:6px;margin:12px 0}
-    .form-row.inline{grid-template-columns: 1fr 1fr;gap:12px}
-    .label{font-weight:600;color:var(--ink-700)}
-    .hint{color:var(--ink-300);font-size:13px}
-    .input, .select{
-      width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:var(--paper);color:var(--ink-900)
-    }
-    .input:focus{outline:3px solid var(--ring);outline-offset:2px;border-color:transparent}
-    .row-split{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
-    .toggle-btn{appearance:none;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);padding:10px 12px;border-radius:10px;cursor:pointer;color:var(--ink-700)}
-    .meter{height:8px;border-radius:999px;background:#e8edf3;overflow:hidden}
-    .meter-fill{height:100%;width:0%;background:var(--jaango-green);transition:width .25s ease}
-    .terms{display:flex;gap:10px;align-items:flex-start;margin-top:6px}
-    .btn{appearance:none;border:none;cursor:pointer;padding:12px 18px;border-radius:12px;font-weight:700;box-shadow:0 6px 16px rgba(60,164,107,.15);text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-    .btn-primary{background:var(--jaango-yellow);color:#171717}
-    .btn-ghost{background:var(--paper-2);color:var(--ink-700)}
-    .muted{color:var(--ink-300)}
-    .notice{background:var(--paper-2);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);padding:14px;color:var(--ink-700)}
-    /* Fix two-up input row overlap */
-    .form-row.inline{
+    .auth-grid{
       display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
+      gap:var(--gap);
+      grid-template-columns:1.1fr .9fr;
       align-items:start;
     }
+    @media (max-width:960px){ .auth-grid{grid-template-columns:1fr;} }
 
-    /* Allow grid children to actually shrink within their column */
-    .form-row.inline > *{ min-width: 0; }
+    /* ---- Cards, pills, basics ---- */
+    .card{
+      background:var(--paper-2);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:var(--radius);
+      padding:18px;
+    }
+    .pill{
+      display:inline-flex;gap:8px;align-items:center;
+      padding:8px 12px;border-radius:999px;
+      background:var(--paper-2);
+      border:1px solid rgba(0,0,0,.06);
+      color:var(--ink-500);font-weight:600;
+    }
 
-    /* Belt-and-suspenders: ensure inputs size inside their cell */
-    .input, .select{ width:100%; box-sizing:border-box; }
+    /* ---- Form elements ---- */
+    .form-row{display:grid;gap:6px;margin:12px 0;}
+    .label{font-weight:600;color:var(--ink-700);}
+    .hint{color:var(--ink-300);font-size:13px;line-height:1.5;}
+    .input,.select{
+      width:100%;padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.12);
+      background:var(--paper);color:var(--ink-900);
+      box-sizing:border-box;
+    }
+    .input:focus{
+      outline:3px solid var(--ring);
+      outline-offset:2px;
+      border-color:transparent;
+    }
+    .row-split{
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:8px;
+      align-items:center;
+    }
 
-    /* Optional: stack on narrow screens */
-    @media (max-width: 640px){
-      .form-row.inline{ grid-template-columns: 1fr; }
+    /* ---- Two-up inline row (Anticipated users + Currency) ---- */
+    .form-row.inline{
+      display:grid;
+      grid-template-columns:minmax(240px,1fr) minmax(200px,1fr);
+      gap:12px;
+      align-items:start;            /* top-align so hints don't push the select */
+    }
+    .form-row.inline > *{ min-width:0; }        /* prevent overflow */
+    .form-row.inline > .form-row{ margin:0; }   /* kill nested row spacing */
+    @media (max-width:520px){
+      .form-row.inline{ grid-template-columns:1fr; }
+    }
+
+    /* ---- Misc helpers ---- */
+    .toggle-btn{
+      appearance:none;
+      border:1px solid rgba(0,0,0,.12);
+      background:var(--paper-2);
+      padding:10px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      color:var(--ink-700);
+    }
+    .meter{height:8px;border-radius:999px;background:#e8edf3;overflow:hidden;}
+    .meter-fill{height:100%;width:0%;background:var(--jaango-green);transition:width .25s ease;}
+    .terms{display:flex;gap:10px;align-items:flex-start;margin-top:6px;}
+    .btn{
+      appearance:none;border:none;cursor:pointer;
+      padding:12px 18px;border-radius:12px;font-weight:700;
+      box-shadow:0 6px 16px rgba(60,164,107,.15);
+      text-decoration:none;display:inline-flex;
+      align-items:center;justify-content:center;
+      transition:transform .15s ease;
+    }
+    .btn-primary{background:var(--jaango-yellow);color:#171717;}
+    .btn-primary:hover{transform:translateY(-1px);}
+    .btn-ghost{background:var(--paper-2);color:var(--ink-700);}
+    .muted{color:var(--ink-300);}
+    .notice{
+      background:var(--paper-2);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:var(--radius);
+      padding:14px;
+      color:var(--ink-700);
     }
 
   </style>
@@ -118,7 +169,7 @@
             <div class="hint">Lowercase letters, numbers, and hyphens only (3–32 chars). Your URL will look like: <code>jaango.club/<span id="slugPreview">acme</span>/feed</code></div>
           </div>
 
-          <div class="form-row inline">
+          <div class="form-row">
             <div>
               <label class="label" for="fullName">Admin full name</label>
               <input class="input" id="fullName" name="fullName" required autocomplete="name" placeholder="Anita Kumar">
@@ -152,10 +203,11 @@
           </div>
 
           <div class="form-row inline">
-            <div>
-              <label class="label" for="users">Expected users (for estimate)</label>
-              <input class="input" id="users" type="number" min="1" step="1" placeholder="e.g., 53">
-            </div>
+            <div class="form-row">
+              <label class="label" for="seats">Anticipated number of users</label>
+              <input class="input" id="seats" name="seats" type="number" min="1" step="1" placeholder="e.g. 50" required>
+              <div class="hint">We’ll start your free 30-day trial with this seat count. You can change it later.</div>
+            </div>            
             <div>
               <label class="label" for="currency">Currency</label>
               <select id="currency" class="select">
@@ -165,16 +217,16 @@
             </div>
           </div>
           
-          <div class="notice" id="estBox" style="display:none">
+          <div class="notice" id="estBox" style="display:none" aria-live="polite">
             <div id="estLine1" style="font-weight:700"></div>
             <div id="estLine2" class="muted" style="margin-top:4px"></div>
+            <div id="estLine3" class="muted" style="margin-top:4px"></div> <!-- NEW annual fee line -->
             <div id="trialMsg" class="hint" style="margin-top:6px; font-weight:600; color:var(--jaango-green)">
               First month is free on Jaango Cloud. You won’t be charged today.
             </div>
           </div>
+                    
           
-          
-
           <div class="terms">
             <input id="agree" name="agree" type="checkbox" required style="margin-top:4px">
             <label for="agree" class="hint" style="line-height:1.6">
@@ -304,63 +356,75 @@
 <script>
   (function(){
     const plan = document.getElementById('plan');
-    const users = document.getElementById('users');
+    const seatsEl = document.getElementById('seats');     // <-- fix id
     const currency = document.getElementById('currency');
     const estBox = document.getElementById('estBox');
     const est1 = document.getElementById('estLine1');
     const est2 = document.getElementById('estLine2');
+    const est3 = document.getElementById('estLine3');     // <-- new line
     const trial = document.getElementById('trialMsg');
-  
-    // Tweaked manually if FX moves
-    const FX = 83; // 1 USD ≈ ₹83 (adjust anytime)
-  
+
+    // tweak if FX moves
+    const FX = 83; // 1 USD ≈ ₹83
+
     function fmt(n, cur){
-      return (cur === 'INR') ? `₹${n.toLocaleString('en-IN')}` : `$${n.toFixed(2)}`;
+      return (cur === 'INR')
+        ? `₹${Math.round(n).toLocaleString('en-IN')}`
+        : `$${n.toFixed(2)}`;
     }
-  
+
     function calc(){
-      const u = Math.max(0, parseInt(users.value || '0', 10));
+      const u = Math.max(0, parseInt(seatsEl.value || '0', 10));
       const cur = currency.value;
       if(!u){ estBox.style.display = 'none'; return; }
-  
-      // Base USD numbers
+
+      // base USD
       const cloudMonthlyUSD = 0.10 * u;
       const cloudAnnualUSD  = cloudMonthlyUSD * 12;
+      const cloudAnnualAfterFreeUSD = cloudMonthlyUSD * 11;    // 1st month free
+
       const perpetualUSD    = 4 * u;
       const slaUSD          = 120;
-  
-      // convert if INR
+
       const to = (x)=> cur === 'INR' ? x * FX : x;
-  
-      let line1 = '';
-      let line2 = '';
+
+      let line1 = '', line2 = '', line3 = '';
       const p = plan.value;
-  
+
       if(p === 'cloud'){
         line1 = `Cloud · ${u} users → ${fmt(to(cloudMonthlyUSD), cur)}/month`;
-        line2 = `≈ ${fmt(to(cloudAnnualUSD), cur)}/year · due today: ${fmt(0, cur)} (1-month free)`;
+        line2 = `≈ ${fmt(to(cloudAnnualUSD), cur)}/year (list)`;
+        line3 = `Anticipated annual license (after 1st month free): ${fmt(to(cloudAnnualAfterFreeUSD), cur)}`;
         trial.style.display = '';
       } else if (p === 'perpetual'){
         line1 = `Perpetual (10-yr) · ${u} users → one-time ${fmt(to(perpetualUSD), cur)}`;
         line2 = `Optional SLA: ${fmt(to(slaUSD), cur)}/year`;
+        line3 = '';
         trial.style.display = 'none';
       } else {
         line1 = `Self-host (BYO infra) → ${fmt(0, cur)} license`;
         line2 = `You bring DB, Cloudinary, email, etc.`;
+        line3 = '';
         trial.style.display = 'none';
       }
-  
+
       est1.textContent = line1;
       est2.textContent = line2;
+      est3.textContent = line3;
+      est3.style.display = line3 ? 'block' : 'none';
       estBox.style.display = 'block';
     }
-  
+
     ['change','input'].forEach(ev=>{
       plan.addEventListener(ev, calc);
-      users.addEventListener(ev, calc);
+      seatsEl.addEventListener(ev, calc);
       currency.addEventListener(ev, calc);
     });
+
+    // paint once if there’s a prefilled value
+    calc();
   })();
+
   </script>
   <script>
     (function(){
@@ -376,6 +440,8 @@
         }
       });
     })();
+
+    
     </script>
     
   

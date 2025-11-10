@@ -20,6 +20,7 @@ const UserSchema = new mongoose.Schema(
     bio: { type: String, trim: true, maxlength: 2000 },
     skills: [{ type: String, trim: true }],
     interests: [{ type: String, trim: true }],
+    isEmailVerified:{type: Boolean},
     preferences: {
       darkMode: { type: Boolean, default: null } // null = follow company default
     },

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Check your email — Jaango</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <%- include('../partials/_topbar') %>
+  <main class="wrap">
+    <section class="section" style="padding-top:18px;">
+      <span class="pill">Jaango.club</span>
+      <h1 class="h2" style="margin:8px 0 6px;">Please check your email</h1>
+      <p class="sub" style="max-width:720px">
+        We’ve sent a verification link to your email. Click the button in that email to verify your address and finish setting up your organization.
+      </p>
+      <div class="notice" style="margin-top:12px">
+        Didn’t get it? Check your spam folder, or wait a minute. Didn’t get it? Check spam or try again in a minute.
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="foot">
+      <p>© <%= new Date().getFullYear() %> Jaango.club</p>
+    </div>
+  </footer>
+</body>
+</html>

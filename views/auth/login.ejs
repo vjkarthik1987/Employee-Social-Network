@@ -1,50 +1,170 @@
-<% layout('layouts/_main') %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Login — Jaango.club</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Sign in to your Jaango club. Where voices meet and ideas ripen.">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    :root{
+      --jaango-yellow:#FFC33A;
+      --jaango-green:#3CA46B;
+      --ink-900:#0E1116;
+      --ink-700:#1F232B;
+      --ink-500:#525866;
+      --ink-300:#8E95A3;
+      --paper:#ffffff;
+      --paper-2:#FAFBFC;
+      --radius:16px;
+      --maxw:1120px;
+    }
 
-<div class="card shadow-sm border-0 p-4" style="background:#fff; border-radius:12px; max-width:360px; margin:auto;">
-  <form method="POST" action="/auth/login" autocomplete="on">
-    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    @media (prefers-color-scheme: dark){
+      :root{
+        --paper:#0B0E14;
+        --paper-2:#0F131A;
+        --ink-900:#F7F8FA;
+        --ink-700:#E9EBEF;
+        --ink-500:#B8BFCC;
+        --ink-300:#99A1B1;
+        --ring: rgba(255,195,58,.28);
+      }
+    }
 
-    <div class="mb-3 text-start">
-      <label for="org" class="form-label">Organization Slug</label>
-      <div class="input-group">
-        <span class="input-group-text bg-light">🏢</span>
-        <input id="org" name="org" type="text" class="form-control" placeholder="your-org" required>
-      </div>
+    body{
+      margin:0;
+      background:var(--paper);
+      color:var(--ink-900);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    }
+
+    main.wrap{max-width:440px;margin:80px auto;padding:24px;}
+
+    .card{
+      background:var(--paper-2);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:var(--radius);
+      padding:28px;
+      box-shadow:0 6px 16px rgba(0,0,0,.05);
+    }
+
+    h1{
+      font-size:clamp(26px,4vw,36px);
+      margin:0 0 12px;
+      text-align:center;
+    }
+
+    .label{display:block;font-weight:600;color:var(--ink-700);margin-bottom:4px;}
+    .input{
+      width:100%;padding:12px 14px;border-radius:12px;
+      border:1px solid rgba(0,0,0,.12);background:var(--paper);
+      color:var(--ink-900);font-size:15px;box-sizing:border-box;
+    }
+    .input:focus{outline:3px solid rgba(60,164,107,.35);outline-offset:2px;border-color:transparent;}
+
+    .form-row{margin:16px 0;}
+    .btn{
+      appearance:none;border:none;cursor:pointer;
+      padding:12px 18px;border-radius:12px;font-weight:700;
+      text-decoration:none;display:inline-flex;align-items:center;justify-content:center;
+      transition:all .15s ease;
+    }
+    .btn-primary{background:var(--jaango-yellow);color:#171717;width:100%;}
+    .btn-primary:hover{transform:translateY(-1px);}
+    .btn-ghost{background:var(--paper-2);color:var(--ink-700);width:100%;}
+    .btn-ghost:hover{background:#eef2f6;}
+    .card .btn-primary,
+    .card .btn-ghost { width:100%; }
+
+    /* Topbar CTA should size to content */
+    .topbar .btn,
+    .topbar .btn-primary,
+    .topbar .start-cta { width:auto !important; }
+
+
+    .input-wrap{position:relative;}
+    .toggle-btn{
+      position:absolute;right:10px;top:50%;transform:translateY(-50%);
+      background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink-500);
+    }
+    p.sub{text-align:center;color:var(--ink-500);margin:12px 0 0;font-size:15px;}
+    .link{color:var(--jaango-green);text-decoration:none;font-weight:600;}
+    .link:hover{text-decoration:underline;}
+  </style>
+</head>
+
+<body>
+
+   <!-- TOPBAR (no user data) -->
+   <%- include('../partials/_topbar')%>
+
+  <main class="wrap">
+    <div class="card">
+      <h1>Sign in to Jaango</h1>
+      <form method="POST" action="/auth/login" autocomplete="on">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+        <div class="form-row">
+          <label for="org" class="label">Organization Slug</label>
+          <input id="org" name="org" type="text" class="input" placeholder="your-org" required>
+        </div>
+
+        <div class="form-row">
+          <label for="email" class="label">Email</label>
+          <input id="email" name="email" type="email" class="input" placeholder="you@company.com" required>
+        </div>
+
+        <div class="form-row">
+          <label for="password" class="label">Password</label>
+          <div class="input-wrap">
+            <input id="password" name="password" type="password" class="input" placeholder="••••••••" required>
+            <button type="button" class="toggle-btn" onclick="togglePass(this)">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+
+        <p class="sub">
+          New here? <a href="/auth/register-org" class="link">Create your organization</a>
+        </p>
+      </form>
     </div>
+  </main>
 
-    <div class="mb-3 text-start">
-      <label for="email" class="form-label">Email</label>
-      <div class="input-group">
-        <span class="input-group-text bg-light">✉️</span>
-        <input id="email" name="email" type="email" class="form-control" placeholder="you@company.com" required>
-      </div>
-    </div>
+  <footer style="text-align:center;margin-top:40px;color:#999;font-size:14px;">
+    © <%= new Date().getFullYear() %> Jaango.club · Where voices meet and ideas ripen.
+  </footer>
 
-    <div class="mb-3 text-start">
-      <label for="password" class="form-label">Password</label>
-      <div class="input-group">
-        <span class="input-group-text bg-light">🔒</span>
-        <input id="password" name="password" type="password" class="form-control" placeholder="••••••••" required>
-        <button type="button" class="btn btn-outline-secondary" onclick="togglePass(this)">👁️</button>
-      </div>
-    </div>
+  <script>
+    function togglePass(btn){
+      const inp=document.getElementById('password');
+      const show=inp.type==='password';
+      inp.type=show?'text':'password';
+      btn.textContent=show?'🙈':'👁️';
+    }
+    // Mobile menu toggle
+  (function(){
+    const btn = document.querySelector('.hamburger');
+    const nav = document.getElementById('nav-links');
+    if(!btn || !nav) return;
 
-    <div class="d-grid mt-4">
-      <button type="submit" class="btn btn-primary w-100">Login</button>
-    </div>
+    function toggle(open){
+      const isOpen = (open !== undefined) ? open : !nav.classList.contains('is-open');
+      nav.classList.toggle('is-open', isOpen);
+      btn.setAttribute('aria-expanded', String(isOpen));
+    }
 
-    <p class="text-center mt-3 mb-0">
-      New here?
-      <a href="/auth/register-org" class="fw-semibold text-decoration-none">Create your organization</a>
-    </p>
-  </form>
-</div>
-
-<script>
-  function togglePass(btn) {
-    const inp = document.getElementById('password');
-    const show = inp.type === 'password';
-    inp.type = show ? 'text' : 'password';
-    btn.textContent = show ? '🙈' : '👁️';
-  }
-</script>
+    btn.addEventListener('click', ()=> toggle());
+    document.addEventListener('click', (e)=>{
+      if(!nav.classList.contains('is-open')) return;
+      if(!nav.contains(e.target) && e.target !== btn) toggle(false);
+    });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') toggle(false); });
+  })();
+  </script>
+</body>
+</html>

@@ -1,6 +1,11 @@
 // models/Company.js
 const mongoose = require('mongoose');
 
+const PlanSchema = new mongoose.Schema({
+  kind: { type: String, enum: ['trial','cloud','perpetual','byo'], default: 'trial' },
+  seats: { type: Number, default: 10 },      // set from form
+}, { _id: false });
+
 const companySchema = new mongoose.Schema({
   slug: { type: String, unique: true, required: true }, // e.g., "acme"
   name: { type: String, required: true },
@@ -29,12 +34,18 @@ const companySchema = new mongoose.Schema({
     lastLinkedInSyncAt: Date
   },
   planState: { type: String, enum: ['FREE_TRIAL','ACTIVE','EXPIRED'], default: 'FREE_TRIAL' },
+  plan: { type: PlanSchema, default: () => ({ kind:'trial', seats:10 }) },
   trialEndsAt: { type: Date },
   license: {
     seats: { type: Number, default: 25 },
     used: { type: Number, default: 0 },
     validTill: { type: Date }
   },
+  // ORG verification (single source of truth)
+  verifyToken: { type: String, index: true, default: null },
+  verifyExpiresAt: { type: Date, default: null },
+  verifiedAt: { type: Date, default: null },
+  
   status: { type: String, enum: ['active','suspended'], default: 'active' },
 }, { timestamps: true });
 

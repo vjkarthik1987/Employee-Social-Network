@@ -2,136 +2,76 @@
 <nav class="navbar">
   <div class="nav-inner">
     <!-- Brand -->
-    <a class="brand" href="/<%= (org||company)?.slug %>/feed" style="display:inline-flex;align-items:center;gap:8px;">
+    <a class="brand" href="/<%= (org||company)?.slug %>/feed">
       <% if (company?.branding?.logoUrl) { %>
-        <img src="<%= company.branding.logoUrl %>" alt="<%= company?.name || 'Engage' %>" style="height:28px;vertical-align:middle;">
+        <img src="<%= company.branding.logoUrl %>" alt="<%= company?.name || 'Engage' %>" class="brand-logo">
       <% } %>
-      <span>
+      <span class="brand-name">
         <%= (org?.productName && org.productName.trim())
             ? org.productName
             : (org?.name || company?.name || 'Engage') %>
       </span>
     </a>
 
-    <!-- Hamburger -->
+    <!-- Hamburger (mobile only, right aligned) -->
     <button class="hamburger"
-            aria-label="Menu"
-            aria-expanded="false"
-            aria-controls="nav-drawer"
-            onclick="window.toggleDrawer(this)">
+      aria-label="Menu"
+      aria-expanded="false"
+      onclick="window.toggleDrawer(this)">
       <span></span><span></span><span></span>
     </button>
-    
-
-    <!-- Desktop links -->
-    <div class="nav-links">
-      <% if (org) { %>
-        <a href="/<%= org.slug %>/feed">Feed</a>
-        <a href="/<%= org.slug %>/groups">Groups</a>
-
-        <% if (currentUser) { %>
-          <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">My Profile</a>
-        <% } %>
-
-        <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
-          <a href="/<%= org.slug %>/mod/queue">Moderation</a>
-        <% } %>
-
-        <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
-          <a href="/<%= org.slug %>/admin/settings">Admin</a>
-          <a href="/<%= org.slug %>/admin/users">Users</a>
-        <% } %>
-        
-        <% if (currentUser) { %>
-          <form method="POST" action="/<%= org.slug %>/auth/logout" class="logout-form">
-            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-            <button class="btn btn-ghost btn-sm" type="submit" style="background-color: red;">Logout</button>
-          </form>
-        <% } else { %>
-          <a class="btn btn-ghost btn-sm" href="/<%= org.slug %>/auth/login">Login</a>
-        <% } %>
-      <% } %>
-    </div>
   </div>
 
-  
-
-  <!-- Mobile drawer -->
-  <div id="nav-drawer" class="nav-drawer" hidden>
-    <% if (!org) { %>
-      <a href="/">Home</a>
-      <a href="/auth/register-org">Register Org</a>
-      <a href="/auth/login">Login</a>
-    <% } else { %>
-      <a href="/<%= org.slug %>/feed">🏠 Feed</a>
-      <a href="/<%= org.slug %>/groups">👥 Groups</a>
-
+  <!-- Links -->
+  <div class="nav-links">
+    <% if (org) { %>
+      <a href="/<%= org.slug %>/feed">Feed</a>
+      <a href="/<%= org.slug %>/groups">Groups</a>
       <% if (currentUser) { %>
-        <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">🧑 My Profile</a>
+        <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">My Profile</a>
       <% } %>
-
       <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
-        <a href="/<%= org.slug %>/mod/queue">🛡️ Moderation</a>
+        <a href="/<%= org.slug %>/mod/queue">Moderation</a>
       <% } %>
-
       <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
-        <a href="/<%= org.slug %>/admin/settings">⚙️ Admin</a>
-        <a href="/<%= org.slug %>/admin/users">👤 Users</a>
+        <a href="/<%= org.slug %>/admin/settings">Admin</a>
+        <a href="/<%= org.slug %>/admin/users">Users</a>
       <% } %>
-
-      <div class="nav-drawer-footer">
-        <% if (currentUser) { %>
-          <form method="POST" action="/<%= org.slug %>/profile/toggle-dark" style="margin-bottom:8px;">
-            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-            <button class="btn" type="submit"><%= currentUser?.preferences?.darkMode ? '☀️ Light' : '🌙 Dark' %></button>
-          </form>
-
-          <form method="POST" action="/<%= org.slug %>/auth/logout">
-            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-            <button class="btn danger" type="submit" style="background-color: red;">Logout</button>
-          </form>
-        <% } else { %>
-          <a class="btn" href="/<%= org.slug %>/auth/login">Login</a>
-        <% } %>
-      </div>
+      <% if (currentUser) { %>
+        <form method="POST" action="/<%= org.slug %>/auth/logout" class="logout-form">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <button class="btn btn-ghost btn-sm" type="submit" style="background-color:red;">Logout</button>
+        </form>
+      <% } else { %>
+        <a class="btn btn-ghost btn-sm" href="/<%= org.slug %>/auth/login">Login</a>
+      <% } %>
     <% } %>
   </div>
 
-  <!-- Backdrop -->
   <div id="nav-backdrop" class="nav-backdrop" hidden></div>
 </nav>
 
 <script>
-  (function () {
-    var drawer = document.getElementById('nav-drawer');
-    var backdrop = document.getElementById('nav-backdrop');
-
-    function syncHidden() {
-      drawer.hidden = !drawer.classList.contains('open');
-      backdrop.hidden = !drawer.classList.contains('open');
-      document.body.classList.toggle('drawer-open', drawer.classList.contains('open'));
+(function () {
+  const navbar = document.querySelector('.navbar');
+  const backdrop = document.getElementById('nav-backdrop');
+  window.toggleDrawer = function (btn) {
+    navbar.classList.toggle('open');
+    const isOpen = navbar.classList.contains('open');
+    btn?.setAttribute('aria-expanded', isOpen);
+    backdrop.classList.toggle('show', isOpen);
+  };
+  backdrop.addEventListener('click', () => {
+    navbar.classList.remove('open');
+    backdrop.classList.remove('show');
+    document.querySelector('.hamburger')?.setAttribute('aria-expanded','false');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      navbar.classList.remove('open');
+      backdrop.classList.remove('show');
+      document.querySelector('.hamburger')?.setAttribute('aria-expanded','false');
     }
-
-    window.toggleDrawer = function (btn) {
-      drawer.classList.toggle('open');
-      btn && btn.setAttribute('aria-expanded', drawer.classList.contains('open'));
-      syncHidden();
-    };
-
-    backdrop.addEventListener('click', function () {
-      drawer.classList.remove('open'); syncHidden();
-      var hb = document.querySelector('.hamburger');
-      hb && hb.setAttribute('aria-expanded', 'false');
-    });
-
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && drawer.classList.contains('open')) {
-        drawer.classList.remove('open'); syncHidden();
-        var hb = document.querySelector('.hamburger');
-        hb && hb.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    new MutationObserver(syncHidden).observe(drawer, { attributes: true, attributeFilter: ['class'] });
-  })();
+  });
+})();
 </script>

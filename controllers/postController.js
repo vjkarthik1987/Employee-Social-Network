@@ -413,20 +413,29 @@ exports.create = async (req, res, next) => {
       publishedAt: status === 'PUBLISHED' ? new Date() : null,
       poll: pollDoc
     });
+    // Multi-image support
+    const files = Array.isArray(req.files) ? req.files : [];
+    if (files.length) {
+      // Force type=IMAGE if attachments exist
+      if (post.type !== 'IMAGE') {
+        post.type = 'IMAGE';
+        await post.save();
+      }
 
-    if (req.file) {
-      await Attachment.create({
+      const rows = files.map(f => ({
         companyId,
         ownerUserId: req.user._id,
         targetType: 'post',
         targetId: post._id,
-        storageUrl: (req.file.path && req.file.path.startsWith('http'))
-          ? req.file.path
-          : `/uploads/${req.file.filename}`,
-        mimeType: req.file.mimetype || null,
-        sizeBytes: req.file.size || null,
-      });
-      await Post.updateOne({ _id: post._id }, { $inc: { attachmentsCount: 1 } });
+        storageUrl: (f.path && f.path.startsWith('http')) ? f.path : (f.location || f.secure_url || `/uploads/${f.filename}`),
+        mimeType: f.mimetype || null,
+        sizeBytes: f.size || null,
+      }));
+
+      if (rows.length) {
+        await Attachment.insertMany(rows);
+        await Post.updateOne({ _id: post._id }, { $inc: { attachmentsCount: rows.length } });
+      }
     }
 
     audit.record({
@@ -495,6 +504,11 @@ exports.getPost = async (req, res, next) => {
         const t0 = performance.now();
         let post = await Post.findOne({ _id: postId, companyId, deletedAt: null })
           .populate('authorId', 'fullName title avatarUrl')
+          .populate({
+            path: 'attachments',
+            select: 'storageUrl mimeType createdAt',
+            options: { sort: { createdAt: 1 } }
+          })
           .lean();
         if (!post) return { notFound: true };
 

@@ -227,3 +227,11 @@ vertical-align:middle;         /* fix baseline wiggle */
 @media (max-width:480px){
 .btn-row .btn{ width:100%; }
 }
+
+.topbar .start-cta{
+  padding:10px 16px;
+  border-radius:12px;
+  font-weight:700;
+  box-shadow:0 6px 16px rgba(60,164,107,.15);
+}
+.topbar .start-cta:hover{ transform: translateY(-1px); }

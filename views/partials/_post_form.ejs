@@ -24,8 +24,6 @@
           data-mention-source="/<%= company.slug %>/posts/mentions"
           placeholder="Write something… (paste a link to show a preview)"></textarea>
 
-  </div>
-
   <!-- Inline Previews -->
   <div class="composer-previews">
     <!-- Link preview -->
@@ -42,9 +40,8 @@
 
     <!-- Media preview -->
     <div id="mediaPreview" class="media-preview d-none">
-      <img id="mediaImg" alt="" class="media-thumb d-none"/>
-      <video id="mediaVideo" class="media-thumb d-none" playsinline controls></video>
-      <button type="button" class="media-remove" id="removeMediaPreview" title="Remove file">×</button>
+       <div id="mediaGrid" class="media-grid"></div>
+       <button type="button" class="media-remove" id="removeMediaPreview" title="Remove all">× Clear</button>
     </div>
   </div>
 
@@ -81,10 +78,11 @@
 
   <!-- Actions -->
   <div class="composer-actions">
-    <label class="composer-action" title="Photo/Video">
-      <span class="icon" aria-hidden="true">🖼️</span><span>Photo/Video</span>
-      <input id="composerFile" type="file" name="image" accept="image/*,video/*" hidden>
+    <label class="composer-action" title="Add photos">
+       <span class="icon" aria-hidden="true">🖼️</span><span>Photos</span>
+       <input id="composerFile" type="file" name="images" accept="image/*" multiple hidden>
     </label>
+      
 
     <button type="button" class="composer-action" data-action="LINK" title="Share a link">
       <span class="icon" aria-hidden="true">🔗</span><span>Link</span>
@@ -123,8 +121,7 @@
 
   // Media preview nodes
   const mediaPreview = document.getElementById('mediaPreview');
-  const mediaImg     = document.getElementById('mediaImg');
-  const mediaVideo   = document.getElementById('mediaVideo');
+  const mediaGrid    = document.getElementById('mediaGrid');
   const removeMediaPreview = document.getElementById('removeMediaPreview');
 
   // —————————————————————————————
@@ -159,13 +156,10 @@
   }
 
   function resetMediaPreview(){
-    mediaImg.src = '';
-    mediaVideo.removeAttribute('src');
-    mediaImg.classList.add('d-none');
-    mediaVideo.classList.add('d-none');
-    mediaPreview.classList.add('d-none');
-    if (fileInp) fileInp.value = '';
-    if (typeSel.value === 'IMAGE') setType('TEXT');
+   mediaGrid.innerHTML = '';
+   mediaPreview.classList.add('d-none');
+   if (fileInp) fileInp.value = '';
+   if (typeSel.value === 'IMAGE') setType('TEXT');
   }
 
   function resetLinkPreview(){
@@ -226,43 +220,29 @@
       enableIfHasContent();
       return;
     }
-
-    const f = fileInp.files[0];
-    const isImage = /^image\//i.test(f.type);
-    const isVideo = /^video\//i.test(f.type);
-
-    // Size guard: 2MB image, 10MB video
-    if (isImage && f.size > 2 * 1024 * 1024) {
-      alert('Images up to 2 MB only.');
-      resetMediaPreview();
-      return;
-    }
-    if (isVideo && f.size > 10 * 1024 * 1024) {
-      alert('Videos up to 10 MB only.');
-      resetMediaPreview();
-      return;
-    }
-
     // Switching away from link preview if any
     resetLinkPreview();
 
-    const url = URL.createObjectURL(f);
-    mediaPreview.classList.remove('d-none');
-
-    if (isImage) {
-      mediaImg.src = url;
-      mediaImg.classList.remove('d-none');
-      mediaVideo.classList.add('d-none');
-    } else if (isVideo) {
-      mediaVideo.src = url;
-      mediaVideo.classList.remove('d-none');
-      mediaImg.classList.add('d-none');
-    } else {
-      alert('Unsupported file type.');
+    // v1 rules: images only; 2 MB per file; max 6 files
+    const files = Array.from(fileInp.files || []);
+    if (files.length > 6) {
+      alert('Please select up to 6 images.');
       resetMediaPreview();
       return;
     }
+    const tooBig = files.find(f => f.size > 2 * 1024 * 1024);
+    const notImg = files.find(f => !/^image\//i.test(f.type));
+    if (notImg) { alert('Only images are supported for now.'); resetMediaPreview(); return; }
+    if (tooBig) { alert('Each image must be ≤ 2 MB.'); resetMediaPreview(); return; }
 
+    mediaGrid.innerHTML = '';
+    files.forEach(f => {
+      const url = URL.createObjectURL(f);
+      const img = document.createElement('img');
+      img.src = url;
+      mediaGrid.appendChild(img);
+    });
+    mediaPreview.classList.remove('d-none');
     setType('IMAGE');
     enableIfHasContent();
   });

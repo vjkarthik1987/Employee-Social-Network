@@ -59,7 +59,7 @@ async function getTransport() {
     console.warn('[mailer] no SMTP config found (DB or .env); suppressing email');
     cached = { enabled: false };
     return cached;
-  }
+}
   
 
 async function sendMail({ to, subject, html }) {
@@ -101,4 +101,67 @@ function renderMentionEmail({ company, actor, snippet, link }) {
     </div>`;
 }
 
-module.exports = { sendMail, renderApprovalEmail, renderMentionEmail };
+// services/mailer.js (or wherever this lives)
+async function sendOrgVerificationEmail({ to, fullName, companyName, verifyUrl, trialEndsAt }) {
+  if (!to) throw new Error('sendOrgVerificationEmail: "to" is required');
+  if (!verifyUrl) throw new Error('sendOrgVerificationEmail: "verifyUrl" is required');
+
+  const first = (fullName || '').trim().split(/\s+/)[0] || 'there';
+
+  // Parse and format trial end date safely
+  const t = (trialEndsAt instanceof Date) ? trialEndsAt : new Date(trialEndsAt);
+  const hasValidDate = !Number.isNaN(t.valueOf());
+  const dateStr = hasValidDate
+    ? t.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+    : null;
+
+  const subject = `Verify your organization — Jaango.club`;
+
+  const html = `
+    <div style="font-family:system-ui,Segoe UI,Roboto,Arial; color:#111">
+      <h2 style="margin:0 0 12px">Welcome to Jaango, ${escapeHtml(first)}!</h2>
+      <p style="margin:0 0 10px">You just created <strong>${escapeHtml(companyName || '')}</strong>.</p>
+      <p style="margin:0 0 14px">To complete setup and activate your 30-day trial, please verify your organization:</p>
+      <p style="margin:0 0 16px">
+        <a href="${verifyUrl}" style="display:inline-block;background:#FFC33A;color:#111;padding:10px 16px;border-radius:10px;text-decoration:none;font-weight:700">
+          Verify Organization
+        </a>
+      </p>
+      <p style="margin:0 0 10px; color:#555">
+        ${hasValidDate ? `Your free trial runs until <strong>${dateStr}</strong>.` : `Your free trial is active for 30 days from today.`}
+      </p>
+      <p style="margin:0 0 10px; color:#999">If you didn’t request this, you can safely ignore this email.</p>
+      <hr style="border:none;border-top:1px solid #eee;margin:16px 0"/>
+      <small>This link expires in 24 hours.</small>
+    </div>
+  `;
+
+  const text = [
+    `Welcome to Jaango, ${first}!`,
+    ``,
+    `You just created ${companyName || ''}.`,
+    ``,
+    `To complete setup and activate your 30-day trial, verify your organization:`,
+    verifyUrl,
+    ``,
+    hasValidDate ? `Your free trial runs until ${dateStr}.` : `Your free trial is active for 30 days from today.`,
+    ``,
+    `If you didn’t request this, you can safely ignore this email.`,
+    `This link expires in 24 hours.`
+  ].join('\n');
+
+  return sendMail({ to, subject, html, text });
+}
+
+// tiny helper to avoid accidental HTML injection via names
+function escapeHtml(s='') {
+  return s
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+
+module.exports = { sendMail, renderApprovalEmail, renderMentionEmail, sendOrgVerificationEmail  };

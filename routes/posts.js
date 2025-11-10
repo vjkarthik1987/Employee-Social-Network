@@ -71,7 +71,7 @@ if (typeof pc?.create !== 'function') {
 }
 router.post('/',
   ensureAuth,               // your auth guard
-  upload.single('image'),   // multer if used
+  upload.array('images', 10),   // multer if used
   csrfProtection,           // if you run CSRF per-route
   pc.create
 );

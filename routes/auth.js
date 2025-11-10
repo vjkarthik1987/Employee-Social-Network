@@ -4,6 +4,12 @@ const passport = require('passport');
 const bcrypt = require('bcrypt');
 const Company = require('../models/Company');
 const User = require('../models/User');
+const crypto = require('crypto');
+const EmailToken = require('../models/EmailToken');
+const { sendOrgVerificationEmail } = require('../services/mailer');
+
+const APP_BASE = process.env.APP_BASE_URL || 'http://localhost:3000';
+
 
 const router = express.Router();
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
@@ -14,53 +20,120 @@ router.get('/register-org', (_req, res) => {
   res.render('auth/register-org');
 });
 
+// POST /auth/register-org
 router.post('/register-org', async (req, res) => {
   try {
-    const { companyName, companySlug, fullName, email, password } = req.body;
+    const { companyName, companySlug, fullName, email, password, seats, agree } = req.body;
 
-    // 1) Create the company with trial + license bootstrap
+    if (!agree) {
+      req.flash('error', 'Please agree to the Terms & Privacy to continue.');
+      return res.redirect('/auth/register-org');
+    }
+    if (!password || password.length < 8) {
+      req.flash('error', 'Please provide a password with at least 8 characters.');
+      return res.redirect('/auth/register-org');
+    }
+
+    const now = new Date();
+    const trialEndsAt = addDays(now, 30);
+    const nSeats = Math.max(1, Number(seats || 10));
+
+    // Create company in FREE_TRIAL state
+    const verifyToken = crypto.randomBytes(32).toString('hex');
     const company = await Company.create({
-      name: companyName,
+      name: companyName.trim(),
       slug: companySlug.toLowerCase().trim(),
-
-      // ↓↓↓ NEW: bootstrapped plan & license for Day 35 ↓↓↓
       planState: 'FREE_TRIAL',
-      trialEndsAt: addDays(new Date(), 90),
-      license: {
-        seats: 25,
-        used: 0, // will set to 1 after we create the first admin
-        validTill: addDays(new Date(), 90)
-      }
+      plan: { kind: 'trial', seats: nSeats, trialEndsAt },
+      trialEndsAt,
+      license: { seats: nSeats, used: 0, validTill: trialEndsAt },
+      verifyToken,
+      verifyExpiresAt: addDays(now, 1),
+      verifiedAt: null
     });
 
-    // 2) Create the first admin user
+    // 🔐 hash password and set passwordHash explicitly
     const passwordHash = await bcrypt.hash(password, 12);
-    await User.create({
+
+    // First admin user (enum should allow ORG_ADMIN)
+    const user = await User.create({
       companyId: company._id,
       role: 'ORG_ADMIN',
       email: email.toLowerCase().trim(),
       fullName: fullName.trim(),
-      passwordHash
+      passwordHash                           // 🔐 set hashed password
     });
 
-    // 3) Bump license.used to 1 (first admin)
+    // Update license usage
     company.license.used = 1;
     await company.save();
 
-    // (Optional) Audit: org registered
-    // const auditService = require('../services/auditService');
-    // await auditService.record('system', 'ORG_REGISTERED', { companyId: company._id, slug: company.slug });
+    // Send org verification email
+    const verifyUrl = `${APP_BASE}/auth/verify-org?token=${verifyToken}`;
+    console.log(APP_BASE);
+    console.log(verifyUrl);
+    await sendOrgVerificationEmail({
+      to: user.email,
+      fullName,
+      companyName,                     // make sure this comes from req.body and is not undefined
+      verifyUrl,                       // absolute URL like http(s)://host/auth/verify-org?token=...
+      trialEndsAt: company.trialEndsAt // pass the actual Date from the doc
+    });
+    
 
-    // 4) Success & redirect to login
-    req.flash('success', `Organization created. Free trial ends on ${company.trialEndsAt.toDateString()}. You can now log in.`);
-    res.redirect('/auth/login');
+    req.flash('success', 'We’ve emailed a verification link. Please check your inbox.');
+    return res.redirect('/auth/check-email');
+
   } catch (err) {
-    console.error(err);
-    req.flash('error', err.code === 11000 ? 'Org slug or user email already exists.' : 'Failed to create organization.');
-    res.redirect('/auth/register-org');
+    console.error('[register-org] error:', err);
+    req.flash('error', err.code === 11000
+      ? 'Org slug or user email already exists.'
+      : 'Could not create your organization. Please try again.');
+    return res.redirect('/auth/register-org');
   }
 });
 
+
+// Email verification endpoint
+// GET /auth/verify-org
+router.get('/verify-org', async (req, res) => {
+  const { token } = req.query || {};
+  if (!token) return res.render('auth/verify-org', { success: false });
+
+  try {
+    const company = await Company.findOne({
+      verifyToken: token,
+      verifyExpiresAt: { $gt: new Date() }
+    });
+
+    if (!company) return res.render('auth/verify-org', { success: false });
+
+    company.verifiedAt = new Date();
+    company.verifyToken = null;
+    company.verifyExpiresAt = null;
+    await company.save();
+
+    return res.render('auth/verify-org', {
+      success: true,
+      companyName: company.name
+    });
+
+  } catch (err) {
+    console.error('[verify-org] error:', err);
+    return res.render('auth/verify-org', { success: false });
+  }
+});
+
+
+
+// Simple page: “check your mail”
+router.get('/check-email', (req, res) => {
+  return res.render('auth/check-email', {
+    title: 'Check your email',
+    user: null,
+    company: null
+  });
+});
 
 // GET: login
 router.get('/login', (req, res) => {
@@ -98,7 +171,6 @@ router.post('/login', (req, res, next) => {
     })(req, res, next);
   });
   
-
 // POST: logout
 router.post('/logout', (req, res, next) => {
   req.logout(err => {

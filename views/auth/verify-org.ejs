@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Verify Organization — Jaango.club</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Verify your Jaango organization to activate your club.">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    :root {
+      --jaango-yellow:#FFC33A;
+      --jaango-green:#3CA46B;
+      --ink-900:#0E1116;
+      --ink-700:#1F232B;
+      --ink-500:#525866;
+      --paper:#ffffff;
+      --paper-2:#FAFBFC;
+      --radius:16px;
+    }
+    body { background:var(--paper); color:var(--ink-900); font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; margin:0; }
+    .wrap{max-width:640px;margin:60px auto;padding:24px;}
+    .card{
+      background:var(--paper-2);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:var(--radius);
+      padding:28px;
+      text-align:center;
+      box-shadow:0 6px 16px rgba(0,0,0,.05);
+    }
+    .card img{width:96px;height:auto;margin-bottom:16px;}
+    h1{font-size:clamp(26px,4vw,36px);margin:8px 0 12px;}
+    p{color:var(--ink-500);margin:0 0 16px;line-height:1.6;}
+    .btn{
+      appearance:none;border:none;cursor:pointer;
+      padding:12px 18px;border-radius:12px;font-weight:700;
+      text-decoration:none;display:inline-flex;align-items:center;justify-content:center;
+    }
+    .btn-primary{background:var(--jaango-yellow);color:#171717;}
+    .btn-ghost{background:var(--paper-2);color:var(--ink-700);}
+    .muted{color:#999;font-size:14px;}
+  </style>
+</head>
+<body>
+
+  <main class="wrap">
+    <div class="card">
+      <% if (typeof success !== 'undefined' && success) { %>
+        <img src="/img/logo.png" alt="Jaango logo">
+        <h1>🎉 Organization Verified</h1>
+        <p>Your organization <strong><%= companyName %></strong> has been successfully verified.</p>
+        <p>You can now sign in and start your 30-day free trial.</p>
+        <a href="/auth/login" class="btn btn-primary">Go to Login</a>
+        <p class="muted" style="margin-top:14px;">Welcome to your new club. 🍋</p>
+
+      <% } else { %>
+        <img src="/img/logo.png" alt="Jaango logo">
+        <h1>⚠️ Verification Failed</h1>
+        <p>This verification link is invalid or has expired.</p>
+        <a href="/auth/login" class="btn btn-ghost">Back to Login</a>
+        <p class="muted" style="margin-top:14px;">Didn’t get the mail? Try “Resend verification” from login.</p>
+      <% } %>
+    </div>
+  </main>
+
+  <footer style="text-align:center;margin-top:40px;color:#999;font-size:14px;">
+    © <%= new Date().getFullYear() %> Jaango.club · Where voices meet and ideas ripen.
+  </footer>
+
+</body>
+</html>
