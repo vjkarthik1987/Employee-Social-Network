@@ -52,8 +52,9 @@
 
   <div class="comment-footer">
     <% if (user && comment.status !== 'deleted') { %>
-      <button class="icon-btn subtle" title="Reply" aria-label="Reply"
-              data-reply-toggle="<%= comment._id %>">💬</button>
+      <button class="icon-btn subtle"
+        title="Reply" aria-label="Reply"
+        data-reply-toggle="<%= comment._id %>">💬 Reply</button>
     <% } %>
     <span class="muted small"><%= (comment.repliesCount || 0) %> repl<%= (comment.repliesCount || 0) === 1 ? 'y' : 'ies' %></span>
   </div>
@@ -61,26 +62,27 @@
   <% if (user && comment.status !== 'deleted') { %>
     <form id="reply-form-<%= comment._id %>"
       method="POST"
-      action="/<%= company.slug %>/posts/<%= post._id %>/comments"
-      class="cc-reply cc-inline"
+      action="/<%= company.slug %>/api/posts/<%= post._id %>/comments"
+      class="cc-reply reply-form"
       style="display:none;"
       data-ajax-reply>
-  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-  <input type="hidden" name="parentCommentId" value="<%= comment._id %>">
-  <div class="cc-row">
-    <img class="cc-avatar" src="<%= user?.avatarUrl || '/img/avatar.png' %>" alt="">
-    <div class="cc-inputwrap">
-      <textarea ... class="cc-input" placeholder="Write a reply…" maxlength="3000" required enterkeyhint="send"></textarea>
-      <div class="cc-tools">
-        <button type="button" class="cc-emoji-btn" title="Add emoji" aria-label="Add emoji">🙂</button>
-        <span class="cc-count" data-cc-count>0/3000</span>
-        <button class="cc-send" type="submit" disabled aria-label="Post reply">➤</button>
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <input type="hidden" name="parentCommentId" value="<%= comment._id %>">
+
+      <div class="cc-row">
+        <img class="cc-avatar" src="<%= user?.avatarUrl || '/img/avatar.png' %>" alt="">
+        <div class="cc-inputwrap">
+          <textarea name="content" class="cc-input" rows="1"
+                    placeholder="Write a reply…" maxlength="3000"
+                    required enterkeyhint="send"></textarea>
+          <div class="cc-tools">
+            <button type="button" class="cc-emoji-btn" title="Add emoji" aria-label="Add emoji">🙂</button>
+            <span class="cc-count" data-cc-count>0/3000</span>
+            <button class="cc-send" type="submit" disabled aria-label="Post reply">➤</button>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</form>
-
-
+    </form>
   <% } %>
 
   <% if (replies && replies.length) { %>
@@ -143,6 +145,10 @@
 </li>
 
 <script>
+  
+</script>
+
+<!-- <script>
 (function(){
   if (window.__COMMENTS_JS_LOADED__) return;  // guard against multiple partial loads
   window.__COMMENTS_JS_LOADED__ = true;
@@ -217,4 +223,4 @@
     } catch(err){ console.error(err); alert('Network error while deleting.'); }
   });
 })();
-</script>
+</script> -->

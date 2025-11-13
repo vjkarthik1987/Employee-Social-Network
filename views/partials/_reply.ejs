@@ -1,40 +1,38 @@
-<% /* _reply.ejs — renders ONE reply <li> */
-  /* Accept either `r` (AJAX path) or `comment` (server include path) */
-  const c = typeof r !== 'undefined' ? r : comment;
-  const a = c && c.authorId;
-  const name = (a && a.fullName) || 'User';
-  const initials = name.trim().split(/\s+/).map(s=>s[0]).slice(0,2).join('').toUpperCase();
-%>
+<!-- views/partials/_reply.ejs -->
+<li class="comment-card" data-reply-id="<%= r._id %>">
+  <div class="comment-header">
+    <div class="ch-left">
+      <img class="avatar-sm" src="<%= r.authorId?.avatarUrl || '/img/avatar.png' %>" alt="">
+      <div class="meta">
+        <span class="comment-author"><%= r.authorId?.fullName || 'User' %></span>
+        <span class="comment-time">• <%= new Date(r.createdAt).toLocaleString() %></span>
+        <% if (r.editedAt) { %><span class="edited-badge" title="Edited">(edited)</span><% } %>
+      </div>
+    </div>
+    <div class="ch-actions">
+      <% const canActR = user && (
+           String(user._id) === String(r.authorId?._id || r.authorId) ||
+           ['ORG_ADMIN','MODERATOR'].includes(user.role)
+         ); %>
+      <% if (canActR && r.status !== 'deleted') { %>
+        <button class="icon-btn danger subtle" title="Delete reply" aria-label="Delete reply"
+                data-ajax-delete data-comment-id="<%= r._id %>">🗑️</button>
+      <% } %>
+      <form method="POST" action="/<%= company.slug %>/report" class="inline" style="display:inline;">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <input type="hidden" name="targetType" value="comment">
+        <input type="hidden" name="targetId" value="<%= r._id %>">
+        <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
+        <button class="icon-btn subtle" title="Report" aria-label="Report">⚑</button>
+      </form>
+    </div>
+  </div>
 
-<li class="comment" data-reply-id="<%= c._id %>">
- <div class="row" style="gap:10px;">
-   <div class="avatar">
-     <% if (a && a.avatarUrl) { %>
-       <img src="<%= a.avatarUrl %>" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-     <% } else { %>
-       <%= initials %>
-     <% } %>
-   </div>
-
-   <div style="flex:1; min-width:0;">
-     <div class="row" style="justify-content:space-between; gap:12px;">
-       <div class="row" style="gap:12px; min-width:0;">
-         <strong style="color:#e9edf6;"><%= name %></strong>
-         <small class="muted"><%= new Date(c.createdAt).toLocaleString() %></small>
-       </div>
-
-       <% const isOwner = user && (String(user._id) === String(a?._id || c.authorId));
-          const isPriv = user && ['ORG_ADMIN','MODERATOR'].includes(user.role);
-          if (isOwner || isPriv) { %>
-         <a href="#" class="muted" data-ajax-delete data-comment-id="<%= c._id %>" title="Delete">Delete</a>
-       <% } %>
-     </div>
-
-     <% if (c.status === 'deleted') { %>
-       <em class="muted">(deleted)</em>
-     <% } else { %>
-       <div class="comment-content" style="margin-top:6px;"><%- c.content %></div>
-     <% } %>
-   </div>
- </div>
+  <div class="comment-body <%= r.status === 'deleted' ? 'is-deleted' : '' %>">
+    <% if (r.status === 'deleted') { %>
+      <em>(deleted)</em>
+    <% } else { %>
+      <div class="comment-content"><%- r.content %></div>
+    <% } %>
+  </div>
 </li>
