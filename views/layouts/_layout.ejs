@@ -25,7 +25,7 @@
 
   <style>
     :root {
-      --primary: <%= _p %>;
+      --primary: <%= (company?.branding?.theme?.primary || '#0a66c2') %>;
       --accent:  <%= _a %>;
       --bg:      <%= _prefersDark ? '#121212' : '#f6f7f9' %>;
       --text:    <%= _prefersDark ? '#eaeaea' : '#111' %>;

@@ -7,161 +7,238 @@
   <div class="admin-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px;">
     <a href="/<%= company.slug %>/admin/internal-links"
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/internal-links')) ? 'active' : '' %>">
-       🔗 Internal Links
+      🔗 Internal Links
     </a>
     <a href="/<%= company.slug %>/admin/perf"
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/perf')) ? 'active' : '' %>">
-       ⚡ Performance Logs
+      ⚡ Performance Logs
     </a>
     <a href="/<%= company.slug %>/admin/audit"
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/audit')) ? 'active' : '' %>">
-       🧾 Audit Logs
+      📜 Audit Trail
+    </a>
+    <a href="/<%= company.slug %>/admin/retention"
+       class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/retention')) ? 'active' : '' %>">
+      🗂️ Retention Rules
+    </a>
+    <a href="/<%= company.slug %>/admin/settings"
+       class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/settings')) ? 'active' : '' %>">
+      ⚙️ Settings
     </a>
   </div>
-  
 
-
-  <!-- ONE MAIN FORM -->
+  <!-- ONE MAIN FORM FOR ALL SETTINGS -->
   <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
-    <!-- Identity -->
+    <!-- ===== Branding: Name, Tagline, Logo ===== -->
     <div class="card" style="padding:16px;display:grid;gap:12px;">
-      <h3 style="margin:0;">Identity</h3>
+      <h3 style="margin:0 0 4px;">Branding</h3>
+      <p style="margin:0 0 8px;color:#555;">How the product appears inside your company.</p>
 
-      <label style="display:block;">
-        <div style="margin-bottom:6px;">Product Name (internal brand)</div>
-        <input name="productName" type="text"
-               value="<%= company.productName || '' %>"
-               placeholder="e.g., SunVerse / Pulse / Loop"
-               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
-      </label>
-
-      <label style="display:block;">
-        <div style="margin-bottom:6px;">Tagline (optional)</div>
-        <input name="tagline" type="text"
-               value="<%= company.tagline || '' %>"
-               placeholder="Where our people connect & celebrate"
-               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
-      </label>
-    </div>
-
-    <!-- Branding -->
-    <div class="card" style="padding:16px;display:grid;gap:12px;">
-      <h3 style="margin:0;">Branding</h3>
-
-      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-        <label>
-          <div style="margin-bottom:6px;">Primary Color</div>
-          <input name="themePrimary" type="color"
-                 value="<%= company.branding?.theme?.primary || '#0a66c2' %>">
+      <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:flex-end;">
+        <label style="display:block;">
+          <div style="margin-bottom:6px;">Product Name (internal brand)</div>
+          <input
+            name="productName"
+            type="text"
+            class="form-input"
+            value="<%= company.productName || '' %>"
+            placeholder="e.g., SunVerse / Pulse / Loop"
+          >
         </label>
 
-        <label>
-          <div style="margin-bottom:6px;">Accent Color</div>
-          <input name="themeAccent" type="color"
-                 value="<%= company.branding?.theme?.accent || company.branding?.theme?.primary || '#0a66c2' %>">
+        <label style="display:block;">
+          <div style="margin-bottom:6px;">Tagline (optional)</div>
+          <input
+            name="tagline"
+            type="text"
+            class="form-input"
+            value="<%= company.tagline || '' %>"
+            placeholder="Where our people connect & celebrate"
+          >
         </label>
 
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-          <div>Preview:</div>
-          <div title="Primary"
-               style="width:24px;height:24px;border-radius:6px;background:<%= company.branding?.theme?.primary || '#0a66c2' %>;"></div>
-          <div title="Accent"
-               style="width:24px;height:24px;border-radius:6px;background:<%= company.branding?.theme?.accent || company.branding?.theme?.primary || '#0a66c2' %>;border:1px solid #ddd;"></div>
-        </div>
+        <label style="display:block;">
+          <div style="margin-bottom:6px;">Logo URL (square works best)</div>
+          <input
+            name="logoUrl"
+            type="url"
+            class="form-input"
+            value="<%= company.branding?.logoUrl || '' %>"
+            placeholder="https://…"
+          >
+        </label>
       </div>
 
-      <label style="display:block;">
-        <div style="margin-bottom:6px;">Logo URL</div>
-        <input type="url" name="logoUrl" placeholder="https://..."
-               value="<%= company.branding?.logoUrl || '' %>"
-               style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;">
-      </label>
-
       <% if (company.branding?.logoUrl) { %>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="color:#666;font-size:13px;">Current Logo:</div>
-          <img src="<%= company.branding.logoUrl %>" alt="logo" style="height:36px;max-width:160px;object-fit:contain;">
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:13px;color:#666;">Preview:</span>
+          <img
+            src="<%= company.branding.logoUrl %>"
+            alt="Logo preview"
+            style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid #eee;"
+          >
         </div>
       <% } %>
     </div>
 
-    <!-- Policies -->
+    <!-- ===== Theme Colors ===== -->
     <div class="card" style="padding:16px;display:grid;gap:12px;">
-      <h3 style="margin:0;">Policies</h3>
+      <h3 style="margin:0 0 4px;">Theme Colors</h3>
+      <p style="margin:0 0 8px;color:#555;">These colours are used across headers, buttons, and highlights.</p>
 
-      <div style="margin:4px 0 10px;">
-        <div style="margin-bottom:6px;">Posting Mode</div>
-        <label style="margin-right:16px;">
-          <input type="radio" name="postingMode" value="OPEN"
-                 <%= company.policies?.postingMode === 'OPEN' ? 'checked' : '' %> >
-          Open — publish instantly
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+        <label style="display:block;">
+          <div style="margin-bottom:6px;">Primary Color</div>
+          <input
+            name="themePrimary"
+            type="color"
+            value="<%= company.branding?.theme?.primary || '#1976d2' %>"
+            class="form-input-color"
+          >
         </label>
-        <label>
-          <input type="radio" name="postingMode" value="MODERATED"
-                 <%= company.policies?.postingMode === 'MODERATED' ? 'checked' : '' %> >
-          Moderated — approval required
+        
+        <label style="display:block;">
+          <div style="margin-bottom:6px;">Secondary / Accent Color</div>
+          <input
+            name="themeSecondary"
+            type="color"
+            value="<%= company.branding?.theme?.secondary || company.branding?.theme?.primary || '#1976d2' %>"
+            class="form-input-color"
+          >
         </label>
-      </div>
-
-      <!-- Email Notifications -->
-      <div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e5e5e5;">
-        <div style="margin-bottom:6px;">Email Notifications</div>
-        <label style="display:flex;align-items:center;gap:8px;">
-          <input type="checkbox" name="notificationsEnabled" value="1"
-                 <%= company.policies?.notificationsEnabled !== false ? 'checked' : '' %> />
-          <span>Enable emails for post approvals and @mentions</span>
-        </label>
-        <div style="color:#666;font-size:13px;margin-top:4px;">
-          Sent from the central mailer, branded with your logo and colors.
+        
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+          <div>Preview:</div>
+          <div title="Primary"
+              style="width:24px;height:24px;border-radius:6px;border:1px solid #ddd;background:<%= company.branding?.theme?.primary || '#0a66c2' %>;"></div>
+          <div title="Secondary"
+              style="width:24px;height:24px;border-radius:6px;border:1px solid #ddd;background:<%= company.branding?.theme?.secondary || company.branding?.theme?.primary || '#0a66c2' %>;"></div>
         </div>
       </div>
+    </div>
+
+
+    <!-- ===== Posting & Notifications ===== -->
+    <div class="card" style="padding:16px;display:grid;gap:12px;">
+      <h3 style="margin:0 0 4px;">Posting & Notifications</h3>
+
+      <div style="display:grid;gap:8px;">
+        <div>
+          <div style="font-weight:500;margin-bottom:4px;">Posting mode</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;margin-bottom:4px;">
+            <input
+              type="radio"
+              name="postingMode"
+              value="OPEN"
+              <%= (company.policies?.postingMode || 'OPEN') === 'OPEN' ? 'checked' : '' %>
+            >
+            <span>Open — anyone in the org can post</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+            <input
+              type="radio"
+              name="postingMode"
+              value="MODERATED"
+              <%= (company.policies?.postingMode || 'OPEN') === 'MODERATED' ? 'checked' : '' %>
+            >
+            <span>Moderated — only admins + approved roles can post</span>
+          </label>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input
+            type="checkbox"
+            name="notificationsEnabled"
+            value="1"
+            <%= company.policies?.notificationsEnabled ? 'checked' : '' %>
+          >
+          <span>Email notifications for important updates</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- ===== Content Policy: Blocked Words ===== -->
+    <div class="card" style="padding:16px;display:grid;gap:8px;">
+      <h3 style="margin:0 0 4px;">Content Policy</h3>
+      <p style="margin:0 0 8px;color:#555;font-size:14px;">
+        Blocked words will be flagged in posts and comments. Separate them with commas.
+      </p>
 
       <label style="display:block;">
         <div style="margin-bottom:6px;">Blocked Words (comma-separated)</div>
-        <textarea name="blockedWordsCSV" rows="3"
-                  style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;"><%= (company.policies?.blockedWords || []).join(', ') %></textarea>
-      </label>
-
-      <label style="display:block;">
-        <div style="margin-bottom:6px;">Retention Days (7–3650)</div>
-        <input name="retentionDays" type="number" min="7" max="3650"
-               value="<%= company.policies?.retentionDays || 730 %>"
-               style="width:180px;padding:8px;border:1px solid #ddd;border-radius:8px;">
+        <textarea
+          name="blockedWordsCSV"
+          rows="3"
+          style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;"
+        ><%= (company.policies?.blockedWords || []).join(', ') %></textarea>
       </label>
     </div>
 
-        <!-- Plan & Usage (read-only) -->
+    <!-- ===== Data Retention ===== -->
     <div class="card" style="padding:16px;display:grid;gap:8px;">
-      <h3 style="margin:0;">Plan & Usage</h3>
-      <div>Plan: <strong><%= company.planState || 'FREE_TRIAL' %></strong>
+      <h3 style="margin:0 0 4px;">Data Retention</h3>
+      <p style="margin:0 0 8px;color:#555;font-size:14px;">
+        Soft-deleted items older than this many days can be permanently removed by the retention job.
+      </p>
+
+      <label style="display:inline-flex;align-items:center;gap:8px;">
+        <span>Retention period&nbsp;(days)</span>
+        <input
+          type="number"
+          name="retentionDays"
+          min="1"
+          max="3650"
+          value="<%= company.policies?.retentionDays || 365 %>"
+          style="width:90px;"
+        >
+      </label>
+    </div>
+
+    <!-- ===== Plan & Usage (Read-only) ===== -->
+    <div class="card" style="padding:16px;display:grid;gap:8px;">
+      <h3 style="margin:0 0 4px;">Plan & Usage</h3>
+
+      <div>
+        Plan:
+        <strong><%= company.planState || 'FREE_TRIAL' %></strong>
         <% if (company.trialEndsAt) { %>
-          &nbsp;•&nbsp; Ends: <strong><%= new Date(company.trialEndsAt).toDateString() %></strong>
+          &nbsp;•&nbsp;Ends:
+          <strong><%= new Date(company.trialEndsAt).toDateString() %></strong>
         <% } %>
       </div>
-      <div>Seats:
-        <strong><%= (company.license?.used || 0) %></strong> /
-        <strong><%= (company.license?.seats || 25) %></strong>
+
+      <div>
+        Seats:
+        <strong><%= company.license?.used || 0 %></strong> /
+        <strong><%= company.license?.seats || 25 %></strong>
         <% if (company.license?.validTill) { %>
-          &nbsp;•&nbsp; Valid till: <strong><%= new Date(company.license.validTill).toDateString() %></strong>
+          &nbsp;•&nbsp;Valid till:
+          <strong><%= new Date(company.license.validTill).toDateString() %></strong>
         <% } %>
       </div>
+
+      <!-- Upgrade button WITHOUT nested form -->
       <div style="margin-top:8px;">
-        <form method="POST" action="/<%= company.slug %>/admin/support/upgrade">
-          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-          <button class="btn" type="submit">Request upgrade</button>
-        </form>
+        <button
+          class="btn"
+          type="submit"
+          formaction="/<%= company.slug %>/admin/support/upgrade"
+          formmethod="POST"
+        >
+          Request upgrade
+        </button>
       </div>
     </div>
 
-
+    <!-- ===== Main Save Button ===== -->
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button class="btn" type="submit">Save Settings</button>
     </div>
   </form>
 
-  <!-- Utilities (separate, NOT nested) -->
+  <!-- ===== Utilities (separate card, but still inside the same section) ===== -->
   <div class="card" style="padding:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">
     <div style="font-weight:600;">Utilities</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -176,7 +253,11 @@
       </form>
 
       <!-- Run Retention -->
-      <form method="POST" action="/<%= company.slug %>/admin/retention/run" onsubmit="return confirm('Run retention now? This will hard-delete expired soft-deleted items.');">
+      <form
+        method="POST"
+        action="/<%= company.slug %>/admin/retention/run"
+        onsubmit="return confirm('Run retention now? This will hard-delete expired soft-deleted items.');"
+      >
         <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
         <button class="btn danger" type="submit">🗑️ Run Retention</button>
       </form>

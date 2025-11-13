@@ -117,13 +117,25 @@ exports.saveSettings = async (req, res, next) => {
     };
 
     // Branding inputs (already there in your code)
+    // Branding inputs
     company.branding = company.branding || {};
     company.branding.theme = company.branding.theme || {};
-    company.branding.theme.primary = req.body.themePrimary || company.branding.theme.primary;
-    company.branding.theme.accent  = req.body.themeAccent  || company.branding.theme.accent;
-    company.branding.logoUrl       = req.body.logoUrl || company.branding.logoUrl;
-    company.productName            = req.body.productName || company.productName;
-    company.tagline                = req.body.tagline || company.tagline;
+
+    const primary   = (req.body.themePrimary   || '').trim();
+    const secondary = (req.body.themeSecondary || '').trim();
+
+    if (isHexColor(primary)) {
+      company.branding.theme.primary = primary;
+    }
+    if (isHexColor(secondary)) {
+      company.branding.theme.secondary = secondary;
+    }
+
+    company.branding.logoUrl = (req.body.logoUrl || '').trim() || company.branding.logoUrl;
+
+    company.productName = (req.body.productName || '').trim() || company.productName;
+    company.tagline     = (req.body.tagline || '').trim() || company.tagline;
+    
 
     // Policies (existing)
     company.policies = company.policies || {};
