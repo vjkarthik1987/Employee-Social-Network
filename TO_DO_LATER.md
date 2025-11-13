@@ -30,3 +30,4 @@
 - Seperate area for polls and announcements
 - Correct the poll admin page
 - Moderation queue should come
+- Improve the comment page

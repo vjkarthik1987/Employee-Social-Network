@@ -16,6 +16,11 @@ const CommentSchema = new mongoose.Schema(
     // light denorms
     repliesCount: { type: Number, default: 0 },
     reactionsCountByType: { type: Object, default: {} },
+    editedAt: { type: Date, default: null },
+    editHistory: [{ content: String, editedAt: Date }],
+    attachmentsCount: { type: Number, default: 0 },
+    mentions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
   },
   { timestamps: true }
 );

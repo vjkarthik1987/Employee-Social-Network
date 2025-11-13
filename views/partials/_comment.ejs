@@ -1,90 +1,220 @@
 <li class="comment-card" data-comment-id="<%= comment._id %>">
   <div class="comment-header">
-    <div>
-      <span class="comment-author"><%= comment.authorId?.fullName || 'User' %></span>
-      <span class="comment-time">• <%= new Date(comment.createdAt).toLocaleString() %></span>
+    <div class="ch-left">
+      <img class="avatar-sm" src="<%= comment.authorId?.avatarUrl || '/img/avatar.png' %>" alt="">
+      <div class="meta">
+        <span class="comment-author"><%= comment.authorId?.fullName || 'User' %></span>
+        <span class="comment-time">• <%= new Date(comment.createdAt).toLocaleString() %></span>
+        <% if (comment.editedAt) { %><span class="edited-badge" title="Edited">(edited)</span><% } %>
+      </div>
     </div>
 
-    <% if (
-      user && (
-        String(user._id) === String(comment.authorId?._id || comment.authorId) ||
-        ['ORG_ADMIN','MODERATOR'].includes(user.role)
-      )
-    ) { %>
-      <form method="POST"
-            action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= comment._id %>/delete"
-            onsubmit="return confirm('Delete this comment?')">
+    <div class="ch-actions">
+      <% const canActTop = user && (
+           String(user._id) === String(comment.authorId?._id || comment.authorId) ||
+           ['ORG_ADMIN','MODERATOR'].includes(user.role)
+         ); %>
+
+      <% if (comment.status !== 'deleted') { %>
+        <!-- Report icon -->
+        <form method="POST" action="/<%= company.slug %>/report" class="inline">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+          <input type="hidden" name="targetType" value="comment">
+          <input type="hidden" name="targetId" value="<%= comment._id %>">
+          <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
+          <button class="icon-btn subtle" title="Report" aria-label="Report">⚑</button>
+        </form>
+      <% } %>
+
+      <% if (canActTop && comment.status !== 'deleted') { %>
+        <!-- Delete icon (AJAX) -->
+        <button class="icon-btn danger subtle" title="Delete" aria-label="Delete"
+                data-delete-comment="<%= comment._id %>">🗑️</button>
+        <noscript>
+          <form method="POST"
+                action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= comment._id %>/delete"
+                style="display:inline;">
             <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-        <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
-      </form>
+            <button class="icon-fallback" type="submit">Delete</button>
+          </form>
+        </noscript>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="comment-body <%= comment.status === 'deleted' ? 'is-deleted' : '' %>">
+    <% if (comment.status === 'deleted') { %>
+      <em>(deleted)</em>
+    <% } else { %>
+      <div class="comment-content"><%- comment.content %></div>
     <% } %>
   </div>
 
-  <% if (comment.status === 'deleted') { %>
-    <div class="comment-content"><em>(deleted)</em></div>
-  <% } else { %>
-    <div class="comment-content"><%- comment.content %></div>
-  <% } %>
-
-  <div class="comment-actions">
+  <div class="comment-footer">
     <% if (user && comment.status !== 'deleted') { %>
-      <a href="#" class="btn-link" data-reply-toggle="<%= comment._id %>">Reply</a>
+      <button class="icon-btn subtle" title="Reply" aria-label="Reply"
+              data-reply-toggle="<%= comment._id %>">💬</button>
     <% } %>
-    <small><%= (comment.repliesCount || 0) %> repl<%= (comment.repliesCount || 0) === 1 ? 'y' : 'ies' %></small>
+    <span class="muted small"><%= (comment.repliesCount || 0) %> repl<%= (comment.repliesCount || 0) === 1 ? 'y' : 'ies' %></span>
   </div>
 
   <% if (user && comment.status !== 'deleted') { %>
     <form id="reply-form-<%= comment._id %>"
-          method="POST"
-          action="/<%= company.slug %>/posts/<%= post._id %>/comments"
-          class="reply-form"
-          style="display:none;">
-      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-      <input type="hidden" name="parentCommentId" value="<%= comment._id %>">
-      <textarea name="content" rows="2" placeholder="Write a reply…" maxlength="3000" required></textarea>
-      <button class="btn btn-sm" type="submit">Reply</button>
-    </form>
+      method="POST"
+      action="/<%= company.slug %>/posts/<%= post._id %>/comments"
+      class="cc-reply cc-inline"
+      style="display:none;"
+      data-ajax-reply>
+  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <input type="hidden" name="parentCommentId" value="<%= comment._id %>">
+  <div class="cc-row">
+    <img class="cc-avatar" src="<%= user?.avatarUrl || '/img/avatar.png' %>" alt="">
+    <div class="cc-inputwrap">
+      <textarea ... class="cc-input" placeholder="Write a reply…" maxlength="3000" required enterkeyhint="send"></textarea>
+      <div class="cc-tools">
+        <button type="button" class="cc-emoji-btn" title="Add emoji" aria-label="Add emoji">🙂</button>
+        <span class="cc-count" data-cc-count>0/3000</span>
+        <button class="cc-send" type="submit" disabled aria-label="Post reply">➤</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+
   <% } %>
 
-  <form method="POST" action="/<%= company.slug %>/report" style="display:inline;">
-    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-    <input type="hidden" name="targetType" value="comment">
-    <input type="hidden" name="targetId" value="<%= comment._id %>">
-    <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
-    <button type="submit" class="btn btn-link small" title="Report this comment">Report</button>
-  </form>
-  
   <% if (replies && replies.length) { %>
     <ul class="replies" data-replies>
       <% replies.forEach(function(r){ %>
         <li class="comment-card" data-reply-id="<%= r._id %>">
           <div class="comment-header">
-            <div>
-              <span class="comment-author"><%= r.authorId?.fullName || 'User' %></span>
-              <span class="comment-time">• <%= new Date(r.createdAt).toLocaleString() %></span>
+            <div class="ch-left">
+              <img class="avatar-sm" src="<%= r.authorId?.avatarUrl || '/img/avatar.png' %>" alt="">
+              <div class="meta">
+                <span class="comment-author"><%= r.authorId?.fullName || 'User' %></span>
+                <span class="comment-time">• <%= new Date(r.createdAt).toLocaleString() %></span>
+              </div>
             </div>
-            <% if (
-              user && (
-                String(user._id) === String(r.authorId?._id || r.authorId) ||
-                ['ORG_ADMIN','MODERATOR'].includes(user.role)
-              )
-            ) { %>
-              <form method="POST"
-                    action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= r._id %>/delete"
-                    onsubmit="return confirm('Delete this reply?')">
+
+            <div class="ch-actions">
+              <% const canActR = user && (
+                   String(user._id) === String(r.authorId?._id || r.authorId) ||
+                   ['ORG_ADMIN','MODERATOR'].includes(user.role)
+                 ); %>
+
+              <% if (r.status !== 'deleted') { %>
+                <!-- Report reply -->
+                <form method="POST" action="/<%= company.slug %>/report" class="inline">
+                  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                  <input type="hidden" name="targetType" value="comment">
+                  <input type="hidden" name="targetId" value="<%= r._id %>">
+                  <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
+                  <button class="icon-btn subtle" title="Report" aria-label="Report">⚑</button>
+                </form>
+              <% } %>
+
+              <% if (canActR && r.status !== 'deleted') { %>
+                <!-- Delete reply -->
+                <button class="icon-btn danger subtle" title="Delete reply" aria-label="Delete reply"
+                        data-delete-comment="<%= r._id %>">🗑️</button>
+                <noscript>
+                  <form method="POST"
+                        action="/<%= company.slug %>/posts/<%= post._id %>/comments/<%= r._id %>/delete"
+                        style="display:inline;">
                     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-                <button class="btn btn-ghost btn-sm" type="submit">Delete</button>
-              </form>
-            <% } %>
+                    <button class="icon-fallback" type="submit">Delete</button>
+                  </form>
+                </noscript>
+              <% } %>
+            </div>
           </div>
 
-          <% if (r.status === 'deleted') { %>
-            <div class="comment-content"><em>(deleted)</em></div>
-          <% } else { %>
-            <div class="comment-content"><%- r.content %></div>
-          <% } %>
+          <div class="comment-body <%= r.status === 'deleted' ? 'is-deleted' : '' %>">
+            <% if (r.status === 'deleted') { %>
+              <em>(deleted)</em>
+            <% } else { %>
+              <div class="comment-content"><%- r.content %></div>
+            <% } %>
+          </div>
         </li>
       <% }) %>
     </ul>
   <% } %>
 </li>
+
+<script>
+(function(){
+  if (window.__COMMENTS_JS_LOADED__) return;  // guard against multiple partial loads
+  window.__COMMENTS_JS_LOADED__ = true;
+
+  const ORG = "<%= company.slug %>";
+  const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  function htmlToNode(html) { const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+
+  // Submit comment/reply (AJAX)
+  document.addEventListener('submit', async (e) => {
+    const form = e.target.closest('.comment-form, .reply-form');
+    if (!form) return;
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]'); if (btn){ btn.disabled=true; btn.textContent='Posting…'; }
+    try{
+      const fd = new FormData(form);
+      if (!fd.get('_csrf') && CSRF) fd.set('_csrf', CSRF);
+      const resp = await fetch(form.action, { method:'POST', headers:{ 'Accept':'application/json' }, body: fd });
+      const data = await resp.json();
+      if (!data.ok) return alert(data.error || 'Could not post comment.');
+
+      const node = htmlToNode(data.html);
+      if (data.isReply) {
+        const parent = document.querySelector(`[data-comment-id="${data.parentCommentId}"]`);
+        const list = parent?.querySelector('[data-replies]') || (()=>{ const ul=document.createElement('ul'); ul.className='replies'; ul.setAttribute('data-replies',''); parent?.appendChild(ul); return ul; })();
+        list.appendChild(node);
+      } else {
+        document.querySelector('[data-comments]')?.prepend(node);
+      }
+      form.reset();
+      if (form.classList.contains('reply-form')) form.style.display = 'none';
+    } catch(err){ console.error(err); alert('Network error while posting comment.'); }
+    finally{ if (btn){ btn.disabled=false; btn.textContent='Reply'; } }
+  });
+
+  // Toggle reply
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-reply-toggle]');
+    if (!t) return;
+    e.preventDefault();
+    const id = t.getAttribute('data-reply-toggle');
+    const form = document.getElementById(`reply-form-${id}`);
+    if (form) form.style.display = (form.style.display === 'none' || !form.style.display) ? 'block' : 'none';
+  });
+
+  // Delete (AJAX)
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-delete-comment]');
+    if (!btn) return;
+    e.preventDefault();
+    if (!confirm('Delete this comment?')) return;
+
+    const commentId = btn.getAttribute('data-delete-comment');
+    try{
+      const resp = await fetch(`/${ORG}/api/comments/${commentId}`, {
+        method:'DELETE',
+        headers:{ 'Accept':'application/json', 'Content-Type':'application/json', 'CSRF-Token': CSRF },
+        body: JSON.stringify({ _csrf: CSRF })
+      });
+      const data = await resp.json();
+      if (!data.ok) return alert('Could not delete.');
+
+      const card = document.querySelector(`[data-comment-id="${commentId}"], [data-reply-id="${commentId}"]`);
+      if (card) {
+        const body = card.querySelector('.comment-content');
+        if (body) body.innerHTML = '<em>(deleted)</em>';
+        card.classList.add('is-soft-deleted');
+        // remove actionable controls
+        card.querySelectorAll('form,button,[data-reply-toggle]').forEach(x => x.remove());
+      }
+    } catch(err){ console.error(err); alert('Network error while deleting.'); }
+  });
+})();
+</script>

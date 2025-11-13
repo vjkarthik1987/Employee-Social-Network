@@ -59,100 +59,88 @@ exports.createAjax = async (req, res, next) => {
     const { postId } = req.params;
     const { content = '', parentCommentId = null } = req.body;
 
-    if (!content.trim()) {
-      return res.status(400).json({ ok: false, error: 'EMPTY' });
+    const raw = (content || '').trim();
+    if (!raw) return res.status(400).json({ ok: false, error: 'EMPTY' });
+
+    // OPTIONAL: blocked words (if configured)
+    const blocked = Array.isArray(req.company?.policies?.blockedWords) ? req.company.policies.blockedWords : [];
+    if (blocked.length && blocked.some(w => raw.toLowerCase().includes(String(w).toLowerCase()))) {
+      return res.status(400).json({ ok: false, error: 'BLOCKED_WORD' });
     }
 
-    // Validate post
-    const post = await Post.findOne({ _id: postId, companyId: cid, deletedAt: null });
+    // Validate post (lean + projection keeps it light)
+    const post = await Post.findOne(
+      { _id: postId, companyId: cid, deletedAt: null },
+      { _id: 1 } // projection
+    ).lean();
     if (!post) return res.status(404).json({ ok: false });
 
-    // Parent/level
+    // Validate parent (when replying)
     let level = 0, parent = null;
     if (parentCommentId) {
-      parent = await Comment.findOne({
-        _id: parentCommentId,
-        postId,
-        companyId: cid,
-        status: { $ne: 'deleted' }
-      });
+      parent = await Comment.findOne(
+        { _id: parentCommentId, postId, companyId: cid, status: { $ne: 'deleted' } },
+        { _id: 1 } // projection
+      ).lean();
       if (!parent) return res.status(400).json({ ok: false, error: 'BAD_PARENT' });
       level = 1;
     }
 
-    // Create comment
+    // Sanitize once
+    const safeHtml = clean(raw);
+
+    // Create
     const comment = await Comment.create({
       companyId: cid,
       postId,
       authorId: req.user._id,
-      parentCommentId: parentCommentId || null,
+      parentCommentId: parent ? parent._id : null,
       level,
-      content: clean(content),
+      content: safeHtml,
     });
 
-    // Denorm counters
-    await Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } });
-    if (parent) await Comment.updateOne({ _id: parent._id }, { $inc: { repliesCount: 1 } });
+    // Denorm bumps in parallel
+    const bumps = [
+      Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } })
+    ];
+    if (parent) bumps.push(Comment.updateOne({ _id: parent._id }, { $inc: { repliesCount: 1 } }));
+    await Promise.all(bumps);
 
-    // Hydrate for view
-    const doc = await Comment.findById(comment._id)
-      .populate('authorId', 'fullName title avatarUrl')
-      .lean();
+    // Build a light "hydrated" doc for the view without an extra DB read
+    const doc = {
+      _id: comment._id,
+      postId,
+      parentCommentId: parent ? parent._id : null,
+      level,
+      content: comment.content,
+      status: 'visible',
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      repliesCount: 0,
+      authorId: {
+        _id: req.user._id,
+        fullName: req.user.fullName,
+        title: req.user.title,
+        avatarUrl: req.user.avatarUrl
+      }
+    };
 
-    // Render SSR HTML partial
+    // SSR partial
+    const csrfToken = (req.csrfToken && req.csrfToken()) || '';
     const view = level === 0 ? 'partials/_comment' : 'partials/_reply';
     const locals = {
       layout: false,
       company: req.company,
       user: req.user,
-      post,
+      post: { _id: postId },        // minimal (the partial only needs IDs)
       comment: level === 0 ? doc : undefined,
       replies: level === 0 ? [] : undefined,
       r: level === 1 ? doc : undefined,
-      csrfToken: req.csrfToken && req.csrfToken(),
+      csrfToken
     };
     const file = path.join(__dirname, '..', 'views', `${view}.ejs`);
     const html = await ejs.renderFile(file, locals, { async: true });
 
-    // --- send @mention emails (non-blocking UX; scoped to this handler) ---
-    try {
-      const company = req.company;
-      if (company?.policies?.notificationsEnabled) {
-        const { handles, emails } = extractMentionsFromHtml(comment.content);
-
-        if (handles.length || emails.length) {
-          const usersByHandle = handles.length
-            ? await User.find({ companyId: cid, handle: { $in: handles } }).lean()
-            : [];
-          const usersByEmail = emails.length
-            ? await User.find({ companyId: cid, email: { $in: emails } }).lean()
-            : [];
-
-          const targets = [...usersByHandle, ...usersByEmail]
-            .filter(u => String(u._id) !== String(req.user._id))   // avoid emailing self
-            .filter(u => !!u.email);
-
-          if (targets.length) {
-            const snippet = makeSnippet(comment.content);
-            const link = `${process.env.APP_BASE_URL}/${company.slug}/p/${post._id}#c-${comment._id}`;
-            const mailHtml = renderMentionEmail({ company, actor: req.user, snippet, link });
-
-            await Promise.allSettled(
-              targets.map(u => sendMail({
-                to: u.email,
-                subject: `You were mentioned on ${company.name}`,
-                html: mailHtml
-              }))
-            );
-          }
-        }
-      }
-    } catch (mailErr) {
-      if (req.logger) req.logger.warn('[comment mention mail] failed', mailErr);
-      // swallow mail errors so UI flow is not blocked
-    }
-
-    // Respond to client
     return res.json({
       ok: true,
       html,
@@ -161,10 +149,126 @@ exports.createAjax = async (req, res, next) => {
       commentsCountDelta: 1,
       postId: String(postId)
     });
-  } catch (e) {
-    next(e);
-  }
+  } catch (e) { next(e); }
 };
+
+// controllers/commentsController.js
+exports.listTopLevel = async (req, res, next) => {
+  try {
+    const cid = companyIdOf(req);
+    const { postId } = req.params;
+    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
+    const skip = (page - 1) * limit;
+
+    // validate post exists (cheap projection)
+    const post = await Post.findOne({ _id: postId, companyId: cid, deletedAt: null }, { _id: 1 }).lean();
+    if (!post) return res.status(404).json({ ok: false });
+
+    // fetch page of level-0 comments
+    const [items, total] = await Promise.all([
+      Comment.find({ companyId: cid, postId, level: 0 })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('authorId', 'fullName title avatarUrl')
+        .lean(),
+      Comment.countDocuments({ companyId: cid, postId, level: 0 })
+    ]);
+
+    // render each item using the same partial
+    const csrfToken = (req.csrfToken && req.csrfToken()) || '';
+    const file = path.join(__dirname, '..', 'views', 'partials/_comment.ejs');
+
+    const htmlItems = await Promise.all(items.map(c =>
+      ejs.renderFile(file, {
+        layout: false,
+        company: req.company,
+        user: req.user,
+        post: { _id: postId },
+        comment: c,
+        replies: [],       // lazy-load via replies endpoint
+        csrfToken
+      }, { async: true })
+    ));
+
+    const hasMore = (skip + items.length) < total;
+
+    res.json({
+      ok: true,
+      html: htmlItems.join(''),
+      page, limit, total, hasMore
+    });
+  } catch (e) { next(e); }
+};
+
+exports.listReplies = async (req, res, next) => {
+  try {
+    const cid = companyIdOf(req);
+    const { postId, parentCommentId } = req.params;
+    const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '10', 10), 1), 50);
+    const skip = (page - 1) * limit;
+
+    // validate parent exists
+    const parent = await Comment.findOne(
+      { _id: parentCommentId, companyId: cid, postId, level: 0 },
+      { _id: 1 }
+    ).lean();
+    if (!parent) return res.status(404).json({ ok: false });
+
+    const [items, total] = await Promise.all([
+      Comment.find({ companyId: cid, postId, parentCommentId, level: 1 })
+        .sort({ createdAt: 1 })  // oldest-first for conversation feel
+        .skip(skip)
+        .limit(limit)
+        .populate('authorId', 'fullName title avatarUrl')
+        .lean(),
+      Comment.countDocuments({ companyId: cid, postId, parentCommentId, level: 1 })
+    ]);
+
+    // render reply partial (you referenced 'partials/_reply' in create path)
+    const csrfToken = (req.csrfToken && req.csrfToken()) || '';
+    const file = path.join(__dirname, '..', 'views', 'partials/_reply.ejs'); // create if not present
+
+    const htmlItems = await Promise.all(items.map(r =>
+      ejs.renderFile(file, {
+        layout: false,
+        company: req.company,
+        user: req.user,
+        post: { _id: postId },
+        r,
+        csrfToken
+      }, { async: true })
+    ));
+
+    const hasMore = (skip + items.length) < total;
+
+    res.json({
+      ok: true,
+      html: htmlItems.join(''),
+      page, limit, total, hasMore
+    });
+  } catch (e) { next(e); }
+};
+
+
+
+exports.editAjax = async (req,res,next)=>{
+  const {commentId}=req.params;
+  const {content=''}=req.body;
+  if(!content.trim()) return res.status(400).json({ok:false,error:'EMPTY'});
+  const c=await Comment.findById(commentId);
+  if(!c) return res.status(404).json({ok:false});
+  if(String(c.authorId)!==String(req.user._id)&&!['ORG_ADMIN','MODERATOR'].includes(req.user.role))
+    return res.status(403).json({ok:false});
+  c.editHistory.push({content:c.content,editedAt:new Date()});
+  c.content=clean(content);
+  c.editedAt=new Date();
+  await c.save();
+  res.json({ok:true,html:await renderUpdatedCommentHTML(c,req)});
+};
+
 
 
 exports.destroyAjax = async (req, res, next) => {

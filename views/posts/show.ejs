@@ -40,38 +40,38 @@
   </div>
 
   <!-- Comments -->
-  <section style="margin-top:18px;">
-    <h3 style="margin:0 0 10px;">Comments</h3>
-
+  <section class="comments-area" style="margin-top:18px;">
+    <h3 class="ca-title">Comments</h3>
+  
     <% if (user) { %>
-      <!-- Top-level comment (AJAX) -->
+      <!-- Top-level composer -->
       <form method="POST"
             action="/<%= company.slug %>/api/posts/<%= post._id %>/comments"
-            class="card" style="margin-bottom:1rem;" id="new-comment-form">
-            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-        <div class="card-body">
-          <textarea name="content" rows="3" class="input" placeholder="Write a comment…" maxlength="3000" required></textarea>
-          <div style="display:flex;justify-content:flex-end;margin-top:.6rem;">
-            <button class="btn" type="submit">Comment</button>
+            class="cc-composer"
+            id="new-comment-form">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <div class="cc-row">
+          <img class="cc-avatar" src="<%= user?.avatarUrl || '/img/avatar.png' %>" alt="">
+          <div class="cc-inputwrap">
+            <textarea name="content" class="cc-input" rows="1" placeholder="Write a comment…" maxlength="3000" required enterkeyhint="send"></textarea>
+
+            <div class="cc-tools">
+              <button type="button" class="cc-emoji-btn" title="Add emoji" aria-label="Add emoji">🙂</button>
+              <span class="cc-count" data-cc-count>0/3000</span>
+              <button class="cc-send" type="submit" disabled aria-label="Post comment">➤</button>
+            </div>
           </div>
         </div>
       </form>
     <% } %>
-
-    <ul id="comments-list" style="list-style:none;padding:0;margin:0;">
+  
+    <ul id="comments-list" class="cc-list">
       <% (comments || []).forEach(function(c){ %>
-        <%- include('../partials/_comment', {
-              company,
-              user,
-              post,
-              comment: c,
-              // if your _comment partial expects replies/repliesByParent, pass empty defaults:
-              replies: [],
-              repliesByParent: {}
-            }) %>
+        <%- include('../partials/_comment', { company, user, post, comment: c, replies: [], repliesByParent: {} }) %>
       <% }) %>
     </ul>
   </section>
+  
 </section>
 
 <!-- Reactions JS (PUT /:org/api/reactions) -->
@@ -238,3 +238,167 @@
   });
 })();
 </script>
+<script>
+  (function(){
+    // auto-resize, counters, enable/disable send, ctrl+enter
+    // function bindComposer(root){
+    //   const ta = root.querySelector('.cc-input');
+    //   const count = root.querySelector('[data-cc-count]');
+    //   const send = root.querySelector('.send-btn');
+    //   if (!ta) return;
+  
+    //   const max = parseInt(ta.getAttribute('maxlength') || '3000', 10);
+  
+    //   const autosize = () => {
+    //     ta.style.height = 'auto';
+    //     ta.style.height = Math.min(ta.scrollHeight, 160) + 'px';
+    //   };
+  
+    //   const updateUI = () => {
+    //     const val = ta.value.trim();
+    //     if (count) count.textContent = `${ta.value.length}/${max}`;
+    //     if (send) send.disabled = !val.length;
+    //   };
+  
+    //   ta.addEventListener('input', () => { autosize(); updateUI(); });
+    //   ta.addEventListener('keydown', (e) => {
+    //     // Ignore IME composition (important for Indian languages, etc.)
+    //     if (e.isComposing) return;
+
+    //     // Shift+Enter → newline (let it through)
+    //     if (e.key === 'Enter' && e.shiftKey) return;
+
+    //     // Plain Enter → submit (no Ctrl/Meta)
+    //     if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    //       e.preventDefault(); // stop newline
+    //       const form = ta.closest('form');
+    //       const sendBtn = form?.querySelector('.cc-send');
+    //       if (form && sendBtn && !sendBtn.disabled) {
+    //         // Triggers your existing submit listeners (AJAX)
+    //         form.requestSubmit();
+    //       }
+    //     }
+    //   });
+
+  
+    //   // initial
+    //   autosize(); updateUI();
+    // }
+  
+    // bind top-level composer
+    const topForm = document.getElementById('new-comment-form');
+    if (topForm) bindComposer(topForm);
+  
+    // bind any visible reply composers on load
+    document.querySelectorAll('.reply-form').forEach(bindComposer);
+  
+    // when a reply form is toggled to visible, (re)bind it
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-reply-toggle]');
+      if (!t) return;
+      const id = t.getAttribute('data-reply-toggle');
+      const form = document.getElementById('reply-form-' + id);
+      if (!form) return;
+      setTimeout(() => bindComposer(form), 0);
+    });
+  
+    // after AJAX insert of a freshly rendered comment/reply, ensure any nested composer is bound if present
+    document.addEventListener('cc:bind', (e) => {
+      if (e.target) bindComposer(e.target);
+    });
+  })();
+  </script>
+
+<script>
+  (function(){
+    // === scoped to comments-area ===
+    const root = document.querySelector('.comments-area');
+    if (!root) return;
+  
+    function bindComposer(form){
+      const ta = form.querySelector('.cc-input');
+      const cnt = form.querySelector('[data-cc-count]');
+      const send = form.querySelector('.cc-send');
+      const emojiBtn = form.querySelector('.cc-emoji-btn');
+      if (!ta) return;
+  
+      const max = parseInt(ta.getAttribute('maxlength') || '3000', 10);
+  
+      const autosize = () => { ta.style.height='auto'; ta.style.height = Math.min(ta.scrollHeight,160)+'px'; };
+      const refresh  = () => {
+        const len = ta.value.length;
+        if (cnt) cnt.textContent = `${len}/${max}`;
+        if (send) send.disabled = ta.value.trim().length === 0;
+      };
+  
+      ta.addEventListener('input', () => { autosize(); refresh(); });
+      ta.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          if (send && !send.disabled) form.requestSubmit();
+        }
+      });
+  
+      // simple emoji insert (placeholder for real picker later)
+      if (emojiBtn) {
+        emojiBtn.addEventListener('click', () => {
+          const emoji = '🙂';
+          const start = ta.selectionStart ?? ta.value.length;
+          const end   = ta.selectionEnd ?? ta.value.length;
+          ta.value = ta.value.slice(0, start) + emoji + ta.value.slice(end);
+          ta.focus();
+          ta.selectionStart = ta.selectionEnd = start + emoji.length;
+          autosize(); refresh();
+        });
+      }
+  
+      // init
+      autosize(); refresh();
+    }
+  
+    // bind top composer
+    const topForm = document.getElementById('new-comment-form');
+    if (topForm) bindComposer(topForm);
+  
+    // bind visible reply composers now
+    root.querySelectorAll('.cc-reply').forEach(bindComposer);
+  
+    // when a reply form is toggled open, bind it
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-reply-toggle]');
+      if (!t) return;
+      const id = t.getAttribute('data-reply-toggle');
+      const form = document.getElementById('reply-form-' + id);
+      if (form) setTimeout(() => bindComposer(form), 0);
+    });
+  
+    // (Optional) if you AJAX-insert new composers later, dispatch this to bind:
+    // node.dispatchEvent(new CustomEvent('cc:bind', { bubbles:true }));
+    document.addEventListener('cc:bind', (e) => {
+      const form = e.target.closest('.cc-composer, .cc-reply');
+      if (form) bindComposer(form);
+    });
+
+    ta.addEventListener('keydown', (e) => {
+    // Ignore while IME is composing characters
+    if (e.isComposing) return;
+
+    // Submit on Enter
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();  // stop newline
+      const form = ta.closest('form');
+      const sendBtn = form?.querySelector('.cc-send');
+      if (form && sendBtn && !sendBtn.disabled) {
+        form.requestSubmit();
+      }
+      return;
+    }
+
+    // Allow Shift+Enter to insert a newline
+  });
+
+
+    
+  })();
+  </script>
+  
+  
