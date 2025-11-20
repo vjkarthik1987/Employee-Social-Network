@@ -1,0 +1,178 @@
+<% layout('layouts/_superadmin') %>
+
+<div class="superadmin-shell">
+  <%- include('../partials/_superadmin_sidebar', { currentSection: 'companies' }) %>
+
+  <div class="wrap" style="margin:0;">
+    <!-- Page header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
+      <div>
+        <h1 class="h2" style="margin-bottom:4px;">
+          <%= company.name %>
+        </h1>
+        <p class="sub" style="margin:0;">
+          <code style="background:var(--paper-2);padding:2px 6px;border-radius:999px;font-size:12px;">
+            <%= company.slug %>
+          </code>
+          · <%= company.dataRegion %> · <%= company.timezone %>
+        </p>
+      </div>
+
+      <form method="POST" action="/super-admin/logout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn-ghost">
+          Log out
+        </button>
+      </form>
+    </div>
+
+    <!-- Top cards: plan + usage -->
+    <section class="section" style="padding-top:0;">
+      <div class="features" style="grid-template-columns:repeat(3, minmax(0,1fr));">
+        <!-- Plan / license -->
+        <div class="card">
+          <h3 style="margin:0 0 6px;font-size:18px;color:var(--ink-900);">Plan & License</h3>
+          <p style="margin:0 0 8px;color:var(--ink-500);">
+            State: <strong><%= company.planState %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Plan kind: <%= company.plan?.kind || 'trial' %>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Plan seats: <%= company.plan?.seats || 0 %>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            License seats: <%= company.license?.seats || 0 %> · used <%= company.license?.used || 0 %>
+          </p>
+          <p style="margin:0;color:var(--ink-500);">
+            Trial: <%= trialStatus %>
+            <% if (company.trialEndsAt) { %>
+              · ends <%= company.trialEndsAt.toISOString().slice(0,10) %>
+            <% } %>
+          </p>
+        </div>
+
+        <!-- Verification & status -->
+        <div class="card">
+          <h3 style="margin:0 0 6px;font-size:18px;color:var(--ink-900);">Status & Verification</h3>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Status:
+            <strong style="text-transform:capitalize;"><%= company.status %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Verification: <strong><%= verificationStatus %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Created: <%= company.createdAt ? company.createdAt.toISOString().slice(0,10) : '-' %>
+          </p>
+          <p style="margin:0;color:var(--ink-500);">
+            Updated: <%= company.updatedAt ? company.updatedAt.toISOString().slice(0,10) : '-' %>
+          </p>
+        </div>
+
+        <!-- Usage summary -->
+        <div class="card">
+          <h3 style="margin:0 0 6px;font-size:18px;color:var(--ink-900);">Usage summary</h3>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Users: <strong><%= usersCount %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Groups: <strong><%= groupsCount %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Posts: <strong><%= postsCount %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Comments: <strong><%= commentsCount %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Attachments: <strong><%= attachmentsCount %></strong>
+          </p>
+          <p style="margin:0 0 4px;color:var(--ink-500);">
+            Poll responses: <strong><%= pollResponsesCount %></strong>
+          </p>
+          <p style="margin:0;color:var(--ink-500);">
+            Internal links: <strong><%= internalLinksCount %></strong>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lower split: product, policies, integrations -->
+    <section class="section" style="padding-top:12px;">
+      <div class="split" style="grid-template-columns:1.3fr 1.1fr;">
+        <!-- Product & policies -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <h3 style="margin:0 0 6px;font-size:18px;color:var(--ink-900);">Product & Branding</h3>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Product name: <strong><%= company.productName || '—' %></strong>
+            </p>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Tagline: <%= company.tagline || '—' %>
+            </p>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Locale: <%= company.locale %>
+            </p>
+            <p style="margin:0;color:var(--ink-500);">
+              Brand theme:
+              primary <code><%= company.branding?.theme?.primary || '#1976d2' %></code>,
+              secondary <code><%= company.branding?.theme?.secondary || '#ffffff' %></code>
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="margin:0 0 6px;font-size:18px;color:var(--ink-900);">Policies</h3>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Posting mode: <strong><%= company.policies?.postingMode || 'OPEN' %></strong>
+            </p>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Retention (days): <%= company.policies?.retentionDays || 0 %>
+            </p>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Notifications: <%= company.policies?.notificationsEnabled ? 'Enabled' : 'Disabled' %>
+            </p>
+            <p style="margin:0;color:var(--ink-500);">
+              Blocked words: <%= (company.policies?.blockedWords || []).length %>
+            </p>
+          </div>
+        </div>
+
+        <!-- Integrations & verification details -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <h3 style="margin:0 0 6px;font-size:18px;color:var(--ink-900);">Integrations</h3>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              LinkedIn company ID: <%= company.integrations?.linkedinCompanyId || '—' %>
+            </p>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              LinkedIn sync: <%= company.integrations?.enableLinkedInSync ? 'Enabled' : 'Disabled' %>
+            </p>
+            <p style="margin:0;color:var(--ink-500);">
+              Last LinkedIn sync:
+              <%= company.integrations?.lastLinkedInSyncAt
+                    ? company.integrations.lastLinkedInSyncAt.toISOString().slice(0,10)
+                    : '—' %>
+            </p>
+          </div>
+
+          <div class="card">
+            <h3 style="margin:0 0 6px;font-size:18px;color:var(--ink-900);">Verification details</h3>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Verify token set:
+              <%= company.verifyToken ? 'Yes' : 'No' %>
+            </p>
+            <p style="margin:0 0 4px;color:var(--ink-500);">
+              Verify expires at:
+              <%= company.verifyExpiresAt ? company.verifyExpiresAt.toISOString().slice(0,10) : '—' %>
+            </p>
+            <p style="margin:0;color:var(--ink-500);">
+              Verified at:
+              <%= company.verifiedAt ? company.verifiedAt.toISOString().slice(0,10) : '—' %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

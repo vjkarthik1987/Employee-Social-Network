@@ -1,0 +1,41 @@
+<% layout('layouts/_superadmin') %>
+<div class="superadmin-shell">
+  <%- include('../partials/_superadmin_sidebar', { currentSection: 'dashboard' }) %>
+
+<div class="wrap" style="margin:0;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
+    <div>
+      <h1 class="h2" style="margin-bottom:6px;">Super Admin Dashboard</h1>
+      <% if (superAdminEmail) { %>
+        <p class="sub" style="margin:0;">Signed in as <strong><%= superAdminEmail %></strong></p>
+      <% } else { %>
+        <p class="sub" style="margin:0;">Platform-wide overview of your tenants.</p>
+      <% } %>
+    </div>
+
+    <form method="POST" action="/super-admin/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn-ghost">
+        Log out
+      </button>
+    </form>
+  </div>
+
+  <section class="section" style="padding-top:0;">
+    <div class="features" style="grid-template-columns:repeat(2, minmax(0,1fr));">
+      <div class="card">
+        <h3 style="margin:0 0 4px;font-size:18px;color:var(--ink-900);">Total companies</h3>
+        <p style="margin:0;color:var(--ink-500);">All tenants in this deployment.</p>
+        <p style="margin:12px 0 0;font-size:32px;font-weight:700;"><%= companiesCount %></p>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 4px;font-size:18px;color:var(--ink-900);">Total users</h3>
+        <p style="margin:0;color:var(--ink-500);">Users across all companies.</p>
+        <p style="margin:12px 0 0;font-size:32px;font-weight:700;"><%= usersCount %></p>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>
+    <%= typeof title !== 'undefined' ? (title + ' · Jaango Super Admin') : 'Jaango Super Admin' %>
+  </title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Jaango Super Admin Console">
+  <link rel="icon" href="/img/logo.ico" sizes="any">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body style="background:var(--paper);color:var(--ink-900);">
+
+  <!-- top bar just for super admin -->
+  <header style="
+    border-bottom:1px solid rgba(15,23,42,.06);
+    background:var(--paper-2);
+  ">
+    <div style="
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:10px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    ">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="
+          width:28px;height:28px;
+          border-radius:999px;
+          background:var(--jaango-yellow);
+          display:flex;align-items:center;justify-content:center;
+          font-weight:800;font-size:16px;color:var(--ink-900);
+        ">
+          J
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:14px;">Jaango Super Admin</div>
+          <div style="font-size:12px;color:var(--ink-500);">
+            Platform owner console
+          </div>
+        </div>
+      </div>
+
+      <!-- Optional: link back to main site -->
+      <a href="/" style="font-size:13px;color:var(--ink-500);text-decoration:none;">
+        ← Back to main site
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <%- body %>
+  </main>
+
+</body>
+</html>

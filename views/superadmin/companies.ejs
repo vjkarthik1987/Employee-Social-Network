@@ -1,0 +1,71 @@
+<% layout('layouts/_superadmin') %>
+<div class="superadmin-shell">
+    <%- include('../partials/_superadmin_sidebar', { currentSection: 'companies' }) %>
+  
+    <div class="wrap" style="margin:0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
+        <div>
+          <h1 class="h2" style="margin-bottom:6px;">All Companies</h1>
+          <p class="sub" style="margin:0;">Tenant registry across the platform.</p>
+        </div>
+  
+        <form method="POST" action="/super-admin/logout">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="btn btn-ghost">
+            Log out
+          </button>
+        </form>
+      </div>
+  
+      <section class="section" style="padding-top:0;">
+        <% if (!companies || !companies.length) { %>
+          <p class="sub">No companies found yet.</p>
+        <% } else { %>
+          <div class="card" style="padding:0;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead>
+                <tr style="background:var(--paper-2);">
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Name</th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Slug</th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Status</th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Plan state</th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Region</th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% companies.forEach(c => { %>
+                  <tr>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                        <a href="/super-admin/companies/<%= c._id %>" style="text-decoration:none;color:var(--ink-900);">
+                          <%= c.name || '(no name)' %>
+                        </a>
+                    </td>
+                      
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                      <code style="background:var(--paper-2);padding:2px 6px;border-radius:999px;font-size:12px;">
+                        <%= c.slug %>
+                      </code>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);text-transform:capitalize;">
+                      <%= c.status || 'active' %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                      <%= c.planState || 'unknown' %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                      <%= c.dataRegion || '-' %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);white-space:nowrap;">
+                      <%= c.createdAt ? c.createdAt.toISOString().slice(0,10) : '-' %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </div>
+  

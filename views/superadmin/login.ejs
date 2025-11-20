@@ -1,0 +1,102 @@
+<% layout('layouts/_main') %>
+<head>
+    <title>Login to Main Admin Page</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="Jaango Main Admin Page Login">
+    <link rel="icon" href="/img/logo.ico" sizes="any">
+    <link rel="stylesheet" href="/css/main.css">
+    <style>
+        :root{
+        --jaango-yellow:#FFC33A;
+        --jaango-yellow-ink:#E59A00;
+        --jaango-green:#3CA46B;
+        --ink-900:#0E1116;
+        --ink-700:#1F232B;
+        --ink-500:#525866;
+        --ink-300:#8E95A3;
+        --paper:#ffffff;
+        --paper-2:#FAFBFC;
+        --ring: rgba(60,164,107,.35);
+        --radius: 16px;
+        --gap: clamp(16px, 3vw, 28px);
+        --maxw: 1120px;
+        }
+        @media (prefers-color-scheme: dark){
+        :root{
+            --paper:#0B0E14;
+            --paper-2:#0F131A;
+            --ink-900:#F7F8FA;
+            --ink-700:#E9EBEF;
+            --ink-500:#B8BFCC;
+            --ink-300:#99A1B1;
+            --ring: rgba(255,195,58,.28);
+        }
+        }
+    </style>
+</head>
+    
+
+<div class="wrap">
+  <div style="max-width:420px;margin:48px auto 32px auto;">
+    <h1 class="h2" style="margin-bottom:8px;">Super Admin Login</h1>
+    <p class="sub" style="margin-bottom:18px;">
+      Sign in as the platform owner to manage companies and tenants.
+    </p>
+
+    <% if (error && error.length) { %>
+      <div class="card" style="margin-bottom:16px; border-left:4px solid #f97373;">
+        <p style="margin:0; color:#b91c1c;"><%= error[0] %></p>
+      </div>
+    <% } %>
+
+    <form method="POST" action="/super-admin/login" style="display:grid;gap:14px;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div>
+        <label for="email" style="display:block;font-weight:600;margin-bottom:4px;">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autocomplete="username"
+          style="
+            width:100%;
+            padding:10px 12px;
+            border-radius:10px;
+            border:1px solid rgba(0,0,0,.12);
+            background:var(--paper-2);
+            color:var(--ink-900);
+            box-sizing:border-box;
+          "
+        >
+      </div>
+
+      <div>
+        <label for="password" style="display:block;font-weight:600;margin-bottom:4px;">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autocomplete="current-password"
+          style="
+            width:100%;
+            padding:10px 12px;
+            border-radius:10px;
+            border:1px solid rgba(0,0,0,.12);
+            background:var(--paper-2);
+            color:var(--ink-900);
+            box-sizing:border-box;
+          "
+        >
+      </div>
+
+      <div style="margin-top:8px;">
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+          Log in
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

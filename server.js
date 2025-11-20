@@ -18,6 +18,7 @@ setInterval(() => { licenseSweep().catch(err => console.warn('[licenseSweep] fai
 const authRoutes = require('./routes/auth');
 const tenantRoutes = require('./routes/tenant');
 const adminCentral = require('./routes/adminCentral');
+const superAdminRoutes = require('./routes/superAdmin');
 
 // --- Middleware ---
 const timing = require('./middleware/timing');
@@ -117,6 +118,8 @@ app.use((req, res, next) => {
 // --------- Public basics ---------
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+
+
 // If you don't have views/pages/home.ejs, consider redirecting to a default org or render a tiny page.
 app.get('/', (_req, res) => {
   res.render('pages/home', { title: 'Welcome', company: null, user: null });
@@ -138,6 +141,7 @@ app.get('/how-it-works', (_req, res) => {
   res.render('pages/how-it-works', {title: "How it works", company: null, user: null})
 })
 
+app.use('/super-admin', superAdminRoutes);
 app.use('/', adminCentral);
 
 app.use('/:org', (req, res, next) => {
