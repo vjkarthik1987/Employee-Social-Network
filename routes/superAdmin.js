@@ -43,6 +43,24 @@ function requireSuperAdmin(req, res, next) {
   return res.redirect('/super-admin/login');
 }
 
+async function logSuperAdminAction({ companyId, action, meta, req }) {
+  try {
+    await AuditLog.create({
+      companyId,
+      actorUserId: null,          // super admin is outside tenant users
+      actorRole: 'SUPER_ADMIN',
+      action,                     // e.g., 'COMPANY_SUSPENDED'
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+      meta: meta || {},
+    });
+  } catch (e) {
+    // don't crash super admin flow if logging fails
+    console.error('Failed to log super admin action', e);
+  }
+}
+
+
 // Tiny async wrapper
 const aw = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
@@ -178,6 +196,8 @@ router.get('/companies/:id', requireSuperAdmin, aw(async (req, res) => {
     ? (company.trialEndsAt > now ? 'In trial' : 'Trial expired')
     : 'No trial set';
 
+  const message = req.query.msg || null;
+
   return res.render('superadmin/company_detail', {
     title: `Company · ${company.name}`,
     company,
@@ -190,9 +210,88 @@ router.get('/companies/:id', requireSuperAdmin, aw(async (req, res) => {
     attachmentsCount,
     pollResponsesCount,
     internalLinksCount,
+    message,
     superAdminEmail: req.session.superAdmin?.email || null,
   });
 }));
+
+// POST /super-admin/companies/:id/suspend
+router.post('/companies/:id/suspend', requireSuperAdmin, aw(async (req, res) => {
+  const companyId = req.params.id;
+
+  const company = await Company.findByIdAndUpdate(
+    companyId,
+    { status: 'suspended' },
+    { new: true }
+  );
+
+  if (!company) {
+    return res.status(404).render('errors/404', { title: 'Company not found' });
+  }
+
+  await logSuperAdminAction({
+    companyId,
+    action: 'COMPANY_SUSPENDED',
+    meta: { by: 'SUPER_ADMIN' },
+    req,
+  });
+
+  return res.redirect(`/super-admin/companies/${companyId}?msg=Company%20suspended`);
+}));
+
+// POST /super-admin/companies/:id/activate
+router.post('/companies/:id/activate', requireSuperAdmin, aw(async (req, res) => {
+  const companyId = req.params.id;
+
+  const company = await Company.findByIdAndUpdate(
+    companyId,
+    { status: 'active' },
+    { new: true }
+  );
+
+  if (!company) {
+    return res.status(404).render('errors/404', { title: 'Company not found' });
+  }
+
+  await logSuperAdminAction({
+    companyId,
+    action: 'COMPANY_ACTIVATED',
+    meta: { by: 'SUPER_ADMIN' },
+    req,
+  });
+
+  return res.redirect(`/super-admin/companies/${companyId}?msg=Company%20activated`);
+}));
+
+// POST /super-admin/companies/:id/extend-trial
+router.post('/companies/:id/extend-trial', requireSuperAdmin, aw(async (req, res) => {
+  const companyId = req.params.id;
+
+  const company = await Company.findById(companyId);
+  if (!company) {
+    return res.status(404).render('errors/404', { title: 'Company not found' });
+  }
+
+  const days = 30; // extend by 30 days (tweak if you prefer)
+  const now = new Date();
+  const base = company.trialEndsAt && company.trialEndsAt > now
+    ? company.trialEndsAt
+    : now;
+
+  const newTrialEndsAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+  company.trialEndsAt = newTrialEndsAt;
+  await company.save();
+
+  await logSuperAdminAction({
+    companyId,
+    action: 'COMPANY_TRIAL_EXTENDED',
+    meta: { daysExtended: days },
+    req,
+  });
+
+  return res.redirect(`/super-admin/companies/${companyId}?msg=Trial%20extended%20by%20${days}%20days`);
+}));
+
 
 
 module.exports = router;
