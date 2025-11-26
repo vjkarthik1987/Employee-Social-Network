@@ -99,8 +99,20 @@
 
    <!-- TOPBAR (no user data) -->
    <%- include('../partials/_topbar')%>
+  
 
   <main class="wrap">
+    <% if (error && error.length) { %>
+      <div class="card" style="margin-bottom:16px; border-left:4px solid #f97373;">
+        <p style="margin:0;color:#b91c1c;"><%= error[0] %></p>
+      </div>
+    <% } %>
+  
+    <% if (success && success.length) { %>
+      <div class="card" style="margin-bottom:16px; border-left:4px solid #16a34a;">
+        <p style="margin:0;color:#166534;"><%= success[0] %></p>
+      </div>
+    <% } %>
     <div class="card">
       <h1>Sign in to Jaango</h1>
       <form method="POST" action="/auth/login" autocomplete="on">

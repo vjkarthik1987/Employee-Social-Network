@@ -1,71 +1,198 @@
 <% layout('layouts/_superadmin') %>
+
 <div class="superadmin-shell">
-    <%- include('../partials/_superadmin_sidebar', { currentSection: 'companies' }) %>
-  
-    <div class="wrap" style="margin:0;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
-        <div>
-          <h1 class="h2" style="margin-bottom:6px;">All Companies</h1>
-          <p class="sub" style="margin:0;">Tenant registry across the platform.</p>
-        </div>
-  
+  <%- include('../partials/_superadmin_sidebar', { currentSection: 'companies' }) %>
+
+  <div class="wrap" style="margin:0;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
+      <div>
+        <h1 class="h2" style="margin-bottom:6px;">All Companies</h1>
+        <p class="sub" style="margin:0;">Tenant registry across the platform.</p>
+      </div>
+    
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a href="/super-admin/companies/new" class="btn btn-primary" style="text-decoration:none;">
+          + New company
+        </a>
+    
         <form method="POST" action="/super-admin/logout">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
           <button type="submit" class="btn btn-ghost">
             Log out
           </button>
         </form>
       </div>
-  
-      <section class="section" style="padding-top:0;">
-        <% if (!companies || !companies.length) { %>
-          <p class="sub">No companies found yet.</p>
-        <% } else { %>
-          <div class="card" style="padding:0;overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:14px;">
-              <thead>
-                <tr style="background:var(--paper-2);">
-                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Name</th>
-                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Slug</th>
-                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Status</th>
-                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Plan state</th>
-                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Region</th>
-                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% companies.forEach(c => { %>
-                  <tr>
-                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
-                        <a href="/super-admin/companies/<%= c._id %>" style="text-decoration:none;color:var(--ink-900);">
-                          <%= c.name || '(no name)' %>
-                        </a>
-                    </td>
-                      
-                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
-                      <code style="background:var(--paper-2);padding:2px 6px;border-radius:999px;font-size:12px;">
-                        <%= c.slug %>
-                      </code>
-                    </td>
-                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);text-transform:capitalize;">
-                      <%= c.status || 'active' %>
-                    </td>
-                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
-                      <%= c.planState || 'unknown' %>
-                    </td>
-                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
-                      <%= c.dataRegion || '-' %>
-                    </td>
-                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);white-space:nowrap;">
-                      <%= c.createdAt ? c.createdAt.toISOString().slice(0,10) : '-' %>
-                    </td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          </div>
-        <% } %>
-      </section>
     </div>
+    
+    <section class="section" style="padding-top:0;">
+
+      <!-- Filter bar -->
+      <div class="card" style="margin-bottom:16px;">
+        <form method="GET" action="/super-admin/companies" style="display:grid;gap:10px;">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;align-items:flex-end;">
+            <!-- Search -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-500);">
+                Search (name or slug)
+              </label>
+              <input
+                type="text"
+                name="q"
+                value="<%= filters && filters.q ? filters.q : '' %>"
+                placeholder="e.g. suntec, acme"
+                style="
+                  width:100%;
+                  padding:8px 10px;
+                  border-radius:10px;
+                  border:1px solid rgba(0,0,0,.12);
+                  background:var(--paper-2);
+                  color:var(--ink-900);
+                  box-sizing:border-box;
+                  font-size:14px;
+                "
+              >
+            </div>
+
+            <!-- Status -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-500);">
+                Status
+              </label>
+              <select name="status" style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);color:var(--ink-900);font-size:14px;">
+                <option value="any" <%= filters.status === 'any' ? 'selected' : '' %>>Any</option>
+                <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+                <option value="suspended" <%= filters.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
+              </select>
+            </div>
+
+            <!-- Plan state -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-500);">
+                Plan state
+              </label>
+              <select name="planState" style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);color:var(--ink-900);font-size:14px;">
+                <option value="any" <%= filters.planState === 'any' ? 'selected' : '' %>>Any</option>
+                <option value="FREE_TRIAL" <%= filters.planState === 'FREE_TRIAL' ? 'selected' : '' %>>Free trial</option>
+                <option value="ACTIVE" <%= filters.planState === 'ACTIVE' ? 'selected' : '' %>>Active</option>
+                <option value="EXPIRED" <%= filters.planState === 'EXPIRED' ? 'selected' : '' %>>Expired</option>
+              </select>
+            </div>
+
+            <!-- Region -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-500);">
+                Region
+              </label>
+              <select name="region" style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);color:var(--ink-900);font-size:14px;">
+                <option value="any" <%= filters.region === 'any' ? 'selected' : '' %>>Any</option>
+                <option value="IN" <%= filters.region === 'IN' ? 'selected' : '' %>>India</option>
+                <option value="EU" <%= filters.region === 'EU' ? 'selected' : '' %>>Europe</option>
+                <option value="US" <%= filters.region === 'US' ? 'selected' : '' %>>US</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;align-items:flex-end;">
+            <!-- Verification -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-500);">
+                Verification
+              </label>
+              <select name="verification" style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);color:var(--ink-900);font-size:14px;">
+                <option value="any" <%= filters.verification === 'any' ? 'selected' : '' %>>Any</option>
+                <option value="verified" <%= filters.verification === 'verified' ? 'selected' : '' %>>Verified</option>
+                <option value="unverified" <%= filters.verification === 'unverified' ? 'selected' : '' %>>Unverified</option>
+              </select>
+            </div>
+
+            <!-- Trial window -->
+            <div>
+              <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-500);">
+                Trial ending
+              </label>
+              <select name="trialWindow" style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);color:var(--ink-900);font-size:14px;">
+                <option value="all" <%= filters.trialWindow === 'all' ? 'selected' : '' %>>Any time</option>
+                <option value="7" <%= filters.trialWindow === '7' ? 'selected' : '' %>>Within 7 days</option>
+                <option value="30" <%= filters.trialWindow === '30' ? 'selected' : '' %>>Within 30 days</option>
+              </select>
+            </div>
+
+            <!-- Sort + buttons -->
+            <div style="display:flex;gap:8px;align-items:flex-end;justify-content:flex-end;">
+              <div style="flex:1;">
+                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-500);">
+                  Sort by
+                </label>
+                <select name="sort" style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);color:var(--ink-900);font-size:14px;">
+                  <option value="newest" <%= filters.sort === 'newest' ? 'selected' : '' %>>Newest created</option>
+                  <option value="oldest" <%= filters.sort === 'oldest' ? 'selected' : '' %>>Oldest created</option>
+                  <option value="trialEnding" <%= filters.sort === 'trialEnding' ? 'selected' : '' %>>Trial ending soon</option>
+                  <option value="name" <%= filters.sort === 'name' ? 'selected' : '' %>>Name (A–Z)</option>
+                </select>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <button type="submit" class="btn btn-primary" style="padding:8px 14px;font-size:13px;">
+                  Apply
+                </button>
+
+                <% if (hasFilters) { %>
+                  <a href="/super-admin/companies" class="btn btn-ghost" style="padding:6px 10px;font-size:12px;">
+                    Clear
+                  </a>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <% if (!companies || !companies.length) { %>
+        <p class="sub">No companies match your current filters.</p>
+      <% } else { %>
+        <div class="card" style="padding:0;overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead>
+              <tr style="background:var(--paper-2);">
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Name</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Slug</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Status</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Plan state</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Region</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% companies.forEach(c => { %>
+                <tr>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <a href="/super-admin/companies/<%= c._id %>" style="text-decoration:none;color:var(--ink-900);">
+                      <%= c.name || '(no name)' %>
+                    </a>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <code style="background:var(--paper-2);padding:2px 6px;border-radius:999px;font-size:12px;">
+                      <%= c.slug %>
+                    </code>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);text-transform:capitalize;">
+                    <%= c.status || 'active' %>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <%= c.planState || 'unknown' %>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <%= c.dataRegion || '-' %>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);white-space:nowrap;">
+                    <%= c.createdAt ? c.createdAt.toISOString().slice(0,10) : '-' %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
   </div>
-  
+</div>

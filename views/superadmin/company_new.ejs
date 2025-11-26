@@ -1,0 +1,145 @@
+<% layout('layouts/_superadmin') %>
+
+<div class="superadmin-shell">
+  <%- include('../partials/_superadmin_sidebar', { currentSection: 'companies' }) %>
+
+  <div class="wrap" style="margin:0;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
+      <div>
+        <h1 class="h2" style="margin-bottom:6px;">Create new company</h1>
+        <p class="sub" style="margin:0;">
+          Set up a new tenant and its first org admin in one step.
+        </p>
+      </div>
+
+      <form method="POST" action="/super-admin/logout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn-ghost">
+          Log out
+        </button>
+      </form>
+    </div>
+
+    <section class="section" style="padding-top:0;max-width:720px;">
+      <% if (error && error.length) { %>
+        <div class="card" style="margin-bottom:16px;border-left:4px solid #f97373;">
+          <p style="margin:0;color:#b91c1c;"><%= error[0] %></p>
+        </div>
+      <% } %>
+
+      <% if (success && success.length) { %>
+        <div class="card" style="margin-bottom:16px;border-left:4px solid var(--jaango-green);">
+          <p style="margin:0;color:var(--ink-700);"><%= success[0] %></p>
+        </div>
+      <% } %>
+
+      <div class="card">
+        <form method="POST" action="/super-admin/companies" style="display:grid;gap:18px;">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <div>
+            <h2 class="h4" style="margin:0 0 4px;">Company details</h2>
+            <p class="sub" style="margin:0;">Basic info used for tenant separation.</p>
+          </div>
+
+          <div style="display:grid;gap:12px;">
+            <div>
+              <label class="label" for="companyName">Company name</label>
+              <input
+                id="companyName"
+                name="companyName"
+                type="text"
+                class="input"
+                placeholder="Acme Corp"
+                required
+              >
+            </div>
+
+            <div>
+              <label class="label" for="companySlug">Company slug</label>
+              <input
+                id="companySlug"
+                name="companySlug"
+                type="text"
+                class="input"
+                placeholder="acme"
+                required
+              >
+              <p class="sub" style="margin-top:4px;text-align:left;">
+                Used in URLs, e.g. <code>/c/acme/...</code>
+              </p>
+            </div>
+
+            <div>
+              <label class="label" for="seats">Seats (license)</label>
+              <input
+                id="seats"
+                name="seats"
+                type="number"
+                min="1"
+                class="input"
+                placeholder="10"
+              >
+              <p class="sub" style="margin-top:4px;text-align:left;">
+                We’ll start them on a 30-day free trial with this many seats.
+              </p>
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid rgba(15,23,42,0.06);margin:8px 0;">
+
+          <div>
+            <h2 class="h4" style="margin:0 0 4px;">First org admin</h2>
+            <p class="sub" style="margin:0;">This user will have ORG_ADMIN access for this tenant.</p>
+          </div>
+
+          <div style="display:grid;gap:12px;">
+            <div>
+              <label class="label" for="adminFullName">Full name</label>
+              <input
+                id="adminFullName"
+                name="adminFullName"
+                type="text"
+                class="input"
+                placeholder="Jane Doe"
+                required
+              >
+            </div>
+
+            <div>
+              <label class="label" for="adminEmail">Email</label>
+              <input
+                id="adminEmail"
+                name="adminEmail"
+                type="email"
+                class="input"
+                placeholder="jane.doe@acme.com"
+                required
+              >
+            </div>
+
+            <div>
+              <label class="label" for="adminPassword">Initial password</label>
+              <input
+                id="adminPassword"
+                name="adminPassword"
+                type="password"
+                class="input"
+                placeholder="••••••••"
+                required
+              >
+              <p class="sub" style="margin-top:4px;text-align:left;">
+                They’ll be asked to verify their org via email before logging in.
+              </p>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
+            <a href="/super-admin/companies" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">Create company</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>

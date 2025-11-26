@@ -1,0 +1,101 @@
+<% layout('layouts/_superadmin') %>
+
+<div class="superadmin-shell">
+  <%- include('../partials/_superadmin_sidebar', { currentSection: 'pending-companies' }) %>
+
+  <div class="wrap" style="margin:0;">
+
+    <% if (typeof message !== 'undefined' && message) { %>
+      <div class="card" style="margin:16px 0;border-left:4px solid var(--jaango-green);">
+        <p style="margin:0;color:var(--ink-700);"><%= message %></p>
+      </div>
+    <% } %>
+
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;">
+      <div>
+        <h1 class="h2" style="margin-bottom:4px;">Pending verification</h1>
+        <p class="sub" style="margin:0;">
+          Companies that have not completed email / org verification yet.
+        </p>
+      </div>
+
+      <form method="POST" action="/super-admin/logout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn btn-ghost">
+          Log out
+        </button>
+      </form>
+    </div>
+
+    <section class="section" style="padding-top:0;">
+
+      <% if (!rows || !rows.length) { %>
+        <p class="sub">No companies are pending verification right now.</p>
+      <% } else { %>
+        <div class="card" style="padding:0;overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead>
+              <tr style="background:var(--paper-2);">
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Company</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Slug</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Region</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Created</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Token status</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Token expires</th>
+                <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% rows.forEach(r => { %>
+                <tr>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <a href="/super-admin/companies/<%= r.company._id %>" style="text-decoration:none;color:var(--ink-900);">
+                      <%= r.company.name || '(no name)' %>
+                    </a>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <code style="background:var(--paper-2);padding:2px 6px;border-radius:999px;font-size:12px;">
+                      <%= r.company.slug %>
+                    </code>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <%= r.company.dataRegion || '-' %>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);white-space:nowrap;">
+                    <%= r.company.createdAt ? r.company.createdAt.toISOString().slice(0,10) : '-' %>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <% if (!r.hasToken) { %>
+                      <span style="color:var(--ink-500);">No token</span>
+                    <% } else if (r.isExpired) { %>
+                      <span style="color:#b91c1c;">Expired</span>
+                    <% } else { %>
+                      <span style="color:var(--jaango-green);">Active</span>
+                    <% } %>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);white-space:nowrap;">
+                    <% if (r.expiresAt) { %>
+                      <%= r.expiresAt.toISOString().slice(0,10) %>
+                    <% } else { %>
+                      —
+                    <% } %>
+                  </td>
+                  <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <form method="POST" action="/super-admin/companies/<%= r.company._id %>/mark-verified" style="display:inline;">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" class="btn btn-ghost" style="font-size:13px;padding:6px 10px;">
+                        Mark verified
+                      </button>
+                    </form>
+
+                    <!-- Later: add "Resend verification email" here -->
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </section>
+  </div>
+</div>

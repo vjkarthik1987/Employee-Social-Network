@@ -162,6 +162,11 @@ router.post('/login', (req, res, next) => {
             req.flash('error', 'Company not found for this account.');
             return res.redirect('/auth/login');
           }
+
+          if (company.status === 'suspended') {
+            req.flash('error', 'Your organization has been suspended. Please contact admin.');
+            return res.redirect('/auth/login');
+          }
           // Cache for quick use later
           req.session.companySlug = company.slug;
           req.flash('success', 'Welcome back!');
