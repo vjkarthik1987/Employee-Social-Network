@@ -1,0 +1,110 @@
+<% layout('layouts/_layout') %>
+
+<section style="max-width:960px;margin:24px auto;display:grid;gap:16px;">
+  <h2 style="margin:0;">Assistant Docs</h2>
+  <p style="margin:0 0 8px;color:#555;">
+    These documents will power the Jaango Assistant’s answers. Add links or uploaded files
+    for your policies, handbooks, FAQs, and key knowledge pages.
+  </p>
+
+  <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
+    <a class="btn" href="/<%= company.slug %>/admin/assistant-docs/new">➕ Add Document</a>
+  </div>
+
+  <div class="card" style="padding:12px 16px;">
+    <% if (!items || !items.length) { %>
+      <p style="margin:8px 0;color:#666;font-size:14px;">
+        No documents added yet. Click “Add Document” to get started.
+      </p>
+    <% } else { %>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead>
+          <tr style="text-align:left;border-bottom:1px solid #e5e7eb;">
+            <th style="padding:6px 4px;">Title</th>
+            <th style="padding:6px 4px;">Source</th>
+            <th style="padding:6px 4px;">Tags</th>
+            <th style="padding:6px 4px;">Status</th>
+            <th style="padding:6px 4px;text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function(d){ %>
+            <tr style="border-bottom:1px solid #f3f4f6;">
+              <!-- Title + description -->
+              <td style="padding:6px 4px;vertical-align:top;">
+                <div style="font-weight:500;"><%= d.title %></div>
+                <% if (d.description) { %>
+                  <div style="color:#6b7280;font-size:12px;max-width:320px;white-space:normal;">
+                    <%= d.description %>
+                  </div>
+                <% } %>
+              </td>
+
+              <!-- URL or uploaded file -->
+              <td style="padding:6px 4px;vertical-align:top;">
+                <% if (d.url) { %>
+                  <a href="<%= d.url %>"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     style="color:#2563eb;word-break:break-all;">
+                    <%= d.url %>
+                  </a>
+                <% } else if (d.originalName) { %>
+                  <span style="color:#374151;">
+                    Uploaded file: <strong><%= d.originalName %></strong>
+                  </span>
+                <% } else { %>
+                  <span style="color:#9ca3af;">—</span>
+                <% } %>
+              </td>
+
+              <!-- Tags -->
+              <td style="padding:6px 4px;vertical-align:top;">
+                <% if (d.tags && d.tags.length) { %>
+                  <% d.tags.forEach(function(t){ %>
+                    <span style="display:inline-block;margin:0 4px 4px 0;padding:2px 6px;border-radius:999px;background:#f3f4f6;">
+                      <%= t %>
+                    </span>
+                  <% }); %>
+                <% } else { %>
+                  <span style="color:#9ca3af;">—</span>
+                <% } %>
+              </td>
+
+              <!-- Status -->
+              <td style="padding:6px 4px;vertical-align:top;">
+                <% if (d.isActive) { %>
+                  <span style="font-size:12px;padding:2px 6px;border-radius:999px;background:#ecfdf3;color:#166534;">
+                    Active
+                  </span>
+                <% } else { %>
+                  <span style="font-size:12px;padding:2px 6px;border-radius:999px;background:#fef2f2;color:#b91c1c;">
+                    Inactive
+                  </span>
+                <% } %>
+              </td>
+
+              <!-- Actions -->
+              <td style="padding:6px 4px;text-align:right;white-space:nowrap;">
+                <a href="/<%= company.slug %>/admin/assistant-docs/<%= d._id %>/edit"
+                   style="font-size:12px;margin-right:8px;">
+                  Edit
+                </a>
+                <form action="/<%= company.slug %>/admin/assistant-docs/<%= d._id %>/delete"
+                      method="POST"
+                      style="display:inline;"
+                      onsubmit="return confirm('Remove this document from the assistant knowledge base?');">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+                  <button type="submit"
+                          style="border:none;background:none;color:#b91c1c;font-size:12px;cursor:pointer;">
+                    Delete
+                  </button>
+                </form>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</section>

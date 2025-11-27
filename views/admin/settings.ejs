@@ -21,11 +21,16 @@
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/retention')) ? 'active' : '' %>">
       🗂️ Retention Rules
     </a>
+    <a href="/<%= company.slug %>/admin/assistant-docs"
+       class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/assistant-docs')) ? 'active' : '' %>">
+      🤖 Assistant Docs
+    </a>
     <a href="/<%= company.slug %>/admin/settings"
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/settings')) ? 'active' : '' %>">
       ⚙️ Settings
     </a>
   </div>
+
 
   <!-- ONE MAIN FORM FOR ALL SETTINGS -->
   <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">

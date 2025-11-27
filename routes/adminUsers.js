@@ -33,10 +33,19 @@ async function checkLicenseGuard(req) {
 // List users
 router.get('/', ensureAuth, requireRole('ORG_ADMIN'), async (req, res, next) => {
   try {
-    const users = await User.find({ companyId: req.companyId }).sort({ createdAt: -1 }).lean();
-    res.render('admin/users/index', { org: req.company, currentUser: req.user, users });
+    const users = await User.find({ companyId: req.companyId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.render('admin/users/index', {
+      company: req.company,
+      users,
+      user: req.user,
+      currentUser: req.user,
+    });
   } catch (e) { next(e); }
 });
+
 
 // Import via CSV (bulk add)
 router.post('/import', ensureAuth, requireRole('ORG_ADMIN'), upload.single('csv'), async (req, res, next) => {

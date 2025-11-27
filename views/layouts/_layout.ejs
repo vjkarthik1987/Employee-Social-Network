@@ -58,6 +58,64 @@
     </main>
   </div>
 
+   <!-- Chatbot Dock (desktop only for now) -->
+  <div class="chatDock" aria-label="Jaango Assistant panel">
+    <div class="chatDock-inner">
+      <div class="chatDock-header">
+        <div class="chatDock-title">
+          <span class="chatDock-name">Jaango Assistant</span>
+        </div>
+        <span class="chatDock-tag">beta</span>
+      </div>
+
+      <div class="chatDock-main">
+        <!-- Messages area -->
+        <div class="chatDock-messages" id="chatMessages">
+          <!-- Example starter message; optional -->
+          <%
+            const _assistantUser =
+              (typeof currentUser !== 'undefined' && currentUser) ||
+              (typeof user !== 'undefined' && user) ||
+              null;
+
+            const _assistantFirst =
+              _assistantUser && _assistantUser.fullName
+                ? _assistantUser.fullName.split(' ')[0]
+                : '';
+          %>
+
+          <div class="chat-msg chat-msg-assistant">
+            <div class="chat-msg-bubble">
+              Hi <%= _assistantFirst %> 👋<br>
+              I can help you with policies, FAQs, and (soon) mood-aware check-ins.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input area fixed to bottom of panel -->
+        <form class="chatDock-input" id="assistantChatForm">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+          <div class="chat-input-wrap">
+            <textarea
+              id="assistantChatInput"
+              name="message"
+              rows="1"
+              placeholder="Send a message..."
+              autocomplete="off"
+            ></textarea>
+            <button type="submit" class="chat-send-btn" aria-label="Send message">
+              ↗
+            </button>
+          </div>
+          <p class="chat-hint">
+            Jaango Assistant uses your company docs. Don’t share passwords or sensitive data here.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Right side bar -->
   <div class="rightBar">
     <%- include('../partials/_sidebar_links', { company, internalLinks: (typeof internalLinks !== 'undefined' ? internalLinks : []) }) %>
@@ -183,6 +241,120 @@
     mo.observe(document.body, { childList: true, subtree: true });
   })();
   </script>
+<script>
+  (function () {
+    var form = document.getElementById('assistantChatForm');
+    var input = document.getElementById('assistantChatInput');
+    var messagesEl = document.getElementById('chatMessages');
+    if (!form || !input || !messagesEl) return;
+
+    // org slug – use company.slug (your routes are /:org/...)
+    var orgSlug = "<%= (typeof company !== 'undefined' && company && company.slug) ? company.slug : '' %>";
+
+    // CSRF token (if present)
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    function autoGrow() {
+      input.style.height = '0px';
+      input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+    }
+
+    function scrollToBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function createBubble(role, text) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'chat-msg chat-msg-' + role;
+
+      var bubble = document.createElement('div');
+      bubble.className = 'chat-msg-bubble';
+      bubble.textContent = text;
+
+      wrapper.appendChild(bubble);
+      messagesEl.appendChild(wrapper);
+      scrollToBottom();
+
+      return bubble;
+    }
+
+    function renderSources(sources) {
+      if (!sources || !sources.length) return;
+      var meta = document.createElement('div');
+      meta.className = 'chat-msg-meta';
+      meta.style.fontSize = '11px';
+      meta.style.color = '#6b7280';
+      meta.style.marginTop = '4px';
+
+      var names = sources
+        .map(function (s) { return s.sourceName || s.label || ''; })
+        .filter(Boolean);
+
+      if (!names.length) return;
+
+      meta.textContent = 'Based on: ' + names.join(', ');
+      scrollToBottom();
+    }
+
+    // Submit handler
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = (input.value || '').trim();
+      if (!text) return;
+
+      // user message
+      createBubble('user', text);
+
+      // reset input
+      input.value = '';
+      autoGrow();
+
+      // assistant placeholder
+      var assistantBubble = createBubble('assistant', 'Thinking...');
+
+      if (!orgSlug) {
+        assistantBubble.textContent = 'Org not detected in URL. Please refresh or contact admin.';
+        return;
+      }
+
+      // ✅ Correct URL: /<org>/api/assistant/chat
+      fetch('/' + encodeURIComponent(orgSlug) + '/api/assistant/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || ''
+        },
+        body: JSON.stringify({ message: text })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data || !data.ok) {
+            assistantBubble.textContent =
+              (data && data.error) || 'Sorry, I could not answer that.';
+            return;
+          }
+          assistantBubble.textContent = data.answer || '…';
+          renderSources(data.sources || []);
+        })
+        .catch(function (err) {
+          console.error('[assistantChat] error', err);
+          assistantBubble.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+
+    // Enter to send, Shift+Enter for newline
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    });
+
+    input.addEventListener('input', autoGrow);
+  })();
+</script>
+
   
   
   

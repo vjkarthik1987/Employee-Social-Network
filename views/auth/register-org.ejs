@@ -426,23 +426,64 @@
   })();
 
   </script>
-  <script>
-    (function(){
-      const form = document.querySelector('form[action="/auth/register-org"]');
-      const agree = document.getElementById('agree');
-      if(!form || !agree) return;
-    
-      form.addEventListener('submit', (e)=>{
-        if(!agree.checked){
-          e.preventDefault();
-          alert('Please agree to the Terms and Privacy Policy before continuing.');
-          agree.focus();
-        }
-      });
-    })();
+ <script>
+  // Simple auto-grow + Enter-to-send for assistant textarea
+  (function () {
+    var form  = document.getElementById('assistantChatForm');
+    var input = document.getElementById('assistantChatInput');
+    if (!form || !input) return;
 
-    
-    </script>
+    function autoGrow() {
+      input.style.height = '0px';
+      input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+    }
+
+    input.addEventListener('input', autoGrow);
+
+    // ENTER sends, SHIFT+ENTER adds newline
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        if (e.shiftKey) {
+          // allow newline
+          return;
+        }
+        // send on plain Enter
+        e.preventDefault();
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      }
+    });
+
+    // Prevent full page reload for now; we’ll wire fetch() later
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = input.value.trim();
+      if (!text) return;
+
+      console.log('User message:', text); // TODO: replace with real API call
+
+      // (optional) show it in the UI immediately
+      var messages = document.getElementById('chatMessages');
+      if (messages) {
+        var wrap = document.createElement('div');
+        wrap.className = 'chat-msg chat-msg-user';
+        var bubble = document.createElement('div');
+        bubble.className = 'chat-msg-bubble';
+        bubble.textContent = text;
+        wrap.appendChild(bubble);
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      input.value = '';
+      autoGrow();
+    });
+  })();
+</script>
+
     
   
 </body>

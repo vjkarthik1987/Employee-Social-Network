@@ -15,9 +15,22 @@ router.get('/', ensureAuth, async (req, res, next) => {
 });
 
 // New form
-router.get('/new', ensureAuth, (req, res) => {
-  res.render('groups/new', { company: req.company });
+router.get('/', ensureAuth, async (req, res, next) => {
+  try {
+    const groups = await Group.find({ companyId: req.companyId })
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    res.render('groups/index', {
+      company: req.company,
+      groups,
+      user: req.user,
+      currentUser: req.user,
+    });
+  } catch (e) { next(e); }
 });
+
 
 // Create (ANY authenticated user)
 router.post('/', ensureAuth, async (req, res, next) => {

@@ -136,6 +136,151 @@
       </div>
     </section>
 
+      <!-- Usage & Storage -->
+  <section class="section" style="padding-top:0;margin-top:24px;">
+    <h2 class="h3" style="margin:0 0 12px;">Usage & Storage</h2>
+    <p class="sub" style="margin:0 0 16px;">
+      High-level view of how this tenant is consuming platform resources.
+    </p>
+
+    <div class="features" style="grid-template-columns:repeat(3, minmax(0,1fr));">
+      <!-- Seats / License -->
+      <div class="card">
+        <h3 style="margin:0 0 4px;font-size:16px;color:var(--ink-900);">
+          License seats
+        </h3>
+        <p style="margin:0 0 8px;color:var(--ink-500);">
+          Assigned vs used seats.
+        </p>
+        <p style="margin:0;font-size:24px;font-weight:700;">
+          <%= licenseUsed %> / <%= licenseSeats %>
+        </p>
+        <p style="margin:8px 0 0;font-size:13px;color:var(--ink-500);">
+          Utilisation:
+          <strong><%= licenseUtilisation %>%</strong>
+        </p>
+      </div>
+
+      <!-- Storage -->
+      <div class="card">
+        <h3 style="margin:0 0 4px;font-size:16px;color:var(--ink-900);">
+          Attachment storage
+        </h3>
+        <p style="margin:0 0 8px;color:var(--ink-500);">
+          Total file footprint across posts and comments.
+        </p>
+        <p style="margin:0;font-size:24px;font-weight:700;">
+          <%= attachmentsTotalMB.toFixed(1) %> MB
+        </p>
+        <p style="margin:8px 0 0;font-size:13px;color:var(--ink-500);">
+          Files: <strong><%= attachmentsCount %></strong>
+        </p>
+      </div>
+
+      <!-- Engagement signals -->
+      <div class="card">
+        <h3 style="margin:0 0 4px;font-size:16px;color:var(--ink-900);">
+          Engagement signals
+        </h3>
+        <p style="margin:0 0 8px;color:var(--ink-500);">
+          Lightweight view of interactions in this tenant.
+        </p>
+        <p style="margin:0;font-size:14px;color:var(--ink-500);line-height:1.6;">
+          • Posts: <strong><%= postsCount %></strong><br>
+          • Comments: <strong><%= commentsCount %></strong><br>
+          • Poll responses: <strong><%= pollResponsesCount %></strong><br>
+          • Internal links: <strong><%= internalLinksCount %></strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+      <!-- Groups in this company -->
+      <section class="section" style="padding-top:12px;margin-top:8px;">
+        <h2 class="h3" style="margin:0 0 12px;">Groups in this tenant</h2>
+        <p class="sub" style="margin:0 0 16px;">
+          Snapshot of groups, their privacy, and activity levels.
+        </p>
+  
+        <% if (!groupsList || !groupsList.length) { %>
+          <div class="card">
+            <p style="margin:0;color:var(--ink-500);">
+              No groups have been created in this company yet.
+            </p>
+          </div>
+        <% } else { %>
+          <div class="card" style="padding:0;overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead>
+                <tr style="background:var(--paper-2);">
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">
+                    Name
+                  </th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">
+                    Privacy
+                  </th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">
+                    Membership
+                  </th>
+                  <th style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">
+                    Members
+                  </th>
+                  <th style="text-align:right;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">
+                    Posts
+                  </th>
+                  <th style="text-align:left;padding:10px 12px;border-bottom:1px solid rgba(15,23,42,.06);">
+                    Created
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <% groupsList.forEach(g => { %>
+                  <tr>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);max-width:220px;">
+                      <div style="font-weight:600;color:var(--ink-900);">
+                        <%= g.name %>
+                      </div>
+                      <% if (g.description) { %>
+                        <div style="font-size:12px;color:var(--ink-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                          <%= g.description %>
+                        </div>
+                      <% } %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);">
+                      <% if (g.isPrivate) { %>
+                        <span style="font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(15,23,42,.06);">
+                          Private
+                        </span>
+                      <% } else { %>
+                        <span style="font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(34,197,94,.08);">
+                          Public
+                        </span>
+                      <% } %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);text-transform:capitalize;font-size:13px;color:var(--ink-500);">
+                      <%= g.membershipPolicy === 'by-approval' ? 'By approval' : 'Open' %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);text-align:right;">
+                      <%= typeof g.membersCount === 'number' ? g.membersCount : (g.members ? g.members.length : 0) %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);text-align:right;">
+                      <%= typeof g.postsCount === 'number' ? g.postsCount : 0 %>
+                    </td>
+                    <td style="padding:8px 12px;border-bottom:1px solid rgba(15,23,42,.04);white-space:nowrap;font-size:13px;color:var(--ink-500);">
+                      <%= g.createdAt ? g.createdAt.toISOString().slice(0,10) : '—' %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <p class="sub" style="margin:8px 0 0;">
+            Showing latest <%= groupsList.length %> groups (newest first).
+          </p>
+        <% } %>
+      </section>
+
+      
     <!-- Lower split: product, policies, integrations -->
     <section class="section" style="padding-top:12px;">
       <div class="split" style="grid-template-columns:1.3fr 1.1fr;">
@@ -212,5 +357,103 @@
         </div>
       </div>
     </section>
+
+          <!-- Audit trail -->
+    <section class="section" style="padding-top:12px;margin-top:8px;">
+      <h2 class="h3" style="margin:0 0 12px;">Audit trail (last 50 events)</h2>
+      <p class="sub" style="margin:0 0 16px;">
+        Recent configuration and policy changes recorded for this tenant.
+      </p>
+
+      <% if (!auditLogs || !auditLogs.length) { %>
+        <div class="card">
+          <p style="margin:0;color:var(--ink-500);">
+            No audit events recorded for this company yet.
+          </p>
+        </div>
+      <% } else { %>
+        <div class="card" style="padding:0;overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="background:var(--paper-2);">
+                <th style="text-align:left;padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.06);">
+                  When
+                </th>
+                <th style="text-align:left;padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.06);">
+                  Actor
+                </th>
+                <th style="text-align:left;padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.06);">
+                  Action
+                </th>
+                <th style="text-align:left;padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.06);">
+                  Target
+                </th>
+                <th style="text-align:left;padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.06);">
+                  Details
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <% auditLogs.forEach(log => { %>
+                <tr>
+                  <!-- When -->
+                  <td style="padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.04);white-space:nowrap;">
+                    <%= log.createdAt ? log.createdAt.toISOString().slice(0,16).replace('T',' ') : '—' %>
+                  </td>
+
+                  <!-- Actor -->
+                  <td style="padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.04);">
+                    <% if (log.actorRole === 'SUPER_ADMIN') { %>
+                      <span style="font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(59,130,246,.08);">
+                        Super admin
+                      </span>
+                    <% } else if (log.actorUserId) { %>
+                      <span style="font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(16,185,129,.08);">
+                        Tenant user
+                      </span>
+                    <% } else { %>
+                      <span style="font-size:12px;padding:2px 8px;border-radius:999px;background:rgba(148,163,184,.25);">
+                        System
+                      </span>
+                    <% } %>
+                  </td>
+
+                  <!-- Action -->
+                  <td style="padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.04);font-family:ui-monospace,Menlo,Consolas,monospace;">
+                    <%= log.action %>
+                  </td>
+
+                  <!-- Target -->
+                  <td style="padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.04);font-size:12px;color:var(--ink-500);">
+                    <% const tType = (log.targetType || 'company'); %>
+                    <%= tType.charAt(0).toUpperCase() + tType.slice(1) %>
+                    <% if (log.targetId) { %>
+                      · <code><%= String(log.targetId).slice(-6) %></code>
+                    <% } %>
+                  </td>
+
+                  <!-- Details (metadata/meta, truncated) -->
+                  <td style="padding:8px 10px;border-bottom:1px solid rgba(15,23,42,.04);max-width:320px;">
+                    <% 
+                      const d = JSON.stringify(log.metadata || log.meta || {});
+                      const out = d.length > 120 ? d.slice(0, 120) + '…' : d;
+                    %>
+                    <code style="font-family:ui-monospace,Menlo,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">
+                      <%= out %>
+                    </code>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="sub" style="margin:8px 0 0;">
+          Showing the latest <%= auditLogs.length %> events for this company.
+        </p>
+      <% } %>
+    </section>
+
+
   </div>
 </div>

@@ -1,0 +1,145 @@
+<% layout('layouts/_layout') %>
+
+<section style="max-width:720px;margin:24px auto;display:grid;gap:16px;">
+  <h2 style="margin:0 0 4px;">
+    <%= item ? 'Edit Assistant Document' : 'Add Assistant Document' %>
+  </h2>
+  <p style="margin:0 0 12px;color:#555;font-size:14px;">
+    Add the documents you want Jaango Assistant to use when answering questions.
+    You can either paste a URL (SharePoint, Google Drive, wiki, etc.) or upload a
+    file (PDF, Word, PPT…). Title and either URL or file are required.
+  </p>
+
+  <form
+    action="/<%= company.slug %>/admin/assistant-docs<%= item ? '/' + item._id : '' %>"
+    method="POST"
+    enctype="multipart/form-data"
+    class="card"
+    style="padding:16px;display:grid;gap:12px;"
+  >
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+    <!-- Title -->
+    <div>
+      <label for="doc-title" class="form-label" style="display:block;font-weight:500;margin-bottom:4px;">
+        Title *
+      </label>
+      <input
+        id="doc-title"
+        name="title"
+        type="text"
+        required
+        value="<%= item ? item.title : '' %>"
+        style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;"
+        placeholder="Eg. Code of Conduct, Leave Policy, Onboarding Handbook"
+      >
+    </div>
+
+    <!-- Description -->
+    <div>
+      <label for="doc-description" class="form-label" style="display:block;font-weight:500;margin-bottom:4px;">
+        Short description
+      </label>
+      <textarea
+        id="doc-description"
+        name="description"
+        rows="2"
+        style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;resize:vertical;"
+        placeholder="Eg. Global policy covering conduct, ethics, and reporting channels."
+      ><%= item ? item.description : '' %></textarea>
+    </div>
+
+    <!-- URL (optional) -->
+    <div>
+      <label for="doc-url" class="form-label" style="display:block;font-weight:500;margin-bottom:4px;">
+        Link URL (optional)
+      </label>
+      <input
+        id="doc-url"
+        name="url"
+        type="url"
+        value="<%= item && item.url ? item.url : '' %>"
+        style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;"
+        placeholder="https://… (SharePoint / wiki / Google Drive link, etc.)"
+      >
+      <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">
+        You can provide a URL, upload a file, or both. At least one of them is required.
+      </p>
+    </div>
+
+    <!-- File upload (optional) -->
+    <div>
+      <label for="doc-file" class="form-label" style="display:block;font-weight:500;margin-bottom:4px;">
+        Upload file (optional)
+      </label>
+      <input
+        id="doc-file"
+        type="file"
+        name="file"
+        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
+      >
+      <% if (item && item.originalName) { %>
+        <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">
+          Current file: <strong><%= item.originalName %></strong>
+        </p>
+      <% } %>
+      <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">
+        Max 10 MB. Supported: PDF, Word, PowerPoint, Excel, text.
+      </p>
+    </div>
+
+    <!-- Tags (optional, simple CSV) -->
+    <div>
+      <label for="doc-tags" class="form-label" style="display:block;font-weight:500;margin-bottom:4px;">
+        Tags (optional)
+      </label>
+      <input
+        id="doc-tags"
+        name="tagsCSV"
+        type="text"
+        value="<%= item && item.tags ? item.tags.join(', ') : '' %>"
+        style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;"
+        placeholder="policy, leave, onboarding"
+      >
+    </div>
+
+    <!-- Visibility -->
+    <div>
+      <label class="form-label" style="display:block;font-weight:500;margin-bottom:4px;">
+        Visibility
+      </label>
+      <select
+        name="visibility"
+        style="width:100%;max-width:240px;padding:8px 10px;border-radius:6px;border:1px solid #d1d5db;font-size:14px;"
+      >
+        <% const v = (item && item.visibility) || 'ALL'; %>
+        <option value="ALL" <%= v === 'ALL' ? 'selected' : '' %>>Everyone</option>
+        <option value="ADMINS" <%= v === 'ADMINS' ? 'selected' : '' %>>Admins only</option>
+        <option value="MODS" <%= v === 'MODS' ? 'selected' : '' %>>Admins & Moderators</option>
+        <option value="HIDDEN" <%= v === 'HIDDEN' ? 'selected' : '' %>>Hidden (for testing)</option>
+      </select>
+    </div>
+
+    <!-- Active toggle -->
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input
+        id="doc-active"
+        type="checkbox"
+        name="isActive"
+        value="1"
+        <%= !item || item.isActive ? 'checked' : '' %>
+      >
+      <label for="doc-active" style="font-size:14px;color:#374151;">
+        Use this document for Jaango Assistant answers
+      </label>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+      <a href="/<%= company.slug %>/admin/assistant-docs" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        <%= item ? 'Save changes' : 'Add document' %>
+      </button>
+    </div>
+  </form>
+</section>

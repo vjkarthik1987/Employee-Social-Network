@@ -447,14 +447,12 @@ router.post('/companies/:id/mark-verified', requireSuperAdmin, aw(async (req, re
   return res.redirect('/super-admin/companies/pending?msg=Company%20marked%20as%20verified');
 }));
 
-
 // GET /super-admin/companies/:id  - Company detail view
 router.get('/companies/:id', requireSuperAdmin, aw(async (req, res) => {
   const companyId = req.params.id;
 
   const company = await Company.findById(companyId).lean();
   if (!company) {
-    // adjust to your 404 view name if different
     return res.status(404).render('errors/404', { title: 'Company not found' });
   }
 
@@ -466,6 +464,8 @@ router.get('/companies/:id', requireSuperAdmin, aw(async (req, res) => {
     attachmentsCount,
     pollResponsesCount,
     internalLinksCount,
+    groupsList,
+    auditLogs,
   ] = await Promise.all([
     User.countDocuments({ companyId }),
     Group.countDocuments({ companyId }),
@@ -474,11 +474,57 @@ router.get('/companies/:id', requireSuperAdmin, aw(async (req, res) => {
     Attachment.countDocuments({ companyId }),
     PollResponse.countDocuments({ companyId }),
     InternalLink.countDocuments({ companyId }),
+    // latest groups
+    Group.find(
+      { companyId },
+      'name description isPrivate membershipPolicy membersCount postsCount createdAt'
+    )
+      .sort({ createdAt: -1 })
+      .limit(25)
+      .lean(),
+    // latest audit log entries for this tenant
+    AuditLog.find({ companyId })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean(),
   ]);
 
-  // derive some computed values for the template
+  // ---- License utilisation (fallback to usersCount if used is 0/undefined) ----
+  const licenseSeats = company.license?.seats || 0;
+
+  let licenseUsed = typeof company.license?.used === 'number'
+    ? company.license.used
+    : 0;
+
+  if ((!licenseUsed || licenseUsed === 0) && usersCount > 0) {
+    licenseUsed = usersCount;
+  }
+
+  const licenseUtilisation =
+    licenseSeats > 0 ? Math.round((licenseUsed / licenseSeats) * 100) : 0;
+
+  // ---- Storage aggregation (attachments) ----
+  const attachmentUsage = await Attachment.aggregate([
+    { $match: { companyId } },
+    {
+      $group: {
+        _id: null,
+        totalBytes: { $sum: { $ifNull: ['$sizeBytes', 0] } },
+      },
+    },
+  ]);
+
+  const attachmentsTotalBytes =
+    attachmentUsage.length && attachmentUsage[0].totalBytes
+      ? attachmentUsage[0].totalBytes
+      : 0;
+
+  const attachmentsTotalMB = attachmentsTotalBytes / (1024 * 1024);
+
+  // ---- Other computed values ----
   const isVerified = !!company.verifiedAt;
   const verificationStatus = isVerified ? 'Verified' : 'Not verified';
+
   const now = new Date();
   const trialStatus = company.trialEndsAt
     ? (company.trialEndsAt > now ? 'In trial' : 'Trial expired')
@@ -498,10 +544,20 @@ router.get('/companies/:id', requireSuperAdmin, aw(async (req, res) => {
     attachmentsCount,
     pollResponsesCount,
     internalLinksCount,
+    attachmentsTotalBytes,
+    attachmentsTotalMB,
+    licenseSeats,
+    licenseUsed,
+    licenseUtilisation,
+    groupsList,
+    auditLogs, // 👈 NEW
     message,
     superAdminEmail: req.session.superAdmin?.email || null,
   });
 }));
+
+
+
 
 // POST /super-admin/companies/:id/suspend
 router.post('/companies/:id/suspend', requireSuperAdmin, aw(async (req, res) => {
