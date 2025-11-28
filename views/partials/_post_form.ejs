@@ -128,11 +128,13 @@
   function enableIfHasContent(){
     const hasText = (textarea.value || '').trim().length > 0;
     const hasMedia = !!(fileInp.files && fileInp.files.length);
-    postBtn.disabled = !(hasText || hasMedia || hasLink);
     const hasPoll = (typeSel.value === 'POLL') && (pbQs.querySelectorAll('.pb-q').length > 0);
     const hasAnnouncement = (typeSel.value === 'ANNOUNCEMENT') && hasText;
-    postBtn.disabled = !(hasText || hasMedia || hasLink || hasPoll || hasAnnouncement);
+
+    // No link-preview yet -> just check text / media / poll / announcement
+    postBtn.disabled = !(hasText || hasMedia || hasPoll || hasAnnouncement);
   }
+
 
   function resetMediaPreview(){
    mediaGrid.innerHTML = '';
@@ -152,25 +154,25 @@
   });
 
   // Action button → LINK (puts focus and hints user to paste)
-  form.querySelectorAll('.composer-action[data-action="LINK"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      setType('LINK');
-      textarea.focus();
-      // if a URL already exists in text, show it
-      const found = firstUrlFromText(textarea.value);
-      if (found) {
-        linkUrlHidden.value = found;
-        lpUrl.textContent = found;
-        linkPreview.classList.remove('d-none');
-      }
-      enableIfHasContent();
-    });
-  });
+  // form.querySelectorAll('.composer-action[data-action="LINK"]').forEach(btn => {
+  //   btn.addEventListener('click', () => {
+  //     setType('LINK');
+  //     textarea.focus();
+  //     // if a URL already exists in text, show it
+  //     const found = firstUrlFromText(textarea.value);
+  //     if (found) {
+  //       linkUrlHidden.value = found;
+  //       lpUrl.textContent = found;
+  //       linkPreview.classList.remove('d-none');
+  //     }
+  //     enableIfHasContent();
+  //   });
+  // });
 
-  removeLinkPreview.addEventListener('click', () => {
-    resetLinkPreview();
-    enableIfHasContent();
-  });
+  // removeLinkPreview.addEventListener('click', () => {
+  //   resetLinkPreview();
+  //   enableIfHasContent();
+  // });
 
   // —————————————————————————————
   // File picker → media preview (Image/Video)
@@ -184,7 +186,7 @@
       return;
     }
     // Switching away from link preview if any
-    resetLinkPreview();
+    // resetLinkPreview();
 
     // v1 rules: images only; 2 MB per file; max 6 files
     const files = Array.from(fileInp.files || []);

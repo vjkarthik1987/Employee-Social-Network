@@ -31,3 +31,5 @@
 - Correct the poll admin page
 - Moderation queue should come
 - Improve the comment page
+- Add Show Chat History Button
+- Photo should be bigger in post (based on number of photos)

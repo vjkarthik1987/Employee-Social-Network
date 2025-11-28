@@ -241,7 +241,7 @@
     mo.observe(document.body, { childList: true, subtree: true });
   })();
   </script>
-<script>
+<!-- <script>
   (function () {
     var form = document.getElementById('assistantChatForm');
     var input = document.getElementById('assistantChatInput');
@@ -353,8 +353,130 @@
 
     input.addEventListener('input', autoGrow);
   })();
-</script>
+</script> -->
 
   
-  
+<script>
+  (function () {
+    var form = document.getElementById('assistantChatForm');
+    var input = document.getElementById('assistantChatInput');
+    var messagesEl = document.getElementById('chatMessages');
+    if (!form || !input || !messagesEl) return;
+
+    // org slug – we know routes are /:org/...
+    var orgSlug = "<%= (typeof company !== 'undefined' && company && company.slug) ? company.slug : '' %>";
+
+    // CSRF token (if present)
+    var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    function autoGrow() {
+      input.style.height = '0px';
+      input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+    }
+
+    function scrollToBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function createBubble(role, text) {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'chat-msg chat-msg-' + role;
+
+      var bubble = document.createElement('div');
+      bubble.className = 'chat-msg-bubble';
+      bubble.textContent = text;
+
+      wrapper.appendChild(bubble);
+      messagesEl.appendChild(wrapper);
+      scrollToBottom();
+
+      return bubble;
+    }
+
+    // ---- Load last 10 history on init ----
+    function loadHistory() {
+      if (!orgSlug) return;
+
+      fetch('/' + encodeURIComponent(orgSlug) + '/api/assistant/history?limit=10', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        }
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data || !data.ok || !Array.isArray(data.history)) {
+            return;
+          }
+          // Append history in chronological order
+          data.history.forEach(function (h) {
+            if (h.question) createBubble('user', h.question);
+            if (h.answer) createBubble('assistant', h.answer);
+          });
+        })
+        .catch(function (err) {
+          console.warn('[assistantChat] history load failed', err);
+        });
+    }
+
+    // ---- Submit handler ----
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = (input.value || '').trim();
+      if (!text) return;
+
+      // user message
+      createBubble('user', text);
+
+      // reset input
+      input.value = '';
+      autoGrow();
+
+      // assistant placeholder
+      var assistantBubble = createBubble('assistant', 'Thinking...');
+
+      if (!orgSlug) {
+        assistantBubble.textContent = 'Org not detected in URL. Please refresh or contact admin.';
+        return;
+      }
+
+      fetch('/' + encodeURIComponent(orgSlug) + '/api/assistant/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || ''
+        },
+        body: JSON.stringify({ message: text })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data || !data.ok) {
+            assistantBubble.textContent =
+              (data && data.error) || 'Sorry, I could not answer that.';
+            return;
+          }
+          assistantBubble.textContent = data.answer || '…';
+        })
+        .catch(function (err) {
+          console.error('[assistantChat] error', err);
+          assistantBubble.textContent = 'Something went wrong. Please try again.';
+        });
+    });
+
+    // Enter to send, Shift+Enter → newline
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    });
+
+    input.addEventListener('input', autoGrow);
+
+    // 🔥 Actually load the old chats on startup
+    loadHistory();
+  })();
+</script>
+ 
   
