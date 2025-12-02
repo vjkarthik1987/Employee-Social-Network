@@ -30,9 +30,12 @@
       <% if (currentUser) { %>
         <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">My Profile</a>
       <% } %>
-      <% if (currentUser && ['MODERATOR','ORG_ADMIN'].includes(currentUser.role)) { %>
-        <a href="/<%= org.slug %>/mod/queue">Moderation</a>
-      <% } %>
+        <a href="/<%= company.slug %>/mod/queue" class="<%= currentPath.includes('/mod/queue') ? 'active' : '' %>">
+          Moderation
+          <% if (typeof moderationQueueCount !== 'undefined' && moderationQueueCount > 0) { %>
+            <span class="nav-pill"><%= moderationQueueCount %></span>
+          <% } %>
+        </a>
       <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
         <a href="/<%= org.slug %>/admin/settings">Admin</a>
         <a href="/<%= org.slug %>/admin/users">Users</a>

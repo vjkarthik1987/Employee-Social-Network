@@ -1,81 +1,132 @@
 <%
-// Expect:
-// - post.poll { title, questions[], totalParticipants, voterIds[], isClosed, closesAt? }
-// - user    (logged-in user)
-// - company (has slug)
-// - csrfToken available in locals (from your controllers)
 const userHasVoted = Array.isArray(post.poll?.voterIds) && post.poll.voterIds.some(id => String(id) === String(user?._id));
 const showResults  = post.poll?.isClosed || userHasVoted;
 const ts = new Date(post.createdAt || post.publishedAt || post.updatedAt || Date.now());
 %>
 
 <article class="post-card poll" data-post-id="<%= post._id %>">
-  <header class="post-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+  <header class="post-header poll-header">
     <div class="post-author">
       <a href="/<%= company.slug %>/profile/<%= post.authorId?._id %>"><%= post.authorId?.fullName || 'User' %></a>
-      <span class="badge">POLL</span>
-      <% if (post.poll?.isClosed) { %><span class="badge muted">Closed</span><% } %>
+      <span class="badge badge-pill">Poll</span>
+      <% if (post.poll?.isClosed) { %>
+        <span class="badge badge-muted badge-pill">Closed</span>
+      <% } %>
     </div>
     <div class="post-meta">
       <time datetime="<%= ts.toISOString() %>"><%= ts.toLocaleString() %></time>
-      <% if (post.groupId && post.group) { %> · in <a href="/<%= company.slug %>/g/<%= post.groupId %>"><%= post.group?.name %></a><% } %>
+      <% if (post.groupId && post.group) { %>
+        · in <a href="/<%= company.slug %>/g/<%= post.groupId %>"><%= post.group?.name %></a>
+      <% } %>
     </div>
   </header>
 
-  <% if (post.poll?.title) { %>
-    <h3 style="margin:6px 0 10px;"><%= post.poll.title %></h3>
-  <% } %>
+  <div class="poll-card-body">
+    <% if (post.poll?.title) { %>
+      <h3 class="poll-title"><%= post.poll.title %></h3>
+    <% } %>
 
-  <% if (!showResults) { %>
-    <!-- Voting form -->
-    <form class="poll-form" onsubmit="return submitPoll_<%= post._id %>(this)">
-      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-      <% (post.poll?.questions || []).forEach(function(q, idx){ %>
-        <fieldset class="poll-q" style="margin:10px 0;">
-          <legend style="font-weight:600;"><%= idx+1 %>. <%= q.text %></legend>
-          <% (q.options || []).forEach(function(o){ %>
-            <label class="poll-opt" style="display:flex;align-items:center;gap:8px;margin:4px 0;">
-              <input type="<%= q.multiSelect ? 'checkbox' : 'radio' %>"
-                     name="q-<%= q.qid %>"
-                     value="<%= o.oid %>"
-                     <%= q.multiSelect ? '' : 'required' %> >
-              <span><%= o.label %></span>
-            </label>
-          <% }) %>
-        </fieldset>
-      <% }) %>
-      <div class="poll-actions" style="display:flex;align-items:center;gap:10px;justify-content:flex-start;">
-        <button type="submit" class="btn">Submit</button>
-        <div class="poll-stats"><%= Number(post.poll?.totalParticipants || 0) %> participants</div>
-        <% if (user && ['MODERATOR','ORG_ADMIN'].includes(user.role)) { %>
-          <button type="button" class="btn muted" onclick="return closePoll_<%= post._id %>(this)">Close poll</button>
-        <% } %>
-      </div>
-    </form>
-  <% } else { %>
-    <!-- Results -->
-    <% (post.poll?.questions || []).forEach(function(q, idx){
-         const total = (q.options||[]).reduce((n,o)=>n+(o.votesCount||0),0) || 0; %>
-      <div class="poll-result-q" style="margin:12px 0;">
-        <div style="font-weight:600;margin-bottom:6px;"><%= idx+1 %>. <%= q.text %></div>
-        <% (q.options || []).forEach(function(opt){
-             const votes = Number(opt.votesCount||0);
-             const pct = total ? Math.round((votes/total)*100) : 0; %>
-          <div class="poll-opt" style="margin:6px 0;">
-            <div style="display:flex;justify-content:space-between;gap:8px;">
-              <span><%= opt.label %></span>
-              <span><%= votes %> (<%= pct %>%)</span>
+    <% if (!showResults) { %>
+      <!-- Voting form -->
+      <form class="poll-form" onsubmit="return submitPoll_<%= post._id %>(this)">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+        <% (post.poll?.questions || []).forEach(function(q, idx){ %>
+          <section class="poll-question">
+            <div class="poll-question-header">
+              <div class="poll-question-index">Q<%= idx + 1 %></div>
+              <div class="poll-question-text"><%= q.text %></div>
+              <% if (q.multiSelect) { %>
+                <span class="poll-question-tag">Multiple choice</span>
+              <% } %>
             </div>
-            <div class="bar" style="height:8px;background:#eee;border-radius:6px;overflow:hidden;">
-              <div style="height:8px;width:<%= pct %>%"></div>
+
+            <div class="poll-options">
+              <% (q.options || []).forEach(function(o){ %>
+                <label class="poll-option">
+                  <span class="poll-option-input">
+                    <input
+                      type="<%= q.multiSelect ? 'checkbox' : 'radio' %>"
+                      name="q-<%= q.qid %>"
+                      value="<%= o.oid %>"
+                      <%= q.multiSelect ? '' : 'required' %>
+                    >
+                    <span class="poll-custom-indicator"></span>
+                  </span>
+                  <span class="poll-option-label"><%= o.label %></span>
+                </label>
+              <% }) %>
             </div>
-          </div>
+          </section>
         <% }) %>
-        <div class="fineprint" style="margin-top:4px;">Total votes for this question: <%= total %></div>
+
+        <footer class="poll-actions">
+          <button type="submit" class="btn btn-primary poll-submit">Submit vote</button>
+          <div class="poll-stats">
+            <span class="poll-participants">
+              <strong><%= Number(post.poll?.totalParticipants || 0) %></strong> participants
+            </span>
+            <% if (!post.poll?.isClosed) { %>
+              <span class="poll-hint">You’ll see results after you vote.</span>
+            <% } %>
+          </div>
+          <% if (user && ['MODERATOR','ORG_ADMIN'].includes(user.role)) { %>
+            <button type="button" class="btn btn-ghost poll-close-btn" onclick="return closePoll_<%= post._id %>(this)">
+              Close poll
+            </button>
+          <% } %>
+        </footer>
+      </form>
+
+    <% } else { %>
+      <!-- Results mode -->
+      <div class="poll-results">
+        <% (post.poll?.questions || []).forEach(function(q, idx){
+             const total = (q.options||[]).reduce((n,o)=>n+(o.votesCount||0),0) || 0; %>
+
+          <section class="poll-question poll-question-results">
+            <div class="poll-question-header">
+              <div class="poll-question-index">Q<%= idx + 1 %></div>
+              <div class="poll-question-text"><%= q.text %></div>
+              <% if (q.multiSelect) { %>
+                <span class="poll-question-tag">Multiple choice</span>
+              <% } %>
+            </div>
+
+            <div class="poll-options poll-options-results">
+              <% (q.options || []).forEach(function(opt){
+                   const votes = Number(opt.votesCount||0);
+                   const pct = total ? Math.round((votes/total)*100) : 0; %>
+
+                <div class="poll-option poll-option-result">
+                  <div class="poll-option-top">
+                    <span class="poll-option-label"><%= opt.label %></span>
+                    <span class="poll-option-value">
+                      <%= votes %> vote<%= votes === 1 ? '' : 's' %> · <%= pct %>%
+                    </span>
+                  </div>
+                  <div class="poll-bar">
+                    <div class="poll-bar-fill" style="width:<%= pct %>%"></div>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+
+            <div class="poll-question-footer">
+              <span class="fineprint">Total votes on this question: <%= total %></span>
+            </div>
+          </section>
+        <% }) %>
+
+        <footer class="poll-footer-summary">
+          <span class="fineprint">
+            Participants: <strong><%= Number(post.poll?.totalParticipants || 0) %></strong>
+            <% if (post.poll?.isClosed) { %> · Poll closed<% } else { %> · Voting open<% } %>
+          </span>
+        </footer>
       </div>
-    <% }) %>
-    <div class="fineprint">Participants: <%= Number(post.poll?.totalParticipants||0) %><%= post.poll?.isClosed ? ' • Poll closed' : '' %></div>
-  <% } %>
+    <% } %>
+  </div>
 </article>
 
 <script>
@@ -86,7 +137,6 @@ async function submitPoll_<%= post._id %>(form){
   const ORG = "<%= company.slug %>";
   const CSRF = form.querySelector('input[name="_csrf"]')?.value || '';
 
-  // collect answers (supports multiSelect & single)
   const answers = [];
   <% (post.poll?.questions || []).forEach(function(q){ %>
     (function(){
@@ -103,7 +153,10 @@ async function submitPoll_<%= post._id %>(form){
     })();
   <% }); %>
 
-  if (!answers.length) { alert('Please select an option.'); return false; }
+  if (!answers.length) {
+    alert('Please select an option.');
+    return false;
+  }
 
   const btn = form.querySelector('button[type="submit"]');
   if (btn){ btn.disabled = true; btn.textContent='Submitting…'; }
@@ -121,30 +174,45 @@ async function submitPoll_<%= post._id %>(form){
     const data = await res.json();
     if(!data.ok){
       alert(data.error || 'Failed to submit');
-      if (btn){ btn.disabled=false; btn.textContent='Submit'; }
+      if (btn){ btn.disabled=false; btn.textContent='Submit vote'; }
       return false;
     }
-    location.reload(); // simplest: show results
+    location.reload();
   }catch(err){
     console.error(err);
     alert('Network error. Try again.');
-    if (btn){ btn.disabled=false; btn.textContent='Submit'; }
+    if (btn){ btn.disabled=false; btn.textContent='Submit vote'; }
   }
   return false;
 }
 
 async function closePoll_<%= post._id %>(btn){
   const ORG = "<%= company.slug %>";
-  btn.disabled = true; btn.textContent = 'Closing…';
+  btn.disabled = true;
+  btn.textContent = 'Closing…';
   try{
     const res = await fetch(`/${ORG}/api/polls/<%= post._id %>/close`, {
       method:'POST',
-      headers:{ 'Accept':'application/json','Content-Type':'application/json','CSRF-Token':'<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>' }
+      headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json',
+        'CSRF-Token':'<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>'
+      }
     });
     const data = await res.json();
-    if(!data.ok){ alert(data.error || 'Failed to close'); btn.disabled=false; btn.textContent='Close poll'; return false; }
+    if(!data.ok){
+      alert(data.error || 'Failed to close');
+      btn.disabled=false;
+      btn.textContent='Close poll';
+      return false;
+    }
     location.reload();
-  }catch(e){ console.error(e); alert('Network error'); btn.disabled=false; btn.textContent='Close poll'; }
+  }catch(e){
+    console.error(e);
+    alert('Network error');
+    btn.disabled=false;
+    btn.textContent='Close poll';
+  }
   return false;
 }
 </script>

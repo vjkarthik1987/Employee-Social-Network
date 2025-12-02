@@ -37,6 +37,7 @@ const router = express.Router({ mergeParams: true });
 
 const Company = require('../models/Company');
 const Group = require('../models/Group');
+const Post = require('../models/Post');
 const linksLoader = require('../middleware/linksLoader');
 
 // Tiny async wrapper so errors don’t crash the process.
@@ -56,6 +57,33 @@ router.use(aw(async (req, res, next) => {
   res.locals.org = company;            // keep your existing usage working
   next();
 }));
+
+// 👉 NEW: moderation queue count for navbar (only for HTML + mods/admins)
+router.use(aw(async (req, res, next) => {
+  // default
+  res.locals.moderationQueueCount = 0;
+
+  const accepts = req.headers.accept || '';
+  const wantsHTML = accepts.includes('text/html');
+  if (!wantsHTML) return next();
+
+  const user = req.user;
+  if (!user) return next();
+  if (!['ORG_ADMIN', 'MODERATOR'].includes(user.role)) return next();
+
+  const companyId = req.companyId;
+  if (!companyId) return next();
+
+  const count = await Post.countDocuments({
+    companyId,
+    deletedAt: null,
+    status: 'QUEUED',
+  });
+
+  res.locals.moderationQueueCount = count;
+  return next();
+}));
+
 
 router.use(linksLoader);
 router.use('/auth', tenantAuth);
