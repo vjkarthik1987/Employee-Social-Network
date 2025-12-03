@@ -1,35 +1,106 @@
 <% layout('layouts/_layout') %>
-<section>
-  <h2>Users — <%= company.name %></h2>
 
-<form action="/<%= company.slug %>/admin/users/import" method="POST" enctype="multipart/form-data" style="margin: 12px 0;">
-  <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-  <label>Upload CSV:</label>
-  <input type="file" name="csv" accept=".csv" required />
-  <button type="submit">Import</button>
-  <p><small>CSV headers: fullName,email,role</small></p>
-</form>
+<section class="admin-users-page">
+  <header class="admin-page-head">
+    <h2 class="h2">Users — <%= company.name %></h2>
+    <p class="sub">
+      Manage your organisation’s members, roles and status.
+    </p>
+  </header>
 
-<table border="1" cellpadding="6" cellspacing="0">
-  <thead>
-    <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
-  </thead>
-  <tbody>
-  <% users.forEach(u => { %>
-    <tr>
-      <td><%= u.fullName %></td>
-      <td><%= u.email %></td>
-      <td><%= u.role %></td>
-      <td><%= u.status %></td>
-      <td>
-        <form action="/<%= company.slug %>/admin/users/<%= u._id %>/delete" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline;">
-          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-          <button type="submit">Delete</button>
-        </form>
-      </td>
-    </tr>
-  <% }) %>
-  </tbody>
-</table>
+  <!-- CSV import -->
+  <form
+    action="/<%= company.slug %>/admin/users/import"
+    method="POST"
+    enctype="multipart/form-data"
+    class="admin-import-form"
+  >
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+    <label class="admin-import-label">
+      <span class="admin-import-title">Bulk add via CSV</span>
+      <input type="file" name="csv" accept=".csv" required />
+    </label>
+    <button type="submit" class="btn btn-ghost">Import</button>
+    <p class="admin-import-hint">
+      CSV headers: <code>fullName,email,role,dateOfBirth,anniversaryDate,dateOfJoining</code><br/>
+      Date fields are optional, format: <code>YYYY-MM-DD</code>.
+    </p>    
+  </form>
+
+  <!-- Users table -->
+  <div class="admin-table-shell">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      <% if (users && users.length) { %>
+        <% users.forEach(u => { %>
+          <tr>
+            <td>
+              <div class="admin-user-main">
+                <div class="admin-user-avatar">
+                  <span><%= (u.fullName || '?').charAt(0).toUpperCase() %></span>
+                </div>
+                <div>
+                  <div class="admin-user-name"><%= u.fullName %></div>
+                  <% if (u.title || u.department) { %>
+                    <div class="admin-user-meta">
+                      <%= [u.title, u.department].filter(Boolean).join(' · ') %>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+            </td>
+            <td class="admin-user-email">
+              <%= u.email %>
+            </td>
+            <td>
+              <span class="tag tag-role tag-role-<%= u.role.toLowerCase() %>">
+                <%= u.role %>
+              </span>
+            </td>
+            <td>
+              <span class="tag tag-status tag-status-<%= u.status %>">
+                <%= u.status %>
+              </span>
+            </td>
+            <td class="admin-users-actions">
+              <a
+                href="/<%= company.slug %>/admin/users/<%= u._id %>/edit"
+                class="btn-ghost btn-sm"
+              >
+                Edit
+              </a>
+
+              <form
+                action="/<%= company.slug %>/admin/users/<%= u._id %>/delete"
+                method="POST"
+                onsubmit="return confirm('Delete this user?');"
+                style="display:inline;"
+              >
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <button type="submit" class="btn-ghost btn-sm btn-danger-soft">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      <% } else { %>
+        <tr>
+          <td colspan="5" class="admin-table-empty">
+            No users yet. Import via CSV or add users from the profile/admin flows.
+          </td>
+        </tr>
+      <% } %>
+      </tbody>
+    </table>
+  </div>
 </section>
-

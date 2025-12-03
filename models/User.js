@@ -25,6 +25,11 @@ const UserSchema = new mongoose.Schema(
       darkMode: { type: Boolean, default: null } // null = follow company default
     },
 
+    // celebration dates (all optional, per user)
+    dateOfBirth: { type: Date },          // personal birthday
+    anniversaryDate: { type: Date },      // wedding/personal anniversary
+    dateOfJoining: { type: Date },        // base for work anniversary
+
     // denorm counters
     postsCount: { type: Number, default: 0 },
     commentsCount: { type: Number, default: 0 },
@@ -52,6 +57,21 @@ UserSchema.virtual('password')
     return this._password;
   });
 
+  UserSchema.virtual('workAnniversaryYears').get(function () {
+    if (!this.dateOfJoining) return null;
+    const now = new Date();
+    let years = now.getFullYear() - this.dateOfJoining.getFullYear();
+  
+    // if not yet reached this year's anniversary, subtract one
+    const hasHadAnnivThisYear =
+      now.getMonth() > this.dateOfJoining.getMonth() ||
+      (now.getMonth() === this.dateOfJoining.getMonth() &&
+       now.getDate() >= this.dateOfJoining.getDate());
+  
+    if (!hasHadAnnivThisYear) years -= 1;
+    return years >= 0 ? years : null;
+  });
+  
 UserSchema.pre('validate', function () {
   if (!this.passwordHash && !this._password) {
     this.invalidate('password', 'Password is required');

@@ -227,6 +227,90 @@ async function runFeedQuery({ req, scope, groupId = null }) {
   return { posts: withGroup, total, totalPages, ...filters };
 }
 
+/**
+ * Given a base date (birthday/joining etc.), compute the next occurrence
+ * after today (or today if it is today), ignoring the year.
+ */
+function computeNextOccurrence(baseDate, today = new Date()) {
+  if (!baseDate) return null;
+  const src = baseDate instanceof Date ? baseDate : new Date(baseDate);
+  if (Number.isNaN(src.getTime())) return null;
+
+  const month = src.getMonth();  // 0–11
+  const day   = src.getDate();   // 1–31
+
+  const thisYear = today.getFullYear();
+  const todayDateOnly = new Date(thisYear, today.getMonth(), today.getDate());
+
+  let next = new Date(thisYear, month, day);
+  if (next < todayDateOnly) {
+    next.setFullYear(thisYear + 1);
+  }
+  return next;
+}
+
+/**
+ * Return next N celebrations (birthday / personal anniv / work anniv)
+ * for active users in this company, sorted by upcoming date.
+ */
+async function getUpcomingCelebrations(companyId, limit = 10) {
+  const today = new Date();
+  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+  // we’ll show celebrations from 2 days ago to 10 days ahead
+  const WINDOW_BEFORE = -2;
+  const WINDOW_AFTER  = 10;
+
+  const users = await User.find({
+    companyId,
+    status: 'active'
+  }).select('fullName dateOfBirth anniversaryDate dateOfJoining').lean();
+
+  const events = [];
+
+  users.forEach(u => {
+    const meta = [
+      { key: 'dateOfBirth',      type: 'BIRTHDAY',         label: 'Birthday',         icon: '🎂' },
+      { key: 'anniversaryDate',  type: 'ANNIVERSARY',      label: 'Anniversary',      icon: '💍' },
+      { key: 'dateOfJoining',    type: 'WORK_ANNIVERSARY', label: 'Work anniversary', icon: '💼' },
+    ];
+
+    meta.forEach(m => {
+      const raw = u[m.key];
+      if (!raw) return;
+
+      const src = raw instanceof Date ? raw : new Date(raw);
+      if (Number.isNaN(src.getTime())) return;
+
+      const month = src.getMonth();
+      const day   = src.getDate();
+
+      // occurrence in *this* year (we ignore year; treat dates as MM-DD)
+      const occ = new Date(today.getFullYear(), month, day);
+      const diffDays = Math.round((occ - todayDateOnly) / MS_PER_DAY);
+
+      // keep only if within window [-2, +10]
+      if (diffDays < WINDOW_BEFORE || diffDays > WINDOW_AFTER) return;
+
+      events.push({
+        userName: u.fullName,
+        type: m.type,
+        label: m.label,
+        icon: m.icon,
+        date: occ,
+        daysAway: diffDays
+      });
+    });
+  });
+
+  // strict chronological order
+  events.sort((a, b) => a.date - b.date);
+
+  return events.slice(0, limit);
+}
+
+
 // ---------- controllers ----------
 
 // GET /:org/feed
@@ -235,6 +319,7 @@ exports.companyFeed = async (req, res, next) => {
     const filters = readFilters(req, { isGroup: false });
     const key = `feed:v1:${req.company.slug}:${cacheStore.hash(filters)}`;
     const ttl = microcache.computeTTL(req.path);   // dynamic TTL
+    const celebrations = await getUpcomingCelebrations(cid(req), 10);
 
     const { value } = await microcache.getOrSet({
       k: key, ttlSec: ttl,
@@ -284,7 +369,7 @@ exports.companyFeed = async (req, res, next) => {
       company: req.company, user: req.user,
       posts: value.posts, total: value.total, totalPages: value.totalPages,
       page: value.page, limit: value.limit, filters: value.filters,
-      searchAction: `/${req.params.org}/feed`, recentSearches: [],csrfToken: req.csrfToken && req.csrfToken(),
+      searchAction: `/${req.params.org}/feed`, recentSearches: [],csrfToken: req.csrfToken && req.csrfToken(), celebrations,
     });
   } catch (e) { next(e); }
 };

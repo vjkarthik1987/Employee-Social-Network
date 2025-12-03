@@ -34,6 +34,40 @@
     </div>
   </form>
 
+  <!-- 🎉 Upcoming celebrations (above composer) -->
+  <% if (user && Array.isArray(celebrations) && celebrations.length) { %>
+    <div class="cele-strip">
+      <div class="cele-strip-label">
+        Upcoming celebrations
+      </div>
+      <div class="cele-strip-scroll">
+        <% celebrations.forEach(function(c) { %>
+          <div class="cele-chip-vert">
+            <div class="cele-chip-icon"><%= c.icon %></div>
+            <div class="cele-chip-title"><%= c.label %></div>
+            <div class="cele-chip-name"><%= c.userName %></div>
+          
+            <div class="cele-chip-meta">
+              <% if (c.daysAway === 0) { %>
+                Today
+              <% } else if (c.daysAway === 1) { %>
+                Tomorrow
+              <% } else if (c.daysAway === -1) { %>
+                Yesterday
+              <% } else if (c.daysAway === -2) { %>
+                2 days ago
+              <% } else if (c.daysAway > 1) { %>
+                In <%= c.daysAway %> days
+              <% } else { %>
+                <%= c.daysAway %> days
+              <% } %>
+            </div>
+          </div>          
+        <% }); %>
+      </div>
+    </div>
+  <% } %>
+
   <!-- ✏️ Post Composer (only if logged in) -->
   <% if (user) { %>
     <%- include('../partials/_post_form', {

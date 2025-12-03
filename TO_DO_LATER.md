@@ -13,25 +13,24 @@
 - Rich Text
 - Save post as draft
 - Company should have a registration end date and type of registration
-- Rethink the workflow when a registration happens
+- ~~Rethink the workflow when a registration happens~~
 - ~~Overall list of companies page~~
 - ~~Overall admin page that creates and manages companies and get analytics~~
 - ~~Flash should stay longer~~
 - Create newsletter
 - Search should go to first page, not second page or others
 - View for the posts that have been reported
-- Birthdays and anniversaries should come in the feed
+- ~~Birthdays and anniversaries should come in the feed~~
 - Follow Feature
-- Add Links
+- ~~Add Links~~
 - Hashtags  
 - ~~Mentions~~
-- If profile pic is not given, use a circle with the first letter of the first name
 - Page reload without refresh
 - Moderator view improve (essentially images and everything should come)
 - Seperate area for polls and announcements
 - Correct the poll admin page
 - ~~Moderation queue should come~~
-- Improve the comment page
+- ~~Improve the comment page~~
 - Add Show Chat History Button
 - Photo should be bigger in post (based on number of photos)
 - Close poll button
@@ -39,4 +38,4 @@
 - Define gamification - posts, likes, reactions, comments
 - Post from here to MS Teams
 - Unpin post from announcements
-- 
+- Edit user and save not working

@@ -2012,3 +2012,325 @@ noscript .icon-fallback { display:inline-block; }
   font-size: 0.9rem;
   transform: translateX(1px);
 }
+
+/* User Page for Admin */
+/* ----- Admin Users page ----- */
+
+.admin-users-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.admin-page-head {
+  margin-bottom: 12px;
+}
+
+.admin-page-head .h2 {
+  margin-bottom: 4px;
+}
+
+.admin-page-head .sub {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+/* CSV import row */
+
+.admin-import-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 12px 0;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.admin-import-label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.admin-import-title {
+  font-weight: 600;
+}
+
+.admin-import-form input[type="file"] {
+  font-size: 0.8rem;
+}
+
+.admin-import-hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* Table shell */
+
+.admin-table-shell {
+  margin-top: 8px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  background: #fff;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.admin-table thead th {
+  background: #f9fafb;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.admin-table tbody td {
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+.admin-table tbody tr:hover {
+  background: #eef2ff;
+}
+
+.admin-table-empty {
+  padding: 18px 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* User cell */
+
+.admin-user-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.admin-user-name {
+  font-weight: 600;
+}
+
+.admin-user-meta {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.admin-user-email {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+}
+
+/* Tags */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Roles */
+
+.tag-role-org_admin {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.tag-role-moderator {
+  background: #ecfeff;
+  color: #0f766e;
+}
+
+.tag-role-member {
+  background: #f5f5f5;
+  color: #374151;
+}
+
+/* Status */
+
+.tag-status-active {
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.tag-status-invited {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.tag-status-suspended {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Actions */
+
+.admin-users-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Small buttons in table */
+
+.btn-sm {
+  height: 28px !important;
+  padding: 0 10px !important;
+  font-size: 0.8rem !important;
+}
+
+.btn-danger-soft {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.btn-danger-soft:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+
+/* ===== Feed celebrations strip (above composer) ===== */
+
+.cele-strip {
+  margin: 8px 0 12px;          /* more space below the strip */
+  padding: 8px 10px 10px;      /* a bit more padding, especially bottom */
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+
+.cele-strip-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.cele-strip-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 0 2px;
+}
+
+/* subtle horizontal scrollbar */
+.cele-strip-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.cele-strip-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cele-strip-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.8); /* slate-ish */
+  border-radius: 999px;
+}
+
+.cele-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;            /* was 999px – now more square */
+  background: #f3f4ff;
+  border: 1px solid #e5e7eb;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+
+.cele-emoji {
+  font-size: 0.9rem;
+}
+
+.cele-name {
+  font-weight: 600;
+}
+
+.cele-meta {
+  color: #6b7280;
+}
+
+/* ==== Vertical celebration cards ==== */
+
+.cele-strip-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.cele-chip-vert {
+  flex: 0 0 96px;                      /* fixed card width */
+  background: #f3f4ff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  white-space: normal;                 /* allow line breaks */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.cele-chip-icon {
+  font-size: 1.4rem;
+  margin-bottom: 2px;
+}
+
+.cele-chip-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 2px;
+}
+
+.cele-chip-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 3px;
+  color: #111827;
+}
+
+.cele-chip-meta {
+  font-size: 0.72rem;
+  color: #6b7280;
+}

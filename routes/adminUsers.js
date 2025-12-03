@@ -56,7 +56,7 @@ router.post('/import', ensureAuth, requireRole('ORG_ADMIN'), upload.single('csv'
     }
 
     const rows = parse(req.file.buffer.toString('utf8'), {
-      columns: true, skip_empty_lines: true, trim: true
+      columns: true, skip_empty_lines: true, trim: true, bom: true,
     });
 
     const allowedRoles = new Set(['MEMBER', 'MODERATOR', 'ORG_ADMIN']);
@@ -66,8 +66,22 @@ router.post('/import', ensureAuth, requireRole('ORG_ADMIN'), upload.single('csv'
       const fullName = row.fullName?.trim();
       const email = row.email?.toLowerCase().trim();
       const role = (row.role || 'MEMBER').toUpperCase();
+      const rawDob   = (row.dateOfBirth || '').trim();
+      const rawAnniv = (row.anniversaryDate || '').trim();
+      const rawJoin  = (row.dateOfJoining || '').trim();
 
       if (!fullName || !email || !allowedRoles.has(role)) { results.skipped++; continue; }
+
+      function parseDateSafe(s) {
+        if (!s) return undefined;
+        const d = new Date(s);
+        if (Number.isNaN(d.getTime())) return undefined;
+        return d;
+      }
+  
+      const dateOfBirth    = parseDateSafe(rawDob);
+      const anniversaryDate = parseDateSafe(rawAnniv);
+      const dateOfJoining  = parseDateSafe(rawJoin);
 
       // Guard: seat limit & expiry
       const company = req.company;
@@ -118,6 +132,9 @@ router.post('/import', ensureAuth, requireRole('ORG_ADMIN'), upload.single('csv'
           role,
           status: 'active',
           passwordHash,               // <-- set explicitly (matches your /routes/auth.js pattern)
+          dateOfBirth,
+          anniversaryDate,
+          dateOfJoining,
         });
         await u.save();
         await User.countDocuments({ companyId: req.companyId, status: 'active' })
