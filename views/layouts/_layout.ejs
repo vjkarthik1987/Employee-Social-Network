@@ -23,6 +23,47 @@
     <link rel="icon" href="<%= company.branding.logoUrl %>" type="image/png">
   <% } %>
 
+    <!-- Quill rich text editor (for ANNOUNCEMENT body) -->
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <style>
+      .rich-editor-container {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fff;
+      }
+      .rich-editor-container .ql-toolbar {
+        border-radius: 8px 8px 0 0;
+      }
+      .rich-editor-container .ql-container {
+        border-radius: 0 0 8px 8px;
+        min-height: 160px;
+        max-height: 360px;
+        overflow-y: auto;
+      }
+  
+      /* 🔹 Keep images inside the editor box */
+      .rich-editor-container .ql-editor img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+
+          /* 🔹 Keep rich text images inside the feed card width */
+    .post-content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 8px;
+      margin: 6px 0;
+    }
+
+    </style>
+    
+  
+  
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  
+
   <style>
     :root {
       --primary: <%= (company?.branding?.theme?.primary || '#0a66c2') %>;
@@ -32,6 +73,16 @@
       --navH:    56px;
     }
     html, body { background: var(--bg); color: var(--text); }
+    .initials-avatar {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:50%;
+      background:#4a5568;
+      color:#fff;
+      font-weight:600;
+      text-transform:uppercase;
+    }
   </style>
 </head>
 

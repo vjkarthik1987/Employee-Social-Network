@@ -454,12 +454,28 @@ exports.create = async (req, res, next) => {
     const type = (req.body.type || 'TEXT').toUpperCase();
     const groupId = req.body.groupId && isObjId(req.body.groupId) ? req.body.groupId : null;
     const richText = (req.body.content || '').toString().slice(0, 10000);
+
     const isAnnouncement = type === 'ANNOUNCEMENT';
     const isPoll = type === 'POLL';
     const canPin = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
     const wantPinned = String(req.body.isPinned) === 'true' || req.body.isPinned === '1';
 
-  // --- normalize poll payload BEFORE create ---
+    // 🔹 NEW: title for announcements (short heading)
+    const rawTitle = (req.body.title || '').toString().slice(0, 200).trim();
+    const title = rawTitle || null;
+
+    // 🔹 NEW: expiry date (from <input type="date">, e.g. '2025-12-31')
+    let expiresAt = null;
+    if (req.body.expiresAt) {
+      const d = new Date(req.body.expiresAt);
+      if (!Number.isNaN(d.getTime())) {
+        // treat as "visible until end of that day"
+        d.setHours(23, 59, 59, 999);
+        expiresAt = d;
+      }
+    }
+
+    // --- normalize poll payload BEFORE create ---
     let pollDoc = undefined;
     if (isPoll) {
       const raw = req.body.poll || {};
@@ -472,6 +488,7 @@ exports.create = async (req, res, next) => {
       if (questions.length < 1 || questions.length > 10) {
         throw new Error('POLL_QUESTION_COUNT');
       }
+
       const normQs = questions.map((q, qi) => {
         // options may be Array or object
         let opts = q?.options;
@@ -486,7 +503,9 @@ exports.create = async (req, res, next) => {
         const normOpts = opts.map((o, oi) => {
           // support both {label:"..."} and "..."
           const label = (typeof o === 'object' ? String(o.label || '') : String(o || '')).trim();
-          const oid = String((typeof o === 'object' ? (o.oid || (oi + 1).toString(36)) : (oi + 1).toString(36)));
+          const oid = String(
+            (typeof o === 'object' ? (o.oid || (oi + 1).toString(36)) : (oi + 1).toString(36))
+          );
           return { oid, label, votesCount: 0 };
         });
         return {
@@ -496,6 +515,7 @@ exports.create = async (req, res, next) => {
           multiSelect: !!q?.multiSelect
         };
       });
+
       pollDoc = {
         title: String(raw.title || '').trim(),
         questions: normQs,
@@ -506,8 +526,8 @@ exports.create = async (req, res, next) => {
       };
     }
 
-
-    const post = await Post.create({
+    // 🔹 Build base post doc
+    const postDoc = {
       companyId,
       authorId: req.user._id,
       groupId,
@@ -517,29 +537,51 @@ exports.create = async (req, res, next) => {
       isPinned: isAnnouncement ? !!(canPin && wantPinned) : false,
       publishedAt: status === 'PUBLISHED' ? new Date() : null,
       poll: pollDoc
-    });
+    };
+
+    // 🔹 Only announcements use title + expiresAt
+    if (isAnnouncement) {
+      if (title) {
+        postDoc.title = title;
+      }
+      postDoc.expiresAt = expiresAt;
+    }
+
+    const post = await Post.create(postDoc);
+
     // Multi-image support
     const files = Array.isArray(req.files) ? req.files : [];
     if (files.length) {
-      // Force type=IMAGE if attachments exist
-      if (post.type !== 'IMAGE') {
-        post.type = 'IMAGE';
-        await post.save();
-      }
-
       const rows = files.map(f => ({
         companyId,
         ownerUserId: req.user._id,
         targetType: 'post',
         targetId: post._id,
-        storageUrl: (f.path && f.path.startsWith('http')) ? f.path : (f.location || f.secure_url || `/uploads/${f.filename}`),
+        storageUrl: (f.path && f.path.startsWith('http'))
+          ? f.path
+          : (f.location || f.secure_url || `/uploads/${f.filename}`),
         mimeType: f.mimetype || null,
         sizeBytes: f.size || null,
       }));
 
       if (rows.length) {
         await Attachment.insertMany(rows);
-        await Post.updateOne({ _id: post._id }, { $inc: { attachmentsCount: rows.length } });
+
+        // 🔹 For normal posts, keep old behavior: convert to IMAGE if not already
+        //    For ANNOUNCEMENT, keep type = 'ANNOUNCEMENT' but set coverImageUrl from first attachment
+        const update = {
+          $inc: { attachmentsCount: rows.length }
+        };
+
+        if (!isAnnouncement && post.type !== 'IMAGE') {
+          update.$set = { ...(update.$set || {}), type: 'IMAGE' };
+        }
+
+        if (isAnnouncement && rows[0]?.storageUrl) {
+          update.$set = { ...(update.$set || {}), coverImageUrl: rows[0].storageUrl };
+        }
+
+        await Post.updateOne({ _id: post._id }, update);
       }
     }
 
@@ -549,8 +591,12 @@ exports.create = async (req, res, next) => {
       action: 'POST_CREATED',
       targetType: 'post',
       targetId: post._id,
-      metadata: { type, status, hasAttachment: !!req.file }
-    }).catch(()=>{});
+      metadata: {
+        type,
+        status,
+        hasAttachment: files.length > 0   // 🔹 more accurate than req.file
+      }
+    }).catch(() => {});
 
     // Invalidate cached feeds
     await microcache.bustTenant(req.company.slug);
@@ -579,7 +625,9 @@ exports.create = async (req, res, next) => {
             const html = renderMentionEmail({ company, actor: req.user, snippet, link });
 
             await Promise.allSettled(
-              targets.map(u => sendMail({ to: u.email, subject: `You were mentioned on ${company.name}`, html }))
+              targets.map(u =>
+                sendMail({ to: u.email, subject: `You were mentioned on ${company.name}`, html })
+              )
             );
           }
         }
@@ -588,11 +636,11 @@ exports.create = async (req, res, next) => {
       req.logger && req.logger.warn('[post mention mail] failed', e);
     }
 
-
     req.flash('success', status === 'PUBLISHED' ? 'Posted.' : 'Submitted for review.');
     return res.redirect(`/${req.params.org}/feed`);
   } catch (e) { next(e); }
 };
+
 
 
 // GET /:org/posts/:postId

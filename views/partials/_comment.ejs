@@ -1,7 +1,44 @@
 <li class="comment-card" data-comment-id="<%= comment._id %>">
   <div class="comment-header">
     <div class="ch-left">
-      <img class="avatar-sm" src="<%= comment.authorId?.avatarUrl || '/img/avatar.png' %>" alt="">
+      <%
+      const cFull = comment.authorId?.fullName || '';
+      const cParts = cFull.trim().split(/\s+/);
+      let cInit = '';
+      if (cParts.length === 1 && cParts[0]) {
+        cInit = cParts[0].slice(0, 2).toUpperCase();
+      } else if (cParts.length > 1) {
+        cInit =
+          (cParts[0][0] || '').toUpperCase() +
+          (cParts[1][0] || '').toUpperCase();
+      }
+      const cAvatarUrl = comment.authorId?.avatarUrl;
+    %>
+
+    <% if (cAvatarUrl) { %>
+      <img class="avatar-sm" src="<%= cAvatarUrl %>" alt="<%= cFull || 'User' %>">
+    <% } else { %>
+      <div
+        class="avatar-sm initials-avatar"
+        aria-hidden="true"
+        style="
+          width:28px;
+          height:28px;
+          border-radius:50%;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          background:#4a5568;
+          color:#fff;
+          font-weight:600;
+          text-transform:uppercase;
+          font-size:0.75rem;
+        "
+      >
+        <%= cInit || '?' %>
+      </div>
+    <% } %>
+
       <div class="meta">
         <span class="comment-author"><%= comment.authorId?.fullName || 'User' %></span>
         <span class="comment-time">• <%= new Date(comment.createdAt).toLocaleString() %></span>
@@ -91,7 +128,44 @@
         <li class="comment-card" data-reply-id="<%= r._id %>">
           <div class="comment-header">
             <div class="ch-left">
-              <img class="avatar-sm" src="<%= r.authorId?.avatarUrl || '/img/avatar.png' %>" alt="">
+              <%
+              const cFull = comment.authorId?.fullName || '';
+              const cParts = cFull.trim().split(/\s+/);
+              let cInit = '';
+              if (cParts.length === 1 && cParts[0]) {
+                cInit = cParts[0].slice(0, 2).toUpperCase();
+              } else if (cParts.length > 1) {
+                cInit =
+                  (cParts[0][0] || '').toUpperCase() +
+                  (cParts[1][0] || '').toUpperCase();
+              }
+              const cAvatarUrl = comment.authorId?.avatarUrl;
+            %>
+      
+            <% if (cAvatarUrl) { %>
+              <img class="avatar-sm" src="<%= cAvatarUrl %>" alt="<%= cFull || 'User' %>">
+            <% } else { %>
+              <div
+                class="avatar-sm initials-avatar"
+                aria-hidden="true"
+                style="
+                  width:28px;
+                  height:28px;
+                  border-radius:50%;
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  background:#4a5568;
+                  color:#fff;
+                  font-weight:600;
+                  text-transform:uppercase;
+                  font-size:0.75rem;
+                "
+              >
+                <%= cInit || '?' %>
+              </div>
+            <% } %>
+      
               <div class="meta">
                 <span class="comment-author"><%= r.authorId?.fullName || 'User' %></span>
                 <span class="comment-time">• <%= new Date(r.createdAt).toLocaleString() %></span>

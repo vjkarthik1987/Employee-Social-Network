@@ -44,16 +44,55 @@
     <header class="post-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
       <!-- LEFT: Avatar + meta -->
       <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
-        <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
-          <img
-            class="post-avatar"
-            src="<%= post.authorId?.avatarUrl || '/img/avatar.png' %>"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            onerror="this.src='/img/avatar.png'; this.onerror=null;"
-          />
-        </a>
+        <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
+          <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
+            <%
+              const _fullName = post.authorId?.fullName || '';
+              const _nameParts = _fullName.trim().split(/\s+/);
+              let _initials = '';
+              if (_nameParts.length === 1 && _nameParts[0]) {
+                _initials = _nameParts[0].slice(0, 2).toUpperCase();
+              } else if (_nameParts.length > 1) {
+                _initials =
+                  (_nameParts[0][0] || '').toUpperCase() +
+                  (_nameParts[1][0] || '').toUpperCase();
+              }
+              const _avatarUrl = post.authorId?.avatarUrl;  // usually your LinkedIn-synced photo
+            %>
+  
+            <% if (_avatarUrl) { %>
+              <!-- Use LinkedIn / stored avatar when available -->
+              <img
+                class="post-avatar"
+                src="<%= _avatarUrl %>"
+                alt="<%= _fullName || 'User' %>"
+                loading="lazy"
+                decoding="async"
+                onerror="this.src='/img/avatar.png'; this.onerror=null;"
+              />
+            <% } else { %>
+              <!-- Fallback: initials avatar -->
+              <div
+                class="post-avatar initials-avatar"
+                aria-hidden="true"
+                style="
+                  width:40px;
+                  height:40px;
+                  border-radius:50%;
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  background:#4a5568;
+                  color:#fff;
+                  font-weight:600;
+                  text-transform:uppercase;
+                  font-size:0.9rem;
+                "
+              >
+                <%= _initials || '?' %>
+              </div>
+            <% } %>
+          </a>  
   
         <div class="post-meta">
           <div class="post-author">
@@ -99,7 +138,14 @@
       <% if (post.type === 'POLL' && post.poll && Array.isArray(post.poll.questions)) { %>
         <%- include('./_post_card_poll', { company, user, post }) %>
       <% } else { %>
-  
+
+      <% /* 🔹 Announcement heading (optional) */ %>
+      <% if (post.type === 'ANNOUNCEMENT' && post.title) { %>
+        <h3 class="post-announcement-title" style="margin:0 0 8px;font-size:1.05rem;font-weight:600;">
+          <%= post.title %>
+        </h3>
+      <% } %>
+
       <% /* Content (sanitized HTML); compact shows excerpt */ %>
       <% if (post.richText) { %>
         <% if (isCompact) { %>
@@ -107,20 +153,47 @@
         <% } else { %>
           <div class="post-content"><%- post.richText %></div>
         <% } %>
-      <% } %>      
+      <% } %>
+     
   
       <%
-        // Prefer: detail view → full attachments; feed/compact → _thumbs; fallback → firstAttachmentUrl
-        let imgs = [];
-        if (Array.isArray(post.attachments) && post.attachments.length) {
-          imgs = post.attachments.map(a => ({ storageUrl: a.storageUrl || a }));
-        } else if (Array.isArray(post._thumbs) && post._thumbs.length) {
-          imgs = post._thumbs.map(u => ({ storageUrl: u }));
-        } else if (post.firstAttachmentUrl) {
-          imgs = [{ storageUrl: post.firstAttachmentUrl }];
-        }
-        const count = imgs.length;
-      %>
+      // Prefer: detail view → full attachments; feed/compact → _thumbs; fallback → firstAttachmentUrl
+      // 🔹 ANNOUNCEMENT hero image
+      const heroUrl = (post.type === 'ANNOUNCEMENT' && post.coverImageUrl)
+        ? String(post.coverImageUrl)
+        : null;
+
+      let imgs = [];
+      if (Array.isArray(post.attachments) && post.attachments.length) {
+        imgs = post.attachments.map(a => ({ storageUrl: a.storageUrl || a }));
+      } else if (Array.isArray(post._thumbs) && post._thumbs.length) {
+        imgs = post._thumbs.map(u => ({ storageUrl: u }));
+      } else if (post.firstAttachmentUrl) {
+        imgs = [{ storageUrl: post.firstAttachmentUrl }];
+      }
+
+      // 🔹 If we have a hero image, avoid duplicating it in the grid
+      if (heroUrl && imgs.length) {
+        imgs = imgs.filter(a => String(a.storageUrl) !== heroUrl);
+      }
+
+      const count = imgs.length;
+    %>
+
+    <% /* 🔹 ANNOUNCEMENT hero block */ %>
+    <% if (heroUrl) { %>
+      <div class="announcement-hero" style="margin:0 0 10px;">
+        <img
+          src="<%= heroUrl %>"
+          alt="<%= post.imageAlt || 'Announcement image' %>"
+          class="announcement-hero-img"
+          style="max-width:100%;height:auto;border-radius:10px;display:block;"
+          loading="lazy"
+          decoding="async"
+        >
+      </div>
+    <% } %>
+
 
       <% if (count > 0) { %>
         <div class="media-grid" data-lightbox-group="<%= post._id %>">
@@ -218,16 +291,6 @@
       <div class="post-reactions reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
         <%- include('./_reactions_bar', { company, user, post }) %>
       </div>
-  
-      <!-- If you want the metrics row visible, uncomment below
-      <div class="card-metrics" aria-label="Post metrics">
-        <span title="Unique per session views">👁 <span data-count="views"><%= __views %></span> views</span>
-        <span title="(Reactions + Comments) / Views">↗️ <span data-rate="engagement"><%= __engRate.toFixed(1) %></span>% engagement</span>
-        <% if (__viewed) { %>
-          <span class="muted" aria-label="You viewed this post">👁 Viewed</span>
-        <% } %>
-      </div>
-      -->
     </footer>
   </article>
   

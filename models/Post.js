@@ -98,6 +98,20 @@ const PostSchema = new mongoose.Schema(
     deletedBy:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     attachmentsCount: { type: Number, default: 0 },
     coverImageUrl:    { type: String, default: null },
+
+    //for announcement
+    title: {
+      type: String,
+      trim: true,
+      maxlength: 160,
+      default: null
+    },
+  
+    expiresAt: {
+      type: Date,
+      default: null,
+      index: true
+    },
   },
   { timestamps: true }
 );

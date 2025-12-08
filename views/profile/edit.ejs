@@ -17,10 +17,23 @@
       <label>LinkedIn URL</label>
       <input type="url" name="linkedinUrl" value="<%= profileUser.linkedinUrl || '' %>" placeholder="https://www.linkedin.com/in/..." />
     </div>
-    <div class="form-row">
-      <label>Avatar URL</label>
-      <input type="url" name="avatarUrl" value="<%= profileUser.avatarUrl || '' %>" placeholder="https://.../avatar.jpg" />
+    <div class="field">
+      <label for="avatarUrl" style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-weight:500;">Profile photo URL</span>
+        <span class="fineprint">
+          Paste a direct image link (from LinkedIn or anywhere) — this is the photo shown in posts and comments.
+        </span>
+      </label>
+      <input
+        type="text"
+        id="avatarUrl"
+        name="avatarUrl"
+        class="input"
+        placeholder="https://…/your-photo.jpg"
+        value="<%= profileUser.avatarUrl || '' %>"
+      >
     </div>
+    
     <div class="form-row">
       <label>Bio</label>
       <textarea name="bio" rows="5" maxlength="2000"><%= profileUser.bio || '' %></textarea>

@@ -27,7 +27,7 @@
 - ~~Mentions~~
 - Page reload without refresh
 - Moderator view improve (essentially images and everything should come)
-- Seperate area for polls and announcements
+- ~~Seperate area for polls and announcements~~
 - Correct the poll admin page
 - ~~Moderation queue should come~~
 - ~~Improve the comment page~~
@@ -39,3 +39,6 @@
 - Post from here to MS Teams
 - Unpin post from announcements
 - Edit user and save not working
+- Pagination of posts
+- Chatbot should summarize new posts
+- Post from LinkedIn

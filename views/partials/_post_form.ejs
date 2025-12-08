@@ -18,11 +18,29 @@
   </div>
 
   <!-- Textarea -->
-  <textarea name="content"
-          rows="1"
-          class="composer-input js-mention"
-          data-mention-source="/<%= company.slug %>/posts/mentions"
-          placeholder="Write something… (paste a link to show a preview)"></textarea>
+    <!-- Plain post textarea (non-announcement) -->
+    <div id="plainComposerWrap">
+      <textarea name="content"
+              id="composerTextarea"
+              rows="1"
+              class="composer-input js-mention"
+              data-mention-source="/<%= company.slug %>/posts/mentions"
+              placeholder="Write something… (paste a link to show a preview)"></textarea>
+    </div>
+
+      <!-- Announcement rich body (shown only for ANNOUNCEMENT) -->
+  <div id="announcementEditorWrap" class="d-none" style="margin-top:.6rem;">
+    <label style="display:flex;flex-direction:column;gap:4px;">
+      <span style="font-size:13px;font-weight:500;">Announcement body</span>
+      <div class="rich-editor-container">
+        <div id="announcementEditor"></div>
+      </div>
+    </label>
+    <div class="fineprint">
+      Use this for your full mailer-style body — formatting, links, inline images, etc.
+    </div>
+  </div>
+
 
   <!-- Inline Previews -->
   <div class="composer-previews">
@@ -120,13 +138,49 @@
 
 
   <!-- Announcement options -->
-  <div id="announceRow" class="d-none" style="margin:8px 0;">
-    <label style="display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" name="isPinned" value="true">
-      <span>Pin to top</span>
-    </label>
-    <div class="fineprint">Only moderators/admins can actually pin; server enforces it.</div>
+    <!-- Announcement options -->
+      <!-- Announcement options -->
+  <div id="announceRow" class="d-none" style="margin:8px 0;display:flex;flex-direction:column;gap:8px;">
+    <!-- Heading -->
+    <div>
+      <label style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:13px;font-weight:500;">Announcement heading</span>
+        <input
+          type="text"
+          name="title"
+          class="input"
+          maxlength="160"
+          placeholder="e.g. We’ve won ACME Bank! (Q3 big deal)"
+        >
+      </label>
+      <div class="fineprint">This appears as the bold heading above the announcement body.</div>
+    </div>
+
+    <!-- Expiry date -->
+    <div>
+      <label style="display:flex;flex-direction:column;gap:4px;">
+        <span style="font-size:13px;font-weight:500;">Show this announcement until</span>
+        <input
+          type="date"
+          name="expiresAt"
+          class="input"
+        >
+      </label>
+      <div class="fineprint">
+        After this date, the announcement disappears from feeds/search but stays in history & direct links.
+      </div>
+    </div>
+
+    <!-- Pin toggle -->
+    <div>
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" name="isPinned" value="true">
+        <span>Pin to top</span>
+      </label>
+      <div class="fineprint">Only moderators/admins can actually pin; server enforces it.</div>
+    </div>
   </div>
+
 
   <!-- Hidden helper row for IMAGE -->
   <div id="imageRow" class="d-none" style="margin-top:.6rem;">
@@ -138,7 +192,6 @@
 <script>
 (function(){
   const form      = document.getElementById('composerForm');
-  const textarea  = form.querySelector('.composer-input');
   const typeSel   = document.getElementById('postTypeSel');
   const fileInp   = document.getElementById('composerFile');
   const postBtn   = document.getElementById('postBtn');
@@ -147,6 +200,28 @@
   const announceRow = document.getElementById('announceRow');
   const pbQs        = form.querySelector('.pb-questions');
   const addQ        = form.querySelector('.pb-add-q');
+  const plainWrap   = document.getElementById('plainComposerWrap');
+  const annWrap     = document.getElementById('announcementEditorWrap');
+  const textarea    = document.getElementById('composerTextarea');
+
+  let annQuill = null;
+  function ensureAnnQuill() {
+    if (annQuill || !window.Quill) return;
+    annQuill = new Quill('#announcementEditor', {
+      theme: 'snow',
+      modules: {
+        toolbar: [
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link', 'image'],
+          ['clean']
+        ]
+      }
+    });
+    annQuill.on('text-change', enableIfHasContent);
+  }
+
 
   // Link preview nodes
   const lpUrl       = document.getElementById('lpUrl');
@@ -164,6 +239,14 @@
     imageRow.classList.toggle('d-none', t !== 'IMAGE');
     pollBuilder.classList.toggle('d-none', t !== 'POLL');
     announceRow.classList.toggle('d-none', t !== 'ANNOUNCEMENT');
+    if (t === 'ANNOUNCEMENT') {
+      ensureAnnQuill();
+      if (plainWrap) plainWrap.classList.add('d-none');
+      if (annWrap) annWrap.classList.remove('d-none');
+    } else {
+      if (plainWrap) plainWrap.classList.remove('d-none');
+      if (annWrap) annWrap.classList.add('d-none');
+    }
   }
 
   function autoGrow(el){
@@ -173,13 +256,21 @@
 
 
   function enableIfHasContent(){
-    const hasText = (textarea.value || '').trim().length > 0;
+    let hasText = false;
+
+    if (typeSel.value === 'ANNOUNCEMENT' && annQuill) {
+      hasText = annQuill.getText().trim().length > 0;
+    } else {
+      hasText = (textarea.value || '').trim().length > 0;
+    }
+
     const hasMedia = !!(fileInp.files && fileInp.files.length);
     const hasPoll = (typeSel.value === 'POLL') && pbQs && pbQs.querySelectorAll('.pb-q').length > 0;
     const hasAnnouncement = (typeSel.value === 'ANNOUNCEMENT') && hasText;
 
     postBtn.disabled = !(hasText || hasMedia || hasPoll || hasAnnouncement);
   }
+
 
 
 
@@ -268,6 +359,10 @@
   // Submit handling
   // —————————————————————————————
   form.addEventListener('submit', () => {
+    // 🔹 If announcement, copy Quill HTML → textarea (which is sent as `content`)
+    if (typeSel.value === 'ANNOUNCEMENT' && annQuill) {
+      textarea.value = annQuill.root.innerHTML;
+    }
     postBtn.disabled = true;
     postBtn.textContent = 'Posting…';
   });

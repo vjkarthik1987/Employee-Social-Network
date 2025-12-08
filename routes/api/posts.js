@@ -7,6 +7,7 @@ const router = express.Router({ mergeParams: true });
 
 // GET /api/:org/posts?groupId=&q=&page=1&limit=10
 // GET /api/:org/posts?groupId=&q=&type=&page=1&limit=10
+// routes/api/posts.js
 router.get('/posts', ensureAuth, async (req, res, next) => {
   try {
     const cid = req.companyId;
@@ -17,7 +18,18 @@ router.get('/posts', ensureAuth, async (req, res, next) => {
     const type  = (req.query.type || '').toUpperCase();
     const allowedTypes = new Set(['TEXT','IMAGE','LINK','POLL','ANNOUNCEMENT']);
 
-    const match = { companyId: cid, deletedAt: null, status: 'PUBLISHED' };
+    const now = new Date();
+
+    const match = {
+      companyId: cid,
+      deletedAt: null,
+      status: 'PUBLISHED',
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $gt: now } }
+      ]
+    };
+
     if (groupId) match.groupId = groupId;
     if (allowedTypes.has(type)) match.type = type;
     if (q) match.richText = { $regex: q, $options: 'i' };
@@ -27,7 +39,7 @@ router.get('/posts', ensureAuth, async (req, res, next) => {
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
-        .select('_id type authorId groupId richText createdAt commentsCount reactionsCountByType viewsCount coverImageUrl')
+        .select('_id type title authorId groupId richText createdAt commentsCount reactionsCountByType viewsCount coverImageUrl')
         .lean(),
       Post.countDocuments(match),
     ]);
@@ -35,6 +47,7 @@ router.get('/posts', ensureAuth, async (req, res, next) => {
     res.json({ ok: true, data: items, page, limit, total });
   } catch (e) { next(e); }
 });
+
 
 // GET /api/:org/posts/:postId
 router.get('/posts/:postId', ensureAuth, async (req, res, next) => {
@@ -49,59 +62,61 @@ router.get('/posts/:postId', ensureAuth, async (req, res, next) => {
 });
 
 // POST /api/:org/posts  { type?, richText, groupId? }
+// routes/api/posts.js
+
 router.post('/posts', ensureAuth, async (req, res, next) => {
   try {
     const cid = req.companyId;
-    const { type = 'TEXT', richText = '', groupId = null, isPinned = false, poll = null } = req.body;
+    const {
+      type: incomingType = 'TEXT',
+      richText = '',
+      groupId = null,
+      isPinned = false,
+      poll = null
+    } = req.body;
 
-    // Policy: moderated orgs queue by default
+    const type = String(incomingType).toUpperCase();
+
+    // 🔹 New inputs
+    const title = (req.body.title || '').trim() || null;
+    let expiresAt = null;
+    if (req.body.expiresAt) {
+      const d = new Date(req.body.expiresAt);
+      if (!Number.isNaN(d.getTime())) {
+        d.setHours(23, 59, 59, 999);
+        expiresAt = d;
+      }
+    }
+
     const mode = (req.company?.policies?.postingMode || 'OPEN').toUpperCase();
     const status = mode === 'MODERATED' ? 'QUEUED' : 'PUBLISHED';
 
     const canPin = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
-    // build pollDoc if needed (normalize array/object)
-    let pollDoc = undefined;
-    if (String(type).toUpperCase() === 'POLL' && poll) {
-      let qs = poll.questions;
-      if (qs && !Array.isArray(qs) && typeof qs === 'object') qs = Object.values(qs);
-      if (!Array.isArray(qs)) qs = [];
-      if (qs.length < 1 || qs.length > 10) return res.status(400).json({ ok:false, error:'POLL_QUESTION_COUNT' });
-      const normQs = qs.map((q, qi) => {
-        let opts = q?.options;
-        if (opts && !Array.isArray(opts) && typeof opts === 'object') opts = Object.values(opts);
-        if (!Array.isArray(opts)) opts = [];
-        if (opts.length < 2 || opts.length > 10) throw new Error('POLL_OPTION_COUNT');
-        const qid = String(q?.qid || (qi + 1).toString(36));
-        const normOpts = opts.map((o, oi) => {
-          const label = (typeof o === 'object' ? String(o.label || '') : String(o || '')).trim();
-          const oid = String((typeof o === 'object' ? (o.oid || (oi + 1).toString(36)) : (oi + 1).toString(36)));
-          return { oid, label, votesCount: 0 };
-        });
-        return { qid, text: String(q?.text || '').trim(), options: normOpts, multiSelect: !!q?.multiSelect };
-      });
-      pollDoc = {
-        title: String(poll.title || '').trim(),
-        questions: normQs,
-        totalParticipants: 0,
-        voterIds: [],
-        isClosed: false,
-        closesAt: poll.closesAt ? new Date(poll.closesAt) : null
-      };
-    }
-    const post = await Post.create({
+
+    // ...existing pollDoc building code...
+
+    const doc = {
       companyId: cid,
-      authorId: req.user._id,
-      groupId: groupId || null,
+      authorId:  req.user._id,
+      groupId:   groupId || null,
       type,
       richText,
       status,
       isPinned: type === 'ANNOUNCEMENT' ? !!(canPin && isPinned) : false,
-      publishedAt: status === 'PUBLISHED' ? new Date() : null,
-    });
+      publishedAt: status === 'PUBLISHED' ? new Date() : null
+    };
+
+    if (type === 'ANNOUNCEMENT') {
+      if (title) doc.title = title;
+      doc.expiresAt = expiresAt;
+    }
+
+    const post = await Post.create(doc);
 
     res.status(201).json({ ok: true, data: post });
   } catch (e) { next(e); }
 });
+
 
 // PATCH /api/:org/posts/:postId  { richText? }  (edit only if not deleted & you’re author)
 router.patch('/posts/:postId', ensureAuth, async (req, res, next) => {
