@@ -30,4 +30,16 @@ router.post('/:slug/editions', ensureAuth, newslettersController.createEdition);
 // View edition
 router.get('/:slug/editions/:number', ensureAuth, newslettersController.showEdition);
 
+// Add internal post item
+router.post('/:slug/editions/:number/items/post',
+  ensureAuth,
+  newslettersController.addPostItem
+);
+
+// Add external article item (AI summarized)
+router.post('/:slug/editions/:number/items/external',
+  ensureAuth,
+  newslettersController.addExternalItem
+);
+
 module.exports = router;

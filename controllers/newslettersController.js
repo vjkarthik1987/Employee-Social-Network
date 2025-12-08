@@ -1,8 +1,17 @@
 // /controllers/newslettersController.js
+const fetch = require('node-fetch'); 
 const { Types } = require('mongoose');
 const Newsletter = require('../models/Newsletter');
 const NewsletterEdition = require('../models/NewsletterEdition');
 const NewsletterSubscription = require('../models/NewsletterSubscription');
+
+const Post = require('../models/Post');
+const { summarizeExternalArticle } = require('../services/newsletterAi');
+
+function stripTags(html = '') {
+  return String(html).replace(/<[^>]*>/g, ' ');
+}
+
 
 function cid(req) {
   return req.companyId || req.company?._id;
@@ -271,29 +280,191 @@ exports.createEdition = async (req, res, next) => {
 };
 
 exports.showEdition = async (req, res, next) => {
-  try {
-    const companyId = cid(req);
-    const { slug, number } = req.params;
+    try {
+      const companyId = cid(req);
+      const { slug, number } = req.params;
+  
+      const newsletter = await Newsletter.findOne({ companyId, slug }).lean();
+      if (!newsletter) return res.status(404).render('errors/404');
+  
+      const edition = await NewsletterEdition.findOne({
+        companyId,
+        newsletterId: newsletter._id,
+        number: Number(number),
+      }).lean();
+  
+      if (!edition) return res.status(404).render('errors/404');
+  
+      const canEdit = canEditNewsletter(newsletter, req.user);
+  
+      let recentPosts = [];
+      if (canEdit) {
+        recentPosts = await Post.find({ companyId, deletedAt: null, status: 'PUBLISHED' })
+          .sort({ createdAt: -1 })
+          .limit(20)
+          .select('_id type richText title createdAt')
+          .lean();
+  
+        recentPosts = recentPosts.map(p => {
+          const baseTitle = p.title
+            || stripTags(p.richText || '').trim().slice(0, 80)
+            || `Post ${String(p._id).slice(-6)}`;
+          return {
+            _id: p._id,
+            title: baseTitle,
+            type: p.type,
+            createdAt: p.createdAt,
+          };
+        });
+      }
+  
+      return res.render('newsletters/edition_show', {
+        company: req.company,
+        user: req.user,
+        newsletter,
+        edition,
+        canEdit,
+        recentPosts,
+        csrfToken: req.csrfToken && req.csrfToken(),
+      });
+    } catch (e) { next(e); }
+  };
+  
+// POST /:org/newsletters/:slug/editions/:number/items/post
+exports.addPostItem = async (req, res, next) => {
+    try {
+      const companyId = cid(req);
+      const { slug, number } = req.params;
+      const postId = (req.body.postId || '').trim();
+      const highlight = (req.body.highlight || '').trim();
+  
+      const newsletter = await Newsletter.findOne({ companyId, slug });
+      if (!newsletter) return res.status(404).render('errors/404');
+  
+      if (!canEditNewsletter(newsletter, req.user)) {
+        req.flash('error', 'You are not allowed to edit this newsletter.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+  
+      if (!postId || !Types.ObjectId.isValid(postId)) {
+        req.flash('error', 'Select a valid post.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+  
+      const post = await Post.findOne({ _id: postId, companyId, deletedAt: null }).lean();
+      if (!post) {
+        req.flash('error', 'Post not found.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+  
+      const edition = await NewsletterEdition.findOne({
+        companyId,
+        newsletterId: newsletter._id,
+        number: Number(number),
+      });
+  
+      if (!edition) {
+        req.flash('error', 'Edition not found.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}`);
+      }
+  
+      const baseTitle = post.title
+        || stripTags(post.richText || '').trim().slice(0, 80)
+        || `Post ${String(post._id).slice(-6)}`;
+  
+      const position = (edition.items?.length || 0) + 1;
+  
+      edition.items.push({
+        kind: 'POST',
+        title: baseTitle,
+        position,
+        postId: post._id,
+        highlight,
+      });
+  
+      edition.lastEditedBy = req.user._id;
+      await edition.save();
+  
+      req.flash('success', 'Post added to newsletter edition.');
+      return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+    } catch (e) { next(e); }
+  };
+  
+  // POST /:org/newsletters/:slug/editions/:number/items/external
+exports.addExternalItem = async (req, res, next) => {
+    try {
+      const companyId = cid(req);
+      const { slug, number } = req.params;
+      const url = (req.body.url || '').trim();
+  
+      const newsletter = await Newsletter.findOne({ companyId, slug });
+      if (!newsletter) return res.status(404).render('errors/404');
+  
+      if (!canEditNewsletter(newsletter, req.user)) {
+        req.flash('error', 'You are not allowed to edit this newsletter.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+  
+      if (!url) {
+        req.flash('error', 'URL is required.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+  
+      const edition = await NewsletterEdition.findOne({
+        companyId,
+        newsletterId: newsletter._id,
+        number: Number(number),
+      });
+  
+      if (!edition) {
+        req.flash('error', 'Edition not found.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}`);
+      }
+  
+      // Fetch the article HTML
+      let html = '';
+        try {
+        const resp = await fetch(url, {
+            headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            'Accept': 'text/html',
+            }
+        });
 
-    const newsletter = await Newsletter.findOne({ companyId, slug }).lean();
-    if (!newsletter) return res.status(404).render('errors/404');
+        if (!resp.ok) throw new Error(`Bad status: ${resp.status}`);
+        html = await resp.text();
 
-    const edition = await NewsletterEdition.findOne({
-      companyId,
-      newsletterId: newsletter._id,
-      number: Number(number),
-    }).lean();
+        } catch (err) {
+        req.flash('error', `Could not fetch article: ${err.message}`);
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+        }
 
-    if (!edition) return res.status(404).render('errors/404');
-
-    const canEdit = canEditNewsletter(newsletter, req.user);
-
-    return res.render('newsletters/edition_show', {
-      company: req.company,
-      user: req.user,
-      newsletter,
-      edition,
-      canEdit,
-    });
-  } catch (e) { next(e); }
-};
+  
+      // Summarize with AI (or fallback)
+      let summary;
+      try {
+        summary = await summarizeExternalArticle(url, html);
+      } catch (err) {
+        req.flash('error', `AI summarization failed: ${err.message}`);
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+  
+      const position = (edition.items?.length || 0) + 1;
+  
+      edition.items.push({
+        kind: 'EXTERNAL',
+        title: summary.title,
+        source: summary.source,
+        url,
+        summaryHtml: summary.summaryHtml,
+        position,
+      });
+  
+      edition.lastEditedBy = req.user._id;
+      await edition.save();
+  
+      req.flash('success', 'External article added to edition.');
+      return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+    } catch (e) { next(e); }
+  };
+  
