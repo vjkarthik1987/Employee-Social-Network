@@ -1,0 +1,28 @@
+<% layout('layouts/_layout') %>
+
+<div class="wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <h1 class="h2">Newsletters</h1>
+    <a href="/<%= company.slug %>/newsletters/new" class="btn btn-primary">New newsletter</a>
+  </div>
+
+  <% if (!newsletters.length) { %>
+    <p>No newsletters yet. Be the first to create one!</p>
+  <% } else { %>
+    <div class="card-list">
+      <% newsletters.forEach(n => { %>
+        <a href="/<%= company.slug %>/newsletters/<%= n.slug %>" class="card" style="display:block;margin-bottom:12px;padding:12px 16px;">
+          <h2 style="margin:0 0 4px;font-size:1.1rem;"><%= n.name %></h2>
+          <% if (n.description) { %>
+            <p class="sub" style="margin:0 0 6px;color:var(--ink-600);"><%= n.description %></p>
+          <% } %>
+          <div class="fineprint">
+            <span><%= n.frequency || 'ADHOC' %></span>
+            ·
+            <span><%= n.subscribersCount || 0 %> subscribers</span>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  <% } %>
+</div>

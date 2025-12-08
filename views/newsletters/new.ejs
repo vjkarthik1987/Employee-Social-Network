@@ -1,0 +1,66 @@
+<% layout('layouts/_layout') %>
+
+<div class="wrap" style="max-width:640px;">
+  <h1 class="h2">Create newsletter</h1>
+
+  <form method="POST" action="/<%= company.slug %>/newsletters">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+    <div class="field">
+      <label class="label">Name</label>
+      <input type="text" name="name" class="input" required maxlength="140">
+    </div>
+
+    <div class="field">
+      <label class="label">Description</label>
+      <textarea name="description" class="input" rows="3" maxlength="4000"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="label">Frequency</label>
+      <select name="frequency" class="input" id="nlFreq">
+        <option value="ADHOC">Ad hoc / as needed</option>
+        <option value="WEEKLY">Weekly</option>
+        <option value="MONTHLY">Monthly</option>
+        <option value="DAILY">Daily</option>
+      </select>
+    </div>
+
+    <div class="field" id="nlWeeklyWrap" style="display:none;">
+      <label class="label">Day of week</label>
+      <select name="dayOfWeek" class="input">
+        <option value="1">Monday</option>
+        <option value="2">Tuesday</option>
+        <option value="3">Wednesday</option>
+        <option value="4">Thursday</option>
+        <option value="5">Friday</option>
+        <option value="6">Saturday</option>
+        <option value="0">Sunday</option>
+      </select>
+    </div>
+
+    <div class="field" id="nlMonthlyWrap" style="display:none;">
+      <label class="label">Day of month</label>
+      <input type="number" name="dayOfMonth" class="input" min="1" max="31">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+  </form>
+</div>
+
+<script>
+  (function(){
+    const freq = document.getElementById('nlFreq');
+    const weekly = document.getElementById('nlWeeklyWrap');
+    const monthly = document.getElementById('nlMonthlyWrap');
+
+    function sync(){
+      const v = freq.value;
+      weekly.style.display = (v === 'WEEKLY') ? '' : 'none';
+      monthly.style.display = (v === 'MONTHLY') ? '' : 'none';
+    }
+
+    freq.addEventListener('change', sync);
+    sync();
+  })();
+</script>

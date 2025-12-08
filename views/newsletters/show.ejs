@@ -1,0 +1,56 @@
+<% layout('layouts/_layout') %>
+
+<div class="wrap">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">
+    <div>
+      <h1 class="h2" style="margin-bottom:4px;"><%= newsletter.name %></h1>
+      <% if (newsletter.description) { %>
+        <p class="sub" style="max-width:640px;"><%= newsletter.description %></p>
+      <% } %>
+      <p class="fineprint">
+        <span><%= newsletter.frequency %></span>
+        ·
+        <span><%= newsletter.subscribersCount || 0 %> subscribers</span>
+      </p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+      <form method="POST" action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/<%= isSubscribed ? 'unsubscribe' : 'subscribe' %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+        <button type="submit" class="btn">
+          <%= isSubscribed ? 'Unsubscribe' : 'Subscribe' %>
+        </button>
+      </form>
+
+      <% if (canEdit) { %>
+        <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/new" class="btn btn-primary">
+          New edition
+        </a>
+      <% } %>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2 class="h3" style="margin-top:16px;">Editions</h2>
+
+  <% if (!editions.length) { %>
+    <p>No editions yet.</p>
+  <% } else { %>
+    <ul class="list-unstyled">
+      <% editions.forEach(e => { %>
+        <li style="margin-bottom:8px;">
+          <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= e.number %>">
+            <strong>Issue #<%= e.number %></strong>
+            <% if (e.title) { %> – <%= e.title %><% } %>
+          </a>
+          <span class="fineprint">
+            ( <%= e.status %>
+            <% if (e.publishedAt) { %> · <%= new Date(e.publishedAt).toLocaleString() %> <% } %>
+            )
+          </span>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+</div>

@@ -1,0 +1,66 @@
+<% layout('layouts/_layout') %>
+
+<div class="wrap" style="max-width:720px;">
+  <p class="fineprint">
+    <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>">&larr; Back to <%= newsletter.name %></a>
+  </p>
+
+  <h1 class="h2">
+    <%= edition.title || ('Issue #' + edition.number) %>
+  </h1>
+  <% if (edition.subtitle) { %>
+    <p class="sub"><%= edition.subtitle %></p>
+  <% } %>
+
+  <p class="fineprint">
+    Issue #<%= edition.number %> · <%= edition.status %>
+    <% if (edition.publishedAt) { %>
+      · Published <%= new Date(edition.publishedAt).toLocaleString() %>
+    <% } %>
+  </p>
+
+  <hr>
+
+  <% if (!edition.items || !edition.items.length) { %>
+    <p>No items yet. We’ll add post & external article blocks in the next step.</p>
+  <% } else { %>
+    <% edition.items
+      .slice()            // copy
+      .sort((a, b) => (a.position || 0) - (b.position || 0))
+      .forEach(item => { %>
+
+        <% if (item.kind === 'NOTE') { %>
+          <section style="margin-bottom:20px;">
+            <% if (item.title) { %>
+              <h3><%= item.title %></h3>
+            <% } %>
+            <div class="post-content"><%- item.bodyHtml || '' %></div>
+          </section>
+        <% } else if (item.kind === 'POST') { %>
+          <section style="margin-bottom:20px;">
+            <h3><%= item.title || 'Post highlight' %></h3>
+            <% if (item.highlight) { %>
+              <p class="sub"><%= item.highlight %></p>
+            <% } %>
+            <% if (item.postId) { %>
+              <p>
+                <a href="/<%= company.slug %>/posts/<%= item.postId %>">View original post</a>
+              </p>
+            <% } %>
+          </section>
+        <% } else if (item.kind === 'EXTERNAL') { %>
+          <section style="margin-bottom:20px;">
+            <h3><%= item.title || 'External article' %></h3>
+            <% if (item.source) { %>
+              <p class="fineprint"><%= item.source %></p>
+            <% } %>
+            <div class="post-content"><%- item.summaryHtml || '' %></div>
+            <% if (item.url) { %>
+              <p><a href="<%= item.url %>" target="_blank" rel="noopener noreferrer">Read full article</a></p>
+            <% } %>
+          </section>
+        <% } %>
+
+    <% }); %>
+  <% } %>
+</div>

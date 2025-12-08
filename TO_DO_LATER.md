@@ -41,4 +41,4 @@
 - Edit user and save not working
 - Pagination of posts
 - Chatbot should summarize new posts
-- Post from LinkedIn
+- ~~Post from LinkedIn~~

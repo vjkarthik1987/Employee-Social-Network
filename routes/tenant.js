@@ -19,6 +19,8 @@ const adminPerf = require('./adminPerf');
 const adminPolls = require('./adminPolls');
 const adminAudit = require('./adminAudit');
 const exportsRouter = require('./exports');
+const newslettersRouter = require('./newsletters');
+
 
 const adminController = require('../controllers/adminController');
 
@@ -93,6 +95,7 @@ router.use('/posts', postsRouter);
 router.use('/', require('./reports'));
 router.use('/profile', ensureAuth, profileRoutes);
 router.get('/feed', ensureAuth, csrfProtection, pc.companyFeed);
+router.use('/newsletters', ensureAuth, newslettersRouter);
 router.use('/saved-searches', savedSearches);
 router.use('/admin/retention', adminRetention);
 router.use('/admin/internal-links', adminInternalLinks);
@@ -100,6 +103,7 @@ router.use('/admin/assistant-docs', adminAssistantDocs);
 router.use('/admin/perf', ensureAuth, requireRole('ORG_ADMIN'), adminPerf);
 router.use('/admin/polls', ensureAuth, requireRole('ORG_ADMIN'), adminPolls)
 router.use('/api/assistant', assistantApiRoutes);
+
 router.use('/', exportsRouter);
 router.use('/admin/audit', adminAudit);
 router.use('/api', commentsApi);

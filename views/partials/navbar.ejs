@@ -27,6 +27,9 @@
     <% if (org) { %>
       <a href="/<%= org.slug %>/feed">Feed</a>
       <a href="/<%= org.slug %>/groups">Groups</a>
+      <a href="/<%= org.slug %>/newsletters"
+        class="nav-link"> Newsletters
+     </a>
       <% if (currentUser) { %>
         <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">My Profile</a>
       <% } %>

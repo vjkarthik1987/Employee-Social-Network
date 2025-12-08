@@ -1,0 +1,25 @@
+<% layout('layouts/_layout') %>
+
+<div class="wrap" style="max-width:720px;">
+  <h1 class="h2">New edition – <%= newsletter.name %></h1>
+
+  <form method="POST" action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions">
+    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+    <div class="field">
+      <label class="label">Title</label>
+      <input type="text" name="title" class="input" placeholder="Issue title (optional)">
+    </div>
+
+    <div class="field">
+      <label class="label">Subtitle</label>
+      <input type="text" name="subtitle" class="input" placeholder="Optional subtitle">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create edition</button>
+  </form>
+
+  <p class="fineprint" style="margin-top:12px;">
+    Items (posts, external links, notes) will be added in the next step.
+  </p>
+</div>
