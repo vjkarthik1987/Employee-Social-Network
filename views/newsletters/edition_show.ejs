@@ -1,126 +1,211 @@
 <% layout('layouts/_layout') %>
 
-<div class="wrap" style="max-width:720px;">
-  <p class="fineprint">
-    <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>">&larr; Back to <%= newsletter.name %></a>
-  </p>
-
-  <h1 class="h2">
-    <%= edition.title || ('Issue #' + edition.number) %>
-  </h1>
-  <% if (edition.subtitle) { %>
-    <p class="sub"><%= edition.subtitle %></p>
-  <% } %>
-
-  <p class="fineprint">
-    Issue #<%= edition.number %> · <%= edition.status %>
-    <% if (edition.publishedAt) { %>
-      · Published <%= new Date(edition.publishedAt).toLocaleString() %>
-    <% } %>
-  </p>
-
-  <% if (canEdit) { %>
-    <div style="margin:8px 0 16px;">
-      <% if (edition.status !== 'PUBLISHED' && canPublish) { %>
-        <form method="POST" action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/publish" style="display:inline-block;margin-right:8px;">
-          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-          <button type="submit" class="btn btn-primary btn-sm">
-            Publish edition
-          </button>
-        </form>
-      <% } %>
-      <% if (edition.status === 'PUBLISHED') { %>
-        <span class="fineprint">This edition is published and read-only for most users.</span>
-      <% } %>
-    </div>
-  <% } %>
-
-
-  <% if (canEdit && edition.status !== 'PUBLISHED') { %>
-    <section style="margin:16px 0 24px;padding:12px 16px;border-radius:8px;background:#f5f5f7;">
-      <h2 class="h4" style="margin-top:0;">Add content to this edition</h2>
-
-      <!-- Add internal post -->
-      <div style="margin-bottom:12px;">
-        <h3 class="h5" style="margin-bottom:4px;">From internal post</h3>
-        <form method="POST" action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/post" style="display:flex;flex-direction:column;gap:8px;max-width:520px;">
-          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-          <label style="display:flex;flex-direction:column;gap:4px;">
-            <span class="fineprint">Pick a recent post</span>
-            <select name="postId" class="input">
-              <option value="">-- Select a post --</option>
-              <% (recentPosts || []).forEach(p => { %>
-                <option value="<%= p._id %>">
-                  [<%= p.type %>] <%= p.title %>
-                </option>
-              <% }); %>
-            </select>
-          </label>
-          <label style="display:flex;flex-direction:column;gap:4px;">
-            <span class="fineprint">Optional highlight / why this matters</span>
-            <textarea name="highlight" class="input" rows="2"></textarea>
-          </label>
-          <button type="submit" class="btn btn-sm btn-primary">Add post</button>
-        </form>
-      </div>
-
-      <!-- Add external article (AI) -->
+<main class="page page--newsletter-edition">
+  <header class="page-header" style="margin-bottom:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
       <div>
-        <h3 class="h5" style="margin-bottom:4px;">From external article (AI summarized)</h3>
-        <form method="POST" action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/external" style="display:flex;flex-direction:column;gap:8px;max-width:520px;">
-          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-          <label style="display:flex;flex-direction:column;gap:4px;">
-            <span class="fineprint">Article URL</span>
-            <input type="url" name="url" class="input" placeholder="https://…" required>
-          </label>
-          <button type="submit" class="btn btn-sm">Add external article</button>
-        </form>
-      </div>
-    </section>
-  <% } %>
-
-  <hr>
-
-  <% if (!edition.items || !edition.items.length) { %>
-    <p>No items yet. We’ll add post & external article blocks in the next step.</p>
-  <% } else { %>
-    <% edition.items
-      .slice()            // copy
-      .sort((a, b) => (a.position || 0) - (b.position || 0))
-      .forEach(item => { %>
-
-        <% if (item.kind === 'NOTE') { %>
-          <section style="margin-bottom:20px;">
-            <% if (item.title) { %>
-              <h3><%= item.title %></h3>
-            <% } %>
-            <div class="post-content"><%- item.bodyHtml || '' %></div>
-          </section>
-        <% } else if (item.kind === 'POST') { %>
-          <section style="margin-bottom:20px;">
-            <h3><%= item.title || 'Post highlight' %></h3>
-            <% if (item.highlight) { %>
-              <p class="sub"><%= item.highlight %></p>
-            <% } %>
-            <% if (item.postId) { %>
-              <p>
-                <a href="/<%= company.slug %>/posts/<%= item.postId %>">View original post</a>
-              </p>
-            <% } %>
-          </section>
-        <% } else if (item.kind === 'EXTERNAL') { %>
-          <section style="margin-bottom:20px;">
-            <h3><%= item.title || 'External article' %></h3>
-            <% if (item.source) { %>
-              <p class="fineprint"><%= item.source %></p>
-            <% } %>
-            <div class="post-content"><%- item.summaryHtml || '' %></div>
-            <% if (item.url) { %>
-              <p><a href="<%= item.url %>" target="_blank" rel="noopener noreferrer">Read full article</a></p>
-            <% } %>
-          </section>
+        <div style="font-size:13px;color:#666;margin-bottom:4px;">
+          <a href="/<%= company.slug %>/newsletters">Newsletters</a> ›
+          <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>"><%= newsletter.name %></a>
+        </div>
+        <h1 style="margin:0;font-size:1.4rem;">
+          Edition #<%= edition.number %> — <%= edition.title || ('Issue #' + edition.number) %>
+        </h1>
+        <% if (edition.subtitle) { %>
+          <p style="margin:4px 0 0;color:#555;"><%= edition.subtitle %></p>
         <% } %>
+      </div>
 
-    <% }); %>
-  <% } %>
-</div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;margin-bottom:4px;">
+          Status:
+          <% if (edition.status === 'PUBLISHED') { %>
+            <span class="badge badge--success">Published</span>
+            <% if (edition.publishedAt) { %>
+              <span style="color:#666;">(<%= new Date(edition.publishedAt).toLocaleString() %>)</span>
+            <% } %>
+          <% } else { %>
+            <span class="badge badge--muted">Draft</span>
+          <% } %>
+        </div>
+
+        <% if (canPublish && edition.status !== 'PUBLISHED') { %>
+          <form method="POST"
+                action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/publish"
+                style="display:inline;">
+            <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+            <button type="submit" class="btn btn-primary">
+              Publish edition
+            </button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.2fr);gap:24px;align-items:flex-start;">
+
+    <!-- LEFT: PREVIEW -->
+    <section aria-label="Edition preview" class="edition-preview" style="border-radius:10px;border:1px solid #eee;padding:16px;background:#fff;">
+      <h2 style="margin-top:0;margin-bottom:8px;font-size:1.2rem;">Preview</h2>
+
+      <% if (edition.coverImageUrl) { %>
+        <div style="margin:0 0 10px;">
+          <img src="<%= edition.coverImageUrl %>"
+               alt="Cover image"
+               style="max-width:100%;height:auto;border-radius:8px;display:block;">
+        </div>
+      <% } %>
+
+      <h1 style="margin:0 0 4px;font-size:1.5rem;"><%= edition.title || newsletter.name %></h1>
+      <% if (edition.subtitle) { %>
+        <p style="margin:0 0 12px;color:#555;"><%= edition.subtitle %></p>
+      <% } %>
+
+      <p style="margin:0 0 16px;font-size:12px;color:#777;">
+        <%= newsletter.name %> · Edition #<%= edition.number %>
+        <% if (edition.status === 'PUBLISHED' && edition.publishedAt) { %>
+          · Published on <%= new Date(edition.publishedAt).toLocaleDateString() %>
+        <% } %>
+      </p>
+
+      <% if (edition.editorNoteHtml) { %>
+        <section class="edition-editor-note" style="margin:0 0 18px;padding:10px 12px;border-radius:8px;background:#f7f7fb;">
+          <h3 style="margin:0 0 6px;font-size:0.95rem;">From the editor</h3>
+          <div class="rich-text"><%- edition.editorNoteHtml %></div>
+        </section>
+      <% } %>
+
+      <% if (!edition.items || !edition.items.length) { %>
+        <p style="color:#888;font-size:0.9rem;">No items in this edition yet. Use the panel on the right to add posts or external articles.</p>
+      <% } else { %>
+        <section class="edition-items">
+          <% edition.items.forEach(function(item){ %>
+            <article style="border-top:1px solid #eee;padding-top:10px;margin-top:10px;">
+              <header style="margin-bottom:4px;">
+                <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.05em;">
+                  <% if (item.kind === 'POST') { %>Internal post<% } %>
+                  <% if (item.kind === 'EXTERNAL') { %>External article<% } %>
+                  <% if (item.kind === 'NOTE') { %>Note<% } %>
+                </div>
+                <% if (item.title) { %>
+                  <h3 style="margin:2px 0;font-size:1rem;"><%= item.title %></h3>
+                <% } %>
+              </header>
+
+              <% if (item.kind === 'POST') { %>
+                <% if (item.highlight) { %>
+                  <p style="margin:0 0 4px;color:#555;"><%= item.highlight %></p>
+                <% } %>
+                <% if (item.postId) { %>
+                  <a href="/<%= company.slug %>/posts/<%= item.postId %>"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     style="font-size:0.85rem;">View full post →</a>
+                <% } %>
+              <% } else if (item.kind === 'EXTERNAL') { %>
+                <% if (item.source) { %>
+                  <div style="font-size:0.8rem;color:#777;margin-bottom:2px;"><%= item.source %></div>
+                <% } %>
+                <% if (item.summaryHtml) { %>
+                  <div class="rich-text" style="margin-bottom:4px;"><%- item.summaryHtml %></div>
+                <% } %>
+                <% if (item.url) { %>
+                  <a href="<%= item.url %>"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     style="font-size:0.85rem;">Read original article →</a>
+                <% } %>
+              <% } else if (item.kind === 'NOTE') { %>
+                <% if (item.bodyHtml) { %>
+                  <div class="rich-text"><%- item.bodyHtml %></div>
+                <% } %>
+              <% } %>
+            </article>
+          <% }); %>
+        </section>
+      <% } %>
+    </section>
+
+    <!-- RIGHT: EDIT PANEL -->
+    <% if (canEdit) { %>
+      <aside aria-label="Edit edition" style="border-radius:10px;border:1px solid #eee;padding:14px;background:#fafafa;">
+        <h2 style="margin-top:0;margin-bottom:8px;font-size:1rem;">Edit edition</h2>
+
+        <!-- Basic metadata -->
+        <form method="POST"
+              action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/update-meta"
+              style="margin-bottom:14px;">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+          <label class="field">
+            <div>Title</div>
+            <input type="text" name="title" value="<%= edition.title || '' %>" />
+          </label>
+
+          <label class="field">
+            <div>Subtitle</div>
+            <input type="text" name="subtitle" value="<%= edition.subtitle || '' %>" />
+          </label>
+
+          <label class="field">
+            <div>Cover image URL (optional)</div>
+            <input type="text" name="coverImageUrl" value="<%= edition.coverImageUrl || '' %>" />
+          </label>
+
+          <label class="field">
+            <div>Short summary (for email subject / preview)</div>
+            <textarea name="summaryText" rows="2"><%= edition.summaryText || '' %></textarea>
+          </label>
+
+          <label class="field">
+            <div>From the editor (HTML allowed)</div>
+            <textarea name="editorNoteHtml" rows="5"><%- edition.editorNoteHtml || '' %></textarea>
+          </label>
+
+          <button type="submit" class="btn btn-sm btn-secondary">Save metadata</button>
+        </form>
+
+        <!-- Add internal post -->
+        <section style="margin-bottom:14px;">
+          <h3 style="margin:0 0 6px;font-size:0.95rem;">Add internal post</h3>
+          <form method="POST"
+                action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+            <label>
+              <div style="font-size:0.85rem;">Choose a recent post</div>
+              <select name="postId">
+                <option value="">-- select --</option>
+                <% recentPosts.forEach(function(p){ %>
+                  <option value="<%= p._id %>">
+                    <%= p.title %>
+                  </option>
+                <% }) %>
+              </select>
+            </label>
+            <label>
+              <div style="font-size:0.85rem;">Highlight (optional)</div>
+              <textarea name="highlight" rows="2"></textarea>
+            </label>
+            <button type="submit" class="btn btn-sm">Add post</button>
+          </form>
+        </section>
+
+        <!-- Add external article -->
+        <section>
+          <h3 style="margin:0 0 6px;font-size:0.95rem;">Add external article (AI summary)</h3>
+          <form method="POST"
+                action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/external">
+            <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+            <label>
+              <div style="font-size:0.85rem;">Article URL</div>
+              <input type="url" name="url" placeholder="https://…" />
+            </label>
+            <button type="submit" class="btn btn-sm">Fetch & summarise</button>
+          </form>
+        </section>
+      </aside>
+    <% } %>
+  </div>
+</main>
+

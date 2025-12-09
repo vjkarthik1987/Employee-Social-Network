@@ -105,6 +105,49 @@ const NewsletterEditionSchema = new Schema({
     default: null,
   },
 
+  // Rich "from the editor" block (HTML)
+  editorNoteHtml: {
+    type: String,
+    default: '',
+  },
+
+  // Optional visual + text used in email subject / preview
+  coverImageUrl: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+
+  summaryText: {
+    type: String,
+    trim: true,
+    maxlength: 280,
+    default: '',
+  },
+
+  // AI generation metadata (we'll use this later)
+  aiTopic: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+
+  aiSourceType: {
+    type: String,
+    enum: ['INTERNAL', 'EXTERNAL', 'MIXED', null],
+    default: null,
+  },
+
+  aiFrom: {
+    type: Date,
+    default: null,
+  },
+
+  aiTo: {
+    type: Date,
+    default: null,
+  },
+
   status: {
     type: String,
     enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'],

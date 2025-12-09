@@ -256,13 +256,15 @@ exports.createEdition = async (req, res, next) => {
     const newsletter = await Newsletter.findOne({ companyId, slug });
     if (!newsletter) return res.status(404).render('errors/404');
 
-    if (!canEditNewsletter(newsletter, req.user) && String(newsletter.ownerId) !== String(req.user._id)) {
+    if (!canEditNewsletter(newsletter, req.user) &&
+        String(newsletter.ownerId) !== String(req.user._id)) {
       req.flash('error', 'You are not allowed to create editions for this newsletter.');
       return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}`);
     }
 
     const title = (req.body.title || '').trim();
     const subtitle = (req.body.subtitle || '').trim();
+    const editorNoteHtml = (req.body.editorNoteHtml || '').toString().trim();
 
     // Next number
     const last = await NewsletterEdition.findOne({
@@ -284,7 +286,8 @@ exports.createEdition = async (req, res, next) => {
       generatedByAi: false,
       createdBy: req.user._id,
       lastEditedBy: req.user._id,
-      items: [], // we’ll add items in next phase
+      editorNoteHtml,       // 👈 new
+      items: [],
     });
 
     req.flash('success', `Edition #${edition.number} created.`);
@@ -292,60 +295,66 @@ exports.createEdition = async (req, res, next) => {
   } catch (e) { next(e); }
 };
 
+
 exports.showEdition = async (req, res, next) => {
-    try {
-      const companyId = cid(req);
-      const { slug, number } = req.params;
-  
-      const newsletter = await Newsletter.findOne({ companyId, slug }).lean();
-      if (!newsletter) return res.status(404).render('errors/404');
-  
-      const edition = await NewsletterEdition.findOne({
-        companyId,
-        newsletterId: newsletter._id,
-        number: Number(number),
-      }).lean();
-  
-      if (!edition) return res.status(404).render('errors/404');
-  
-      // ✅ declare canEdit BEFORE using it
-      const canEdit = canEditNewsletter(newsletter, req.user);
-  
-      let recentPosts = [];
-      if (canEdit) {
-        recentPosts = await Post.find({ companyId, deletedAt: null, status: 'PUBLISHED' })
-          .sort({ createdAt: -1 })
-          .limit(20)
-          .select('_id type richText title createdAt')
-          .lean();
-  
-        recentPosts = recentPosts.map(p => {
-          const baseTitle = p.title
-            || stripTags(p.richText || '').trim().slice(0, 80)
-            || `Post ${String(p._id).slice(-6)}`;
-          return {
-            _id: p._id,
-            title: baseTitle,
-            type: p.type,
-            createdAt: p.createdAt,
-          };
-        });
-      }
-  
-      const canPublish = canPublishNewsletter(newsletter, req.user);
-  
-      return res.render('newsletters/edition_show', {
-        company: req.company,
-        user: req.user,
-        newsletter,
-        edition,
-        canEdit,
-        canPublish,
-        recentPosts,
-        csrfToken: req.csrfToken && req.csrfToken(),
+  try {
+    const companyId = cid(req);
+    const { slug, number } = req.params;
+
+    const newsletter = await Newsletter.findOne({ companyId, slug }).lean();
+    if (!newsletter) return res.status(404).render('errors/404');
+
+    const edition = await NewsletterEdition.findOne({
+      companyId,
+      newsletterId: newsletter._id,
+      number: Number(number),
+    }).lean();
+
+    if (!edition) return res.status(404).render('errors/404');
+
+    // Normalise items order
+    edition.items = (edition.items || []).slice().sort((a, b) => {
+      return (a.position || 0) - (b.position || 0);
+    });
+
+    const canEdit = canEditNewsletter(newsletter, req.user);
+    const canPublish = canPublishNewsletter(newsletter, req.user);
+
+    // For the right-side “add content” panel
+    let recentPosts = [];
+    if (canEdit) {
+      recentPosts = await Post.find({ companyId, deletedAt: null, status: 'PUBLISHED' })
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .select('_id type richText title createdAt')
+        .lean();
+
+      recentPosts = recentPosts.map(p => {
+        const baseTitle = p.title
+          || stripTags(p.richText || '').trim().slice(0, 80)
+          || `Post ${String(p._id).slice(-6)}`;
+        return {
+          _id: p._id,
+          title: baseTitle,
+          type: p.type,
+          createdAt: p.createdAt,
+        };
       });
-    } catch (e) { next(e); }
-  };
+    }
+
+    return res.render('newsletters/edition_show', {
+      company: req.company,
+      user: req.user,
+      newsletter,
+      edition,
+      canEdit,
+      canPublish,
+      recentPosts,
+      csrfToken: req.csrfToken && req.csrfToken(),
+    });
+  } catch (e) { next(e); }
+};
+
   
   
 // POST /:org/newsletters/:slug/editions/:number/items/post
@@ -544,3 +553,41 @@ exports.publishEdition = async (req, res, next) => {
     } catch (e) { next(e); }
   };
   
+  // POST /:org/newsletters/:slug/editions/:number/update-meta
+exports.updateEditionMeta = async (req, res, next) => {
+  try {
+    const companyId = cid(req);
+    const { slug, number } = req.params;
+
+    const newsletter = await Newsletter.findOne({ companyId, slug });
+    if (!newsletter) return res.status(404).render('errors/404');
+
+    if (!canEditNewsletter(newsletter, req.user)) {
+      req.flash('error', 'You are not allowed to edit this newsletter.');
+      return res.redirect(`/${req.params.org}/newsletters/${slug}/editions/${number}`);
+    }
+
+    const edition = await NewsletterEdition.findOne({
+      companyId,
+      newsletterId: newsletter._id,
+      number: Number(number),
+    });
+
+    if (!edition) {
+      req.flash('error', 'Edition not found.');
+      return res.redirect(`/${req.params.org}/newsletters/${slug}`);
+    }
+
+    edition.title = (req.body.title || '').trim() || edition.title;
+    edition.subtitle = (req.body.subtitle || '').trim();
+    edition.coverImageUrl = (req.body.coverImageUrl || '').trim() || null;
+    edition.summaryText = (req.body.summaryText || '').trim();
+    edition.editorNoteHtml = (req.body.editorNoteHtml || '').toString().trim();
+    edition.lastEditedBy = req.user._id;
+
+    await edition.save();
+
+    req.flash('success', 'Edition details updated.');
+    return res.redirect(`/${req.params.org}/newsletters/${slug}/editions/${number}`);
+  } catch (e) { next(e); }
+};

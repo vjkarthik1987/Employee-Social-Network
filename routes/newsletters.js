@@ -47,5 +47,10 @@ router.post('/:slug/editions/:number/publish',
   newslettersController.publishEdition
 );
 
+router.post('/:slug/editions/:number/update-meta',
+  ensureAuth,
+  newslettersController.updateEditionMeta
+);
+
 
 module.exports = router;
