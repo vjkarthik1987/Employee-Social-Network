@@ -42,4 +42,10 @@ router.post('/:slug/editions/:number/items/external',
   newslettersController.addExternalItem
 );
 
+router.post('/:slug/editions/:number/publish',
+  ensureAuth,
+  newslettersController.publishEdition
+);
+
+
 module.exports = router;

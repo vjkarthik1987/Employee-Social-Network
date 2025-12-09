@@ -11,6 +11,5 @@ const emailTokenSchema = new mongoose.Schema({
   used:      { type: Boolean, default: false }
 }, { timestamps: true });
 
-emailTokenSchema.index({ token: 1 });
 
 module.exports = mongoose.model('EmailToken', emailTokenSchema);

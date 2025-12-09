@@ -2334,3 +2334,83 @@ noscript .icon-fallback { display:inline-block; }
   font-size: 0.72rem;
   color: #6b7280;
 }
+
+/* ------------------------------------------------------
+   POST CARD UPGRADE — Modern, clean redesign
+   ------------------------------------------------------ */
+
+/* Tighter, cleaner card */
+.post-card {
+  border-radius: 14px;
+  border: 1px solid #e6e6e6;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 14px 16px;
+  background: #fff;
+  transition: box-shadow 0.15s ease, transform 0.12s ease;
+}
+
+.post-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+
+/* HEADER */
+.post-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px !important;
+}
+
+.post-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 50%;
+}
+
+.post-author {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+/* Timestamp becomes lighter */
+.post-time time {
+  color: #6b7280;
+  font-size: 0.82rem !important;
+}
+
+/* BODY */
+.post-body {
+  margin-top: 4px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+/* Compact text spacing */
+.post-content.compact {
+  margin-top: 4px;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  color: #222;
+}
+
+/* FOOTER */
+.post-footer {
+  border-top: 1px solid #f1f1f1;
+  padding-top: 10px;
+  margin-top: 8px;
+}
+
+/* Reaction row cleaner */
+.reactions-bar {
+  margin-top: 4px;
+  padding-top: 2px;
+}
+
+/* Comments count cleaner */
+.comments-count {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+

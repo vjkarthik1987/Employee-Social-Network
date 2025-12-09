@@ -5,6 +5,8 @@ const audit = require('../services/auditService');
 const microcache = require('../middleware/microcache');
 const { sendMail, renderApprovalEmail } = require('../services/mailer');
 const User = require('../models/User');
+const Attachment = require('../models/Attachment');   // ⬅ add this
+
 
 
 function cid(req) { return req.companyId || req.company?._id; }
@@ -27,9 +29,15 @@ exports.queue = async (req, res, next) => {
         .skip(skip)
         .limit(limit)
         .populate('authorId', 'fullName title avatarUrl')
+        .populate({
+          path: 'attachments',
+          select: 'storageUrl mimeType createdAt',
+          options: { sort: { createdAt: 1 } }
+        })
         .lean(),
       Post.countDocuments(match),
     ]);
+    
 
     const totalPages = Math.max(Math.ceil(total / limit), 1);
 

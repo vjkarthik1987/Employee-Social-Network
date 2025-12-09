@@ -1,3 +1,21 @@
+<%
+function timeAgo(date) {
+  const seconds = Math.floor((Date.now() - date) / 1000);
+  const intervals = [
+    { label: 'y', secs: 31536000 },
+    { label: 'm', secs: 2592000 },
+    { label: 'd', secs: 86400 },
+    { label: 'h', secs: 3600 },
+    { label: 'm', secs: 60 },
+  ];
+  for (let i of intervals) {
+    const v = Math.floor(seconds / i.secs);
+    if (v >= 1) return `${v}${i.label} ago`;
+  }
+  return "Just now";
+}
+%>
+
 <% (function(){ %>
   <!-- views/partials/_post_card.ejs -->
   
@@ -44,7 +62,6 @@
     <header class="post-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
       <!-- LEFT: Avatar + meta -->
       <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
-        <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
           <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
             <%
               const _fullName = post.authorId?.fullName || '';
@@ -106,7 +123,7 @@
           </div>
   
           <div class="post-time">
-            <time datetime="<%= ts.toISOString() %>" style="font-size:smaller;"><%= ts.toLocaleString() %></time>
+            <time datetime="<%= ts.toISOString() %>"><%= timeAgo(ts) %></time>
             <% if (inGroup) { %>
               · in <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group?.name %></a>
             <% } %>
@@ -242,7 +259,8 @@
            ? (isCloud ? imgUrl.replace('/upload/','/upload/w_640,h_360,c_fill,q_auto,f_auto/') : imgUrl)
            : ''; // fallback handled in markup
    %>
-     <a class="link-preview <%= isCompact ? 'lp--compact' : 'lp--full' %>"
+   <a class="link-preview <%= isCompact ? 'lp--compact' : 'lp--full' %>"
+    style="margin-top:10px; margin-bottom:8px;"
         href="<%= url %>"
         target="_blank"
         rel="noopener noreferrer"

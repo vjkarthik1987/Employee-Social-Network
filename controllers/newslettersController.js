@@ -35,6 +35,15 @@ function canEditNewsletter(newsletter, user) {
   return false;
 }
 
+function canPublishNewsletter(newsletter, user) {
+    if (!newsletter || !user) return false;
+    const uid = String(user._id);
+    if (String(newsletter.ownerId) === uid) return true;
+    if ((newsletter.publishers || []).some(id => String(id) === uid)) return true;
+    return false;
+  }
+  
+
 exports.listNewsletters = async (req, res, next) => {
   try {
     const companyId = cid(req);
@@ -121,42 +130,46 @@ exports.createNewsletter = async (req, res, next) => {
 };
 
 exports.showNewsletter = async (req, res, next) => {
-  try {
-    const companyId = cid(req);
-    const { slug } = req.params;
-
-    const newsletter = await Newsletter.findOne({ companyId, slug }).lean();
-    if (!newsletter) return res.status(404).render('errors/404');
-
-    const editions = await NewsletterEdition.find({
-      companyId,
-      newsletterId: newsletter._id,
-    })
-      .sort({ status: -1, number: -1 }) // drafts first by default, then published by number
-      .lean();
-
-    let currentSub = null;
-    if (req.user) {
-      currentSub = await NewsletterSubscription.findOne({
+    try {
+      const companyId = cid(req);
+      const { slug } = req.params;
+  
+      const newsletter = await Newsletter.findOne({ companyId, slug }).lean();
+      if (!newsletter) return res.status(404).render('errors/404');
+  
+      const editions = await NewsletterEdition.find({
         companyId,
         newsletterId: newsletter._id,
-        userId: req.user._id,
-      }).lean();
-    }
-
-    const isSubscribed = !!(currentSub && currentSub.status === 'ACTIVE');
-    const canEdit = canEditNewsletter(newsletter, req.user);
-
-    return res.render('newsletters/show', {
-      company: req.company,
-      user: req.user,
-      newsletter,
-      editions,
-      isSubscribed,
-      canEdit,
-    });
-  } catch (e) { next(e); }
-};
+      })
+        .sort({ status: -1, number: -1 })
+        .lean();
+  
+      let currentSub = null;
+      if (req.user) {
+        currentSub = await NewsletterSubscription.findOne({
+          companyId,
+          newsletterId: newsletter._id,
+          userId: req.user._id,
+        }).lean();
+      }
+  
+      const isSubscribed = !!(currentSub && currentSub.status === 'ACTIVE');
+      const canEdit = canEditNewsletter(newsletter, req.user);
+      const canPublish = canPublishNewsletter(newsletter, req.user);
+  
+      return res.render('newsletters/show', {
+        company: req.company,
+        user: req.user,
+        newsletter,
+        editions,
+        isSubscribed,
+        canEdit,
+        canPublish,
+        csrfToken: req.csrfToken && req.csrfToken(),
+      });
+    } catch (e) { next(e); }
+  };
+  
 
 exports.subscribe = async (req, res, next) => {
   try {
@@ -295,6 +308,7 @@ exports.showEdition = async (req, res, next) => {
   
       if (!edition) return res.status(404).render('errors/404');
   
+      // ✅ declare canEdit BEFORE using it
       const canEdit = canEditNewsletter(newsletter, req.user);
   
       let recentPosts = [];
@@ -318,17 +332,21 @@ exports.showEdition = async (req, res, next) => {
         });
       }
   
+      const canPublish = canPublishNewsletter(newsletter, req.user);
+  
       return res.render('newsletters/edition_show', {
         company: req.company,
         user: req.user,
         newsletter,
         edition,
         canEdit,
+        canPublish,
         recentPosts,
         csrfToken: req.csrfToken && req.csrfToken(),
       });
     } catch (e) { next(e); }
   };
+  
   
 // POST /:org/newsletters/:slug/editions/:number/items/post
 exports.addPostItem = async (req, res, next) => {
@@ -420,7 +438,12 @@ exports.addExternalItem = async (req, res, next) => {
         req.flash('error', 'Edition not found.');
         return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}`);
       }
-  
+
+      if (edition.status === 'PUBLISHED') {
+        req.flash('error', 'Cannot modify a published edition.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+    
       // Fetch the article HTML
       let html = '';
         try {
@@ -465,6 +488,59 @@ exports.addExternalItem = async (req, res, next) => {
   
       req.flash('success', 'External article added to edition.');
       return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+    } catch (e) { next(e); }
+  };
+  
+// POST /:org/newsletters/:slug/editions/:number/publish
+exports.publishEdition = async (req, res, next) => {
+    try {
+      const companyId = cid(req);
+      const { slug, number } = req.params;
+  
+      const newsletter = await Newsletter.findOne({ companyId, slug });
+      if (!newsletter) return res.status(404).render('errors/404');
+  
+      if (!canPublishNewsletter(newsletter, req.user)) {
+        req.flash('error', 'You are not allowed to publish this newsletter.');
+        return res.redirect(`/${req.params.org}/newsletters/${slug}/editions/${number}`);
+      }
+  
+      const edition = await NewsletterEdition.findOne({
+        companyId,
+        newsletterId: newsletter._id,
+        number: Number(number),
+      });
+  
+      if (!edition) {
+        req.flash('error', 'Edition not found.');
+        return res.redirect(`/${req.params.org}/newsletters/${slug}`);
+      }
+  
+      if (edition.status === 'PUBLISHED') {
+        req.flash('info', 'This edition is already published.');
+        return res.redirect(`/${req.params.org}/newsletters/${slug}/editions/${number}`);
+      }
+
+      if (edition.status === 'PUBLISHED') {
+        req.flash('error', 'Cannot modify a published edition.');
+        return res.redirect(`/${req.params.org}/newsletters/${newsletter.slug}/editions/${number}`);
+      }
+    
+      edition.status = 'PUBLISHED';
+      edition.publishedAt = new Date();
+      edition.lastEditedBy = req.user._id;
+      await edition.save();
+  
+      // Update newsletter lastPublishedAt (and any future metrics)
+      newsletter.lastPublishedAt = edition.publishedAt;
+      await newsletter.save();
+  
+      // TODO: you can later add:
+      // - notify subscribers (in-app + email)
+      // - log audit event
+  
+      req.flash('success', 'Edition published.');
+      return res.redirect(`/${req.params.org}/newsletters/${slug}/editions/${number}`);
     } catch (e) { next(e); }
   };
   

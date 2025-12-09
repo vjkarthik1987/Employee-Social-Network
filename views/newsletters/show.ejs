@@ -38,19 +38,19 @@
     <p>No editions yet.</p>
   <% } else { %>
     <ul class="list-unstyled">
-      <% editions.forEach(e => { %>
-        <li style="margin-bottom:8px;">
-          <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= e.number %>">
-            <strong>Issue #<%= e.number %></strong>
-            <% if (e.title) { %> – <%= e.title %><% } %>
-          </a>
-          <span class="fineprint">
-            ( <%= e.status %>
-            <% if (e.publishedAt) { %> · <%= new Date(e.publishedAt).toLocaleString() %> <% } %>
-            )
-          </span>
-        </li>
-      <% }); %>
+        <% editions.forEach(e => { %>
+            <li style="margin-bottom:8px;">
+              <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= e.number %>">
+                <strong>Issue #<%= e.number %></strong>
+                <% if (e.title) { %> – <%= e.title %><% } %>
+              </a>
+              <span class="fineprint">
+                ( <%= e.status %>
+                <% if (e.publishedAt) { %> · <%= new Date(e.publishedAt).toLocaleString() %> <% } %>
+                )
+              </span>
+            </li>
+          <% }); %>    
     </ul>
   <% } %>
 </div>

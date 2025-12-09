@@ -9,15 +9,15 @@
 - ~~Introduce product name for each company~~
 - Have GIFs ready
 - Make AI generated summary
-- Mobile readiness
-- Rich Text
+- ~~Mobile readiness~~
+- ~~Rich Text~~
 - Save post as draft
 - Company should have a registration end date and type of registration
 - ~~Rethink the workflow when a registration happens~~
 - ~~Overall list of companies page~~
 - ~~Overall admin page that creates and manages companies and get analytics~~
 - ~~Flash should stay longer~~
-- Create newsletter
+- ~~Create newsletter~~
 - Search should go to first page, not second page or others
 - View for the posts that have been reported
 - ~~Birthdays and anniversaries should come in the feed~~
@@ -26,7 +26,7 @@
 - Hashtags  
 - ~~Mentions~~
 - Page reload without refresh
-- Moderator view improve (essentially images and everything should come)
+- ~~Moderator view improve (essentially images and everything should come)~~
 - ~~Seperate area for polls and announcements~~
 - Correct the poll admin page
 - ~~Moderation queue should come~~
@@ -42,3 +42,4 @@
 - Pagination of posts
 - Chatbot should summarize new posts
 - ~~Post from LinkedIn~~
+- Connect to company LinkedIn page
