@@ -1,8 +1,33 @@
 <% layout('layouts/_layout') %>
+<style>
+  /* Light blue page background for post detail */
+.page.page--post-show {
+  background: #e7f0ff;      /* tweak shade as you like */
+  min-height: 100vh;
+}
 
-<section style="max-width:900px;margin:24px auto;">
-  <!-- Post card -->
-  <div class="card" style="margin-bottom:1rem;">
+/* Centered content column */
+.post-page-wrap {
+  max-width: 900px;
+  margin: 24px auto 32px;
+  padding: 0 12px;
+}
+
+/* Make the outer "card" transparent – just a layout shell */
+.post-page-shell {
+  margin-bottom: 1rem;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+</style>
+
+<main class="page page--post-show">
+  <section class="post-page-wrap">
+    <!-- Post card -->
+    <div class="card post-page-shell">
     <div class="card-header" style="display:flex;justify-content:space-between;">
       <div>
         <strong><%= post.authorId?.fullName || 'User' %></strong>
@@ -73,6 +98,7 @@
   </section>
   
 </section>
+</main>
 
 <!-- Reactions JS (PUT /:org/api/reactions) -->
 <script>

@@ -41,30 +41,64 @@
         Upcoming celebrations
       </div>
       <div class="cele-strip-scroll">
-        <% celebrations.forEach(function(c) { %>
-          <div class="cele-chip-vert">
-            <div class="cele-chip-icon"><%= c.icon %></div>
-            <div class="cele-chip-title"><%= c.label %></div>
-            <div class="cele-chip-name"><%= c.userName %></div>
-          
-            <div class="cele-chip-meta">
+        <% celebrations.forEach(function(c) { 
+             // EXPECTED FIELDS:
+             // c.type       -> "birthday" | "anniversary" | "work"
+             // c.icon       -> emoji like "🎂"
+             // c.userName   -> "Baba"
+             // c.email      -> user's email address
+             // c.avatarUrl  -> avatar URL (optional)
+        %>
+          <div class="cele-card <%= c.type %>">
+            <div class="cele-card-icon"><%= c.icon %></div>
+      
+            <% if (c.avatarUrl) { %>
+              <img 
+                src="<%= c.avatarUrl %>" 
+                alt="Avatar of <%= c.userName %>" 
+                class="cele-avatar"
+              />
+            <% } %>
+      
+            <div class="cele-card-type"><%= c.label %></div>
+            <div class="cele-card-name"><%= c.userName %></div>
+      
+            <div class="cele-card-meta">
               <% if (c.daysAway === 0) { %>
                 Today
               <% } else if (c.daysAway === 1) { %>
                 Tomorrow
               <% } else if (c.daysAway === -1) { %>
                 Yesterday
-              <% } else if (c.daysAway === -2) { %>
-                2 days ago
               <% } else if (c.daysAway > 1) { %>
                 In <%= c.daysAway %> days
               <% } else { %>
-                <%= c.daysAway %> days
+                <%= Math.abs(c.daysAway) %> days ago
               <% } %>
             </div>
-          </div>          
+      
+            <% if (c.email) { 
+                 const subject = encodeURIComponent('Happy ' + c.label + '!');
+                 const body    = encodeURIComponent(
+                   'Hi ' + c.userName + ',\n\n' +
+                   'Just wanted to drop a quick note to wish you a very happy ' +
+                   c.label.toLowerCase() + '!\n\n' +
+                   'Best,\n' +
+                   (user && user.fullName ? user.fullName : 'Your colleague')
+                 );
+            %>
+              <a
+                class="cele-wish-btn"
+                href="mailto:<%= c.email %>?subject=<%= subject %>&body=<%= body %>"
+              >
+                ✉️ Send wishes
+              </a>
+            <% } %>
+          </div>
         <% }); %>
       </div>
+      
+      
     </div>
   <% } %>
 
@@ -82,6 +116,27 @@
   <% if (!posts || posts.length === 0) { %>
     <div class="empty">No posts found. Try a different query.</div>
   <% } %>
+
+  <!-- Feed tabs: Regular posts vs Announcements -->
+  <div class="feed-tabs-wrap">
+    <div class="feed-tabs">
+      <%
+        const activeTab = (filters && filters.tab) || 'REGULAR';
+        const baseUrl = searchAction || ('/' + company.slug + '/feed');
+      %>
+
+      <a href="<%= baseUrl %>?tab=REGULAR"
+        class="feed-tab <%= activeTab === 'ANNOUNCEMENTS' ? '' : 'is-active' %>">
+        Regular posts
+      </a>
+
+      <a href="<%= baseUrl %>?tab=ANNOUNCEMENTS"
+        class="feed-tab <%= activeTab === 'ANNOUNCEMENTS' ? 'is-active' : '' %>">
+        Announcements
+      </a>
+    </div>
+  </div>
+
 
   <div class="feed-grid">
     <% (posts || []).forEach(function(post){ %>

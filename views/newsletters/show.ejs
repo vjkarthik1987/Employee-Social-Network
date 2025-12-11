@@ -1,56 +1,539 @@
 <% layout('layouts/_layout') %>
 
-<div class="wrap">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">
-    <div>
-      <h1 class="h2" style="margin-bottom:4px;"><%= newsletter.name %></h1>
-      <% if (newsletter.description) { %>
-        <p class="sub" style="max-width:640px;"><%= newsletter.description %></p>
-      <% } %>
-      <p class="fineprint">
-        <span><%= newsletter.frequency %></span>
-        ·
-        <span><%= newsletter.subscribersCount || 0 %> subscribers</span>
-      </p>
+<main class="page page--newsletter-show">
+  <!-- HEADER -->
+  <header class="page-header newsletter-header">
+    <div class="nl-header-main">
+      <div class="nl-header-text">
+        <div class="nl-breadcrumb">
+          <a href="/<%= company.slug %>/newsletters">Newsletters</a>
+        </div>
+
+        <h1 class="nl-title"><%= newsletter.name %></h1>
+
+        <% if (newsletter.description) { %>
+          <p class="nl-description"><%= newsletter.description %></p>
+        <% } %>
+
+        <p class="nl-meta">
+          <span>Frequency: <strong><%= newsletter.frequency || 'ADHOC' %></strong></span>
+          <span class="nl-meta-dot">•</span>
+          <span>Subscribers: <strong><%= newsletter.subscribersCount || 0 %></strong></span>
+          <% if (newsletter.lastPublishedAt) { %>
+            <span class="nl-meta-dot">•</span>
+            <span>Last published: <%= new Date(newsletter.lastPublishedAt).toLocaleString() %></span>
+          <% } %>
+        </p>
+      </div>
+
+      <div class="nl-header-actions">
+        <form method="POST"
+              action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/<%= isSubscribed ? 'unsubscribe' : 'subscribe' %>">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+          <button type="submit"
+                  class="btn btn-sm <%= isSubscribed ? 'btn-secondary' : 'btn-primary' %>">
+            <%= isSubscribed ? 'Unsubscribe' : 'Subscribe' %>
+          </button>
+        </form>
+
+        <% if (canEdit) { %>
+          <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/new"
+             class="btn btn-sm btn-outline nl-new-edition-btn">
+            + New edition
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <!-- TEAM STRIP (FULL WIDTH, HORIZONTAL) -->
+  <section class="nl-team-strip card">
+    <div class="nl-team-strip-head">
+      <h2>Newsletter team</h2>
+      <p>Who can write, edit and publish this newsletter.</p>
     </div>
 
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
-      <form method="POST" action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/<%= isSubscribed ? 'unsubscribe' : 'subscribe' %>">
-        <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-        <button type="submit" class="btn">
-          <%= isSubscribed ? 'Unsubscribe' : 'Subscribe' %>
-        </button>
-      </form>
+    <div class="nl-team-roles">
+      <!-- Owner -->
+      <div class="nl-team-col">
+        <div class="nl-team-label">Owner</div>
+        <% if (ownerUser) { %>
+          <div class="nl-team-main">
+            <div class="nl-team-name"><%= ownerUser.fullName %></div>
+            <% if (ownerUser.title) { %>
+              <div class="nl-team-title"><%= ownerUser.title %></div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div class="nl-team-empty">Not set</div>
+        <% } %>
+      </div>
 
-      <% if (canEdit) { %>
-        <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/new" class="btn btn-primary">
-          New edition
-        </a>
-      <% } %>
-    </div>
-  </div>
-
-  <hr>
-
-  <h2 class="h3" style="margin-top:16px;">Editions</h2>
-
-  <% if (!editions.length) { %>
-    <p>No editions yet.</p>
-  <% } else { %>
-    <ul class="list-unstyled">
-        <% editions.forEach(e => { %>
-            <li style="margin-bottom:8px;">
-              <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= e.number %>">
-                <strong>Issue #<%= e.number %></strong>
-                <% if (e.title) { %> – <%= e.title %><% } %>
-              </a>
-              <span class="fineprint">
-                ( <%= e.status %>
-                <% if (e.publishedAt) { %> · <%= new Date(e.publishedAt).toLocaleString() %> <% } %>
-                )
+      <!-- Editors -->
+      <div class="nl-team-col">
+        <div class="nl-team-label">Editors</div>
+        <% if (editorUsers && editorUsers.length) { %>
+          <div class="nl-team-chips">
+            <% editorUsers.forEach(function(u){ %>
+              <span class="nl-chip">
+                <%= u.fullName %>
+                <% if (u.title) { %>
+                  <span class="nl-chip-sub"> · <%= u.title %></span>
+                <% } %>
               </span>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="nl-team-empty">None</div>
+        <% } %>
+      </div>
+
+      <!-- Publishers -->
+      <div class="nl-team-col">
+        <div class="nl-team-label">Publishers</div>
+        <% if (publisherUsers && publisherUsers.length) { %>
+          <div class="nl-team-chips">
+            <% publisherUsers.forEach(function(u){ %>
+              <span class="nl-chip">
+                <%= u.fullName %>
+                <% if (u.title) { %>
+                  <span class="nl-chip-sub"> · <%= u.title %></span>
+                <% } %>
+              </span>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="nl-team-empty">None (only owner can publish)</div>
+        <% } %>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN GRID -->
+  <div class="nl-layout-two-col">
+    <!-- LEFT: EDITIONS LIST -->
+    <section aria-label="Editions" class="nl-editions card">
+      <div class="nl-editions-head">
+        <h2>Editions</h2>
+        <% if (canEdit) { %>
+          <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/new"
+             class="btn btn-sm btn-outline nl-new-edition-inline">
+            + New edition
+          </a>
+        <% } %>
+      </div>
+
+      <% if (!editions || !editions.length) { %>
+        <p class="nl-empty-text">
+          No editions yet. Create the first one to get started.
+        </p>
+      <% } else { %>
+        <ul class="nl-editions-list">
+          <% editions.forEach(function(ed){ %>
+            <li class="nl-edition-item">
+              <div class="nl-edition-main">
+                <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= ed.number %>"
+                   class="nl-edition-title">
+                  Edition #<%= ed.number %> — <%= ed.title || ('Issue #' + ed.number) %>
+                </a>
+                <% if (ed.subtitle) { %>
+                  <div class="nl-edition-subtitle"><%= ed.subtitle %></div>
+                <% } %>
+
+                <div class="nl-edition-meta">
+                  <% if (ed.status === 'PUBLISHED') { %>
+                    <span class="badge badge--success">Published</span>
+                    <% if (ed.publishedAt) { %>
+                      <span> · <%= new Date(ed.publishedAt).toLocaleString() %></span>
+                    <% } %>
+                  <% } else { %>
+                    <span class="badge badge--muted">Draft</span>
+                    <% if (ed.updatedAt) { %>
+                      <span> · Updated <%= new Date(ed.updatedAt).toLocaleString() %></span>
+                    <% } %>
+                  <% } %>
+                </div>
+              </div>
             </li>
-          <% }); %>    
-    </ul>
-  <% } %>
-</div>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+
+    <!-- RIGHT: MANAGE TEAM / SETTINGS -->
+    <aside aria-label="Newsletter team and settings" class="nl-settings card">
+      <h2 class="nl-settings-title">Team & settings</h2>
+
+      <% if (canEdit && teamCandidates && teamCandidates.length) { %>
+        <form method="POST"
+              action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/team"
+              class="nl-team-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+          <label class="nl-field">
+            <div class="nl-field-label">Owner</div>
+            <select name="ownerId" class="form-control">
+              <option value="">(keep current)</option>
+              <% teamCandidates.forEach(function(u){ %>
+                <option value="<%= u._id %>"
+                  <%= ownerUser && String(ownerUser._id) === String(u._id) ? 'selected' : '' %>>
+                  <%= u.fullName %> <% if (u.title) { %> — <%= u.title %><% } %>
+                </option>
+              <% }); %>
+            </select>
+          </label>
+
+          <label class="nl-field">
+            <div class="nl-field-label">Editors (can create / edit editions)</div>
+            <select name="editorIds" class="form-control" multiple size="4">
+              <% teamCandidates.forEach(function(u){ 
+                   var isSelected = editorUsers && editorUsers.some(function(eu){ return String(eu._id) === String(u._id); });
+              %>
+                <option value="<%= u._id %>" <%= isSelected ? 'selected' : '' %>>
+                  <%= u.fullName %> <% if (u.title) { %> — <%= u.title %><% } %>
+                </option>
+              <% }); %>
+            </select>
+          </label>
+
+          <label class="nl-field">
+            <div class="nl-field-label">Publishers (can publish editions)</div>
+            <select name="publisherIds" class="form-control" multiple size="4">
+              <% teamCandidates.forEach(function(u){ 
+                   var isSelected = publisherUsers && publisherUsers.some(function(pu){ return String(pu._id) === String(u._id); });
+              %>
+                <option value="<%= u._id %>" <%= isSelected ? 'selected' : '' %>>
+                  <%= u.fullName %> <% if (u.title) { %> — <%= u.title %><% } %>
+                </option>
+              <% }); %>
+            </select>
+          </label>
+
+          <button type="submit" class="btn btn-sm btn-secondary">
+            Save team
+          </button>
+        </form>
+      <% } else { %>
+        <p class="nl-empty-text small">
+          Only the owner can manage roles for this newsletter.
+        </p>
+      <% } %>
+    </aside>
+  </div>
+</main>
+
+<style>
+  .page--newsletter-show .newsletter-header {
+    margin-bottom: 12px;
+  }
+
+  .nl-header-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .nl-header-text {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .nl-breadcrumb {
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+
+  .nl-breadcrumb a {
+    color: #6b7280;
+    text-decoration: none;
+  }
+  .nl-breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .nl-title {
+    margin: 0;
+    font-size: 1.6rem;
+    word-break: break-word;
+  }
+
+  .nl-description {
+    margin: 6px 0 0;
+    color: #4b5563;
+    max-width: 640px;
+    word-break: break-word;
+  }
+
+  .nl-meta {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .nl-meta-dot {
+    opacity: 0.6;
+  }
+
+  .nl-header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+  }
+
+  .nl-new-edition-btn {
+    width: auto;
+    justify-content: center;
+  }
+
+  /* TEAM STRIP */
+  .nl-team-strip.card {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+  }
+
+  .nl-team-strip-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .nl-team-strip-head h2 {
+    margin: 0;
+    font-size: 0.98rem;
+  }
+
+  .nl-team-strip-head p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .nl-team-roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .nl-team-col {
+    flex: 1 1 0;
+    min-width: 180px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: #f9fafb;
+  }
+
+  .nl-team-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+
+  .nl-team-main {
+    font-size: 0.9rem;
+  }
+
+  .nl-team-name {
+    font-weight: 600;
+  }
+
+  .nl-team-title {
+    font-size: 0.82rem;
+    color: #6b7280;
+  }
+
+  .nl-team-empty {
+    font-size: 0.82rem;
+    color: #9ca3af;
+  }
+
+  .nl-team-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .nl-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #111827;
+  }
+
+  .nl-chip-sub {
+    font-weight: 400;
+    color: #6b7280;
+  }
+
+  /* GRID LAYOUT */
+  .nl-layout-two-col {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .nl-editions.card,
+  .nl-settings.card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding: 12px 14px;
+  }
+
+  /* Editions list */
+  .nl-editions-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .nl-editions-head h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .nl-new-edition-inline {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .nl-empty-text {
+    font-size: 0.86rem;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  .nl-editions-list {
+    list-style: none;
+    padding: 0;
+    margin: 4px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nl-edition-item {
+    border-radius: 10px;
+    border: 1px solid #eef2f7;
+    padding: 8px 10px;
+    background: #f9fafb;
+  }
+
+  .nl-edition-title {
+    font-weight: 600;
+    text-decoration: none;
+    color: #111827;
+    word-break: break-word;
+  }
+
+  .nl-edition-title:hover {
+    text-decoration: underline;
+  }
+
+  .nl-edition-subtitle {
+    font-size: 0.85rem;
+    color: #4b5563;
+    margin-top: 2px;
+  }
+
+  .nl-edition-meta {
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+
+  /* Settings / Team form */
+  .nl-settings-title {
+    margin: 0 0 8px;
+    font-size: 1rem;
+  }
+
+  .nl-team-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .nl-field-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: #4b5563;
+  }
+
+  .nl-field select,
+  .nl-field textarea,
+  .nl-field input {
+    width: 100%;
+  }
+
+  .nl-field select {
+    font-size: 0.9rem;
+    padding: 6px 8px;
+  }
+
+  .nl-settings .btn {
+    margin-top: 4px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .nl-header-main {
+      align-items: flex-start;
+    }
+
+    .nl-header-actions {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .nl-layout-two-col {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nl-settings.card {
+      order: -1; /* show settings above editions on mobile if you like */
+    }
+  }
+
+  @media (max-width: 640px) {
+    .nl-header-actions {
+      width: 100%;
+      justify-content: flex-start;
+      gap: 8px;
+    }
+
+    .nl-team-roles {
+      flex-direction: column;
+    }
+
+    .nl-team-col {
+      min-width: 100%;
+    }
+  }
+</style>

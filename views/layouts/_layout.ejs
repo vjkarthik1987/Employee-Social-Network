@@ -57,6 +57,19 @@
       margin: 6px 0;
     }
 
+    /* Global app background — soft FB-like light blue */
+  body {
+    background: #e9eef4 !important;   /* soft blue-grey */
+  }
+
+  /* Optional: ensure the main wrapper still looks balanced */
+  .page,
+  .wrap,
+  .main-content {
+    background: transparent !important;
+  }
+
+
     </style>
     
   
@@ -83,6 +96,8 @@
       font-weight:600;
       text-transform:uppercase;
     }
+
+    
   </style>
 </head>
 
@@ -114,12 +129,33 @@
     <div class="chatDock-inner">
       <div class="chatDock-header">
         <div class="chatDock-title">
-          <span class="chatDock-name">Jaango Assistant</span>
+          <div class="chatDock-avatar">AI</div>
+          <div class="chatDock-title-text">
+            <span class="chatDock-name">Jaango Assistant</span>
+            <span class="chatDock-sub">
+              <span class="chatDock-status-dot"></span>
+              <span>Online</span>
+            </span>
+          </div>
         </div>
         <span class="chatDock-tag">beta</span>
       </div>
+      
 
       <div class="chatDock-main">
+        <!-- Quick suggestions -->
+        <div class="chatDock-suggestions" id="chatSuggestions">
+          <button type="button" class="chat-suggest" data-chat-fill="Summarise today’s top posts">
+            Summarise today’s posts
+          </button>
+          <button type="button" class="chat-suggest" data-chat-fill="What are the most active groups this week?">
+            Active groups this week
+          </button>
+          <button type="button" class="chat-suggest" data-chat-fill="Draft a kudos post for my team for this week">
+            Draft a kudos post
+          </button>
+        </div>
+
         <!-- Messages area -->
         <div class="chatDock-messages" id="chatMessages">
           <!-- Example starter message; optional -->
@@ -413,6 +449,8 @@
     var input = document.getElementById('assistantChatInput');
     var messagesEl = document.getElementById('chatMessages');
     if (!form || !input || !messagesEl) return;
+    var suggestionsEl = document.getElementById('chatSuggestions');
+
 
     // org slug – we know routes are /:org/...
     var orgSlug = "<%= (typeof company !== 'undefined' && company && company.slug) ? company.slug : '' %>";
@@ -524,6 +562,21 @@
     });
 
     input.addEventListener('input', autoGrow);
+
+    // Suggestion chips → fill input and optionally send
+    if (suggestionsEl) {
+      suggestionsEl.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-chat-fill]');
+        if (!btn) return;
+        var text = btn.getAttribute('data-chat-fill') || '';
+        if (!text) return;
+        input.value = text;
+        autoGrow();
+        // Auto-send; remove this line if you prefer manual send
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      });
+    }
+
 
     // 🔥 Actually load the old chats on startup
     loadHistory();

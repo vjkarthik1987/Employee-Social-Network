@@ -1,28 +1,359 @@
 <% layout('layouts/_layout') %>
 
-<main class="page page--newsletter-edition">
-  <header class="page-header" style="margin-bottom:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+<style>
+  /* Newsletter edition layout & styling – local to this page */
+
+  .nl-page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .nl-header {
+    margin-bottom: 16px;
+    padding: 8px 0 4px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .nl-header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .nl-breadcrumbs {
+    font-size: 0.82rem;
+    color: #6b7280;
+    margin-bottom: 4px;
+  }
+
+  .nl-breadcrumbs a {
+    color: #6b7280;
+    text-decoration: none;
+  }
+  .nl-breadcrumbs a:hover {
+    text-decoration: underline;
+  }
+
+  .nl-title {
+    margin: 0;
+    font-size: 1.4rem;
+    line-height: 1.2;
+  }
+
+  .nl-subtitle {
+    margin: 4px 0 0;
+    color: #4b5563;
+    font-size: 0.95rem;
+  }
+
+  .nl-status-row {
+    text-align: right;
+    font-size: 0.78rem;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge--success {
+    background: #ecfdf3;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+  }
+  .badge--muted {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+  }
+
+  .nl-status-time {
+    color: #6b7280;
+    margin-left: 4px;
+  }
+
+  /* Layout: preview + side panel */
+  .nl-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.1fr);
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .nl-preview-card,
+  .nl-aside-card,
+  .nl-ai-card {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 14px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+
+  .nl-preview-card h2 {
+    font-size: 1.05rem;
+    margin: 0 0 10px;
+  }
+
+  .nl-cover {
+    margin: 0 0 10px;
+  }
+  .nl-cover img {
+    width: 100%;
+    height: auto;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+  }
+
+  .nl-preview-main-title {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+  }
+
+  .nl-preview-subtitle {
+    margin: 0 0 10px;
+    color: #4b5563;
+  }
+
+  .nl-preview-meta {
+    margin: 0 0 14px;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+
+  .nl-editor-note {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: #f7f7fb;
+    border: 1px solid #e5e7eb;
+  }
+
+  .nl-editor-note h3 {
+    margin: 0 0 6px;
+    font-size: 0.9rem;
+  }
+
+  .nl-empty {
+    color: #9ca3af;
+    font-size: 0.9rem;
+  }
+
+  .nl-items article {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+
+  .nl-item-label {
+    font-size: 0.72rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+
+  .nl-item-title {
+    margin: 2px 0 4px;
+    font-size: 1rem;
+  }
+
+  .nl-item-highlight {
+    margin: 0 0 4px;
+    color: #4b5563;
+    font-size: 0.9rem;
+  }
+
+  .nl-item-link {
+    font-size: 0.84rem;
+    color: var(--primary);
+    text-decoration: none;
+  }
+  .nl-item-link:hover {
+    text-decoration: underline;
+  }
+
+  .rich-text {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+  .rich-text p {
+    margin: 0 0 6px;
+  }
+
+  /* Aside */
+
+  .nl-aside-card h2 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+  }
+
+  .nl-field {
+    margin-bottom: 8px;
+    font-size: 0.88rem;
+  }
+
+  .nl-field > div {
+    margin-bottom: 3px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #374151;
+  }
+
+  .nl-aside-card input[type="text"],
+  .nl-aside-card input[type="url"],
+  .nl-aside-card textarea,
+  .nl-aside-card select {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 7px 9px;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .nl-aside-card input[type="text"]:focus,
+  .nl-aside-card input[type="url"]:focus,
+  .nl-aside-card textarea:focus,
+  .nl-aside-card select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(10,102,194,0.12);
+  }
+
+  .nl-aside-section {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed #e5e7eb;
+  }
+
+  .nl-aside-section h3 {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+  }
+
+  .nl-aside-section label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+  }
+
+  .nl-aside-section select {
+    margin-top: 3px;
+  }
+
+  .nl-aside-section textarea {
+    margin-top: 3px;
+  }
+
+  .btn.btn-sm {
+    margin-top: 4px;
+  }
+
+  /* AI card sits below aside on desktop, but we’ll stack on mobile */
+  .nl-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nl-ai-card h3 {
+    margin: 0 0 6px;
+    font-size: 0.96rem;
+  }
+
+  .nl-ai-card label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+  }
+
+  .nl-ai-card input[type="text"],
+  .nl-ai-card input[type="date"],
+  .nl-ai-card textarea,
+  .nl-ai-card select {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    padding: 7px 9px;
+    font-size: 0.9rem;
+    outline: none;
+  }
+
+  .nl-ai-row {
+    display: flex;
+    gap: 8px;
+  }
+  .nl-ai-row > div {
+    flex: 1;
+  }
+
+  .nl-ai-hint {
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-top: 4px;
+  }
+
+  /* Responsive tweaks */
+  @media (max-width: 900px) {
+    .nl-layout {
+      grid-template-columns: 1fr;
+    }
+    .nl-header-top {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .nl-status-row {
+      text-align: left;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .nl-preview-card,
+    .nl-aside-card,
+    .nl-ai-card {
+      padding: 12px 12px;
+    }
+    .nl-title {
+      font-size: 1.25rem;
+    }
+    .nl-preview-main-title {
+      font-size: 1.25rem;
+    }
+  }
+</style>
+
+<main class="page nl-page page--newsletter-edition">
+  <header class="nl-header">
+    <div class="nl-header-top">
       <div>
-        <div style="font-size:13px;color:#666;margin-bottom:4px;">
+        <div class="nl-breadcrumbs">
           <a href="/<%= company.slug %>/newsletters">Newsletters</a> ›
           <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>"><%= newsletter.name %></a>
         </div>
-        <h1 style="margin:0;font-size:1.4rem;">
+        <h1 class="nl-title">
           Edition #<%= edition.number %> — <%= edition.title || ('Issue #' + edition.number) %>
         </h1>
         <% if (edition.subtitle) { %>
-          <p style="margin:4px 0 0;color:#555;"><%= edition.subtitle %></p>
+          <p class="nl-subtitle"><%= edition.subtitle %></p>
         <% } %>
       </div>
 
-      <div style="text-align:right;">
-        <div style="font-size:12px;margin-bottom:4px;">
+      <div class="nl-status-row">
+        <div style="margin-bottom:6px;">
           Status:
           <% if (edition.status === 'PUBLISHED') { %>
             <span class="badge badge--success">Published</span>
             <% if (edition.publishedAt) { %>
-              <span style="color:#666;">(<%= new Date(edition.publishedAt).toLocaleString() %>)</span>
+              <span class="nl-status-time">
+                (<%= new Date(edition.publishedAt).toLocaleString() %>)
+              </span>
             <% } %>
           <% } else { %>
             <span class="badge badge--muted">Draft</span>
@@ -43,69 +374,74 @@
     </div>
   </header>
 
-  <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.2fr);gap:24px;align-items:flex-start;">
-
+  <div class="nl-layout">
     <!-- LEFT: PREVIEW -->
-    <section aria-label="Edition preview" class="edition-preview" style="border-radius:10px;border:1px solid #eee;padding:16px;background:#fff;">
-      <h2 style="margin-top:0;margin-bottom:8px;font-size:1.2rem;">Preview</h2>
+    <section aria-label="Edition preview" class="nl-preview-card">
+      <h2>Preview</h2>
 
       <% if (edition.coverImageUrl) { %>
-        <div style="margin:0 0 10px;">
-          <img src="<%= edition.coverImageUrl %>"
-               alt="Cover image"
-               style="max-width:100%;height:auto;border-radius:8px;display:block;">
+        <div class="nl-cover">
+          <img src="<%= edition.coverImageUrl %>" alt="Cover image">
         </div>
       <% } %>
 
-      <h1 style="margin:0 0 4px;font-size:1.5rem;"><%= edition.title || newsletter.name %></h1>
+      <h1 class="nl-preview-main-title"><%= edition.title || newsletter.name %></h1>
+
       <% if (edition.subtitle) { %>
-        <p style="margin:0 0 12px;color:#555;"><%= edition.subtitle %></p>
+        <p class="nl-preview-subtitle"><%= edition.subtitle %></p>
       <% } %>
 
-      <p style="margin:0 0 16px;font-size:12px;color:#777;">
+      <p class="nl-preview-meta">
         <%= newsletter.name %> · Edition #<%= edition.number %>
         <% if (edition.status === 'PUBLISHED' && edition.publishedAt) { %>
           · Published on <%= new Date(edition.publishedAt).toLocaleDateString() %>
+        <% } else { %>
+          · Not yet published
         <% } %>
       </p>
 
       <% if (edition.editorNoteHtml) { %>
-        <section class="edition-editor-note" style="margin:0 0 18px;padding:10px 12px;border-radius:8px;background:#f7f7fb;">
-          <h3 style="margin:0 0 6px;font-size:0.95rem;">From the editor</h3>
+        <section class="nl-editor-note">
+          <h3>From the editor</h3>
           <div class="rich-text"><%- edition.editorNoteHtml %></div>
         </section>
       <% } %>
 
       <% if (!edition.items || !edition.items.length) { %>
-        <p style="color:#888;font-size:0.9rem;">No items in this edition yet. Use the panel on the right to add posts or external articles.</p>
+        <p class="nl-empty">
+          No items in this edition yet. Use the panel on the right to add posts or external articles,
+          or let AI draft an edition for you.
+        </p>
       <% } else { %>
-        <section class="edition-items">
+        <section class="nl-items">
           <% edition.items.forEach(function(item){ %>
-            <article style="border-top:1px solid #eee;padding-top:10px;margin-top:10px;">
-              <header style="margin-bottom:4px;">
-                <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.05em;">
+            <article>
+              <header>
+                <div class="nl-item-label">
                   <% if (item.kind === 'POST') { %>Internal post<% } %>
                   <% if (item.kind === 'EXTERNAL') { %>External article<% } %>
                   <% if (item.kind === 'NOTE') { %>Note<% } %>
                 </div>
                 <% if (item.title) { %>
-                  <h3 style="margin:2px 0;font-size:1rem;"><%= item.title %></h3>
+                  <h3 class="nl-item-title"><%= item.title %></h3>
                 <% } %>
               </header>
 
               <% if (item.kind === 'POST') { %>
                 <% if (item.highlight) { %>
-                  <p style="margin:0 0 4px;color:#555;"><%= item.highlight %></p>
+                  <p class="nl-item-highlight"><%= item.highlight %></p>
                 <% } %>
                 <% if (item.postId) { %>
                   <a href="/<%= company.slug %>/posts/<%= item.postId %>"
                      target="_blank"
                      rel="noopener noreferrer"
-                     style="font-size:0.85rem;">View full post →</a>
+                     class="nl-item-link">View full post →</a>
                 <% } %>
               <% } else if (item.kind === 'EXTERNAL') { %>
                 <% if (item.source) { %>
-                  <div style="font-size:0.8rem;color:#777;margin-bottom:2px;"><%= item.source %></div>
+                  <div style="font-size:0.82rem;color:#6b7280;margin-bottom:2px;">
+                    <%= item.source %>
+                  </div>
                 <% } %>
                 <% if (item.summaryHtml) { %>
                   <div class="rich-text" style="margin-bottom:4px;"><%- item.summaryHtml %></div>
@@ -114,7 +450,7 @@
                   <a href="<%= item.url %>"
                      target="_blank"
                      rel="noopener noreferrer"
-                     style="font-size:0.85rem;">Read original article →</a>
+                     class="nl-item-link">Read original article →</a>
                 <% } %>
               <% } else if (item.kind === 'NOTE') { %>
                 <% if (item.bodyHtml) { %>
@@ -127,85 +463,142 @@
       <% } %>
     </section>
 
-    <!-- RIGHT: EDIT PANEL -->
-    <% if (canEdit) { %>
-      <aside aria-label="Edit edition" style="border-radius:10px;border:1px solid #eee;padding:14px;background:#fafafa;">
-        <h2 style="margin-top:0;margin-bottom:8px;font-size:1rem;">Edit edition</h2>
+    <!-- RIGHT: EDIT PANEL + AI BOX -->
+    <div class="nl-right-column">
+      <% if (canEdit) { %>
+        <aside aria-label="Edit edition" class="nl-aside-card">
+          <h2>Edit edition</h2>
 
-        <!-- Basic metadata -->
-        <form method="POST"
-              action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/update-meta"
-              style="margin-bottom:14px;">
-          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-
-          <label class="field">
-            <div>Title</div>
-            <input type="text" name="title" value="<%= edition.title || '' %>" />
-          </label>
-
-          <label class="field">
-            <div>Subtitle</div>
-            <input type="text" name="subtitle" value="<%= edition.subtitle || '' %>" />
-          </label>
-
-          <label class="field">
-            <div>Cover image URL (optional)</div>
-            <input type="text" name="coverImageUrl" value="<%= edition.coverImageUrl || '' %>" />
-          </label>
-
-          <label class="field">
-            <div>Short summary (for email subject / preview)</div>
-            <textarea name="summaryText" rows="2"><%= edition.summaryText || '' %></textarea>
-          </label>
-
-          <label class="field">
-            <div>From the editor (HTML allowed)</div>
-            <textarea name="editorNoteHtml" rows="5"><%- edition.editorNoteHtml || '' %></textarea>
-          </label>
-
-          <button type="submit" class="btn btn-sm btn-secondary">Save metadata</button>
-        </form>
-
-        <!-- Add internal post -->
-        <section style="margin-bottom:14px;">
-          <h3 style="margin:0 0 6px;font-size:0.95rem;">Add internal post</h3>
+          <!-- Basic metadata -->
           <form method="POST"
-                action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/post">
+                action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/update-meta">
             <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+            <div class="nl-field">
+              <div>Title</div>
+              <input type="text" name="title" value="<%= edition.title || '' %>">
+            </div>
+
+            <div class="nl-field">
+              <div>Subtitle</div>
+              <input type="text" name="subtitle" value="<%= edition.subtitle || '' %>">
+            </div>
+
+            <div class="nl-field">
+              <div>Cover image URL (optional)</div>
+              <input type="text" name="coverImageUrl" value="<%= edition.coverImageUrl || '' %>">
+            </div>
+
+            <div class="nl-field">
+              <div>Short summary (for email subject / preview)</div>
+              <textarea name="summaryText" rows="2"><%= edition.summaryText || '' %></textarea>
+            </div>
+
+            <div class="nl-field">
+              <div>From the editor (HTML allowed)</div>
+              <textarea name="editorNoteHtml" rows="5"><%- edition.editorNoteHtml || '' %></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-sm btn-secondary">Save metadata</button>
+          </form>
+
+          <!-- Add internal post -->
+          <section class="nl-aside-section">
+            <h3>Add internal post</h3>
+            <form method="POST"
+                  action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/post">
+              <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+              <label>
+                <div>Choose a recent post</div>
+                <select name="postId">
+                  <option value="">-- select --</option>
+                  <% recentPosts.forEach(function(p){ %>
+                    <option value="<%= p._id %>">
+                      <%= p.title %>
+                    </option>
+                  <% }) %>
+                </select>
+              </label>
+
+              <label>
+                <div>Highlight (optional)</div>
+                <textarea name="highlight" rows="2"></textarea>
+              </label>
+
+              <button type="submit" class="btn btn-sm">Add post</button>
+            </form>
+          </section>
+
+          <!-- Add external article -->
+          <section class="nl-aside-section">
+            <h3>Add external article (AI summary)</h3>
+            <form method="POST"
+                  action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/external">
+              <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+              <label>
+                <div>Article URL</div>
+                <input type="url" name="url" placeholder="https://…">
+              </label>
+
+              <button type="submit" class="btn btn-sm">Fetch & summarise</button>
+            </form>
+          </section>
+        </aside>
+
+        <!-- AI-assisted edition box -->
+        <section class="nl-ai-card">
+          <h3>AI-assisted edition</h3>
+          <form method="POST"
+                action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/generate-ai">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
             <label>
-              <div style="font-size:0.85rem;">Choose a recent post</div>
-              <select name="postId">
-                <option value="">-- select --</option>
-                <% recentPosts.forEach(function(p){ %>
-                  <option value="<%= p._id %>">
-                    <%= p.title %>
-                  </option>
-                <% }) %>
+              Topic / theme
+              <input type="text" name="topic"
+                     placeholder="e.g. This week in product & culture">
+            </label>
+
+            <div class="nl-ai-row">
+              <div>
+                <label>
+                  From date
+                  <input type="date" name="fromDate">
+                </label>
+              </div>
+              <div>
+                <label>
+                  To date
+                  <input type="date" name="toDate">
+                </label>
+              </div>
+            </div>
+
+            <label>
+              Sources
+              <select name="sourceType">
+                <option value="MIXED">Internal + external</option>
+                <option value="INTERNAL">Internal posts only</option>
+                <option value="EXTERNAL">External links only</option>
               </select>
             </label>
-            <label>
-              <div style="font-size:0.85rem;">Highlight (optional)</div>
-              <textarea name="highlight" rows="2"></textarea>
-            </label>
-            <button type="submit" class="btn btn-sm">Add post</button>
-          </form>
-        </section>
 
-        <!-- Add external article -->
-        <section>
-          <h3 style="margin:0 0 6px;font-size:0.95rem;">Add external article (AI summary)</h3>
-          <form method="POST"
-                action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions/<%= edition.number %>/items/external">
-            <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
             <label>
-              <div style="font-size:0.85rem;">Article URL</div>
-              <input type="url" name="url" placeholder="https://…" />
+              External article URLs (one per line, optional)
+              <textarea name="externalUrls" rows="3" placeholder="https://..."></textarea>
             </label>
-            <button type="submit" class="btn btn-sm">Fetch & summarise</button>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:6px;">
+              Let AI draft this edition
+            </button>
+            <p class="nl-ai-hint">
+              We’ll scan your chosen window for internal posts and use the links you provide,
+              then draft an editor note and up to 10 items.
+            </p>
           </form>
         </section>
-      </aside>
-    <% } %>
+      <% } %>
+    </div>
   </div>
 </main>
-

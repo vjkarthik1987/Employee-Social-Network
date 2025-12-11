@@ -25,6 +25,7 @@ function stripTags(html = '') { return String(html).replace(/<[^>]*>/g, ' '); }
 function readFilters(req, { isGroup = false } = {}) {
   const q        = (req.query.q || '').trim();
   const type     = (req.query.type || '').toUpperCase();
+  const tab      = (req.query.tab  || '').toUpperCase();   // 👈 NEW
   const authorId = (req.query.authorId || '').trim();
   const people   = (req.query.people || '').trim();
   const from     = (req.query.from || '').trim();
@@ -35,8 +36,9 @@ function readFilters(req, { isGroup = false } = {}) {
   const limit = Math.min(Math.max(parseInt(req.query.limit || '15', 10), 5), 50);
   const skip  = (page - 1) * limit;
 
-  return { q, type, authorId, people, from, to, myGroups, page, limit, skip };
+  return { q, type, tab, authorId, people, from, to, myGroups, page, limit, skip };
 }
+
 
 async function resolvePeopleToAuthorIds({ companyId, people }) {
   if (!people) return null;
@@ -98,7 +100,19 @@ function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople })
   const match = { companyId, deletedAt: null, status: 'PUBLISHED' };
 
   if (scope === 'GROUP' && groupId) match.groupId = groupId;
-  if (allowed.has(filters.type)) match.type = filters.type;
+
+  // 1️⃣ If a specific type filter is set, respect that first
+  if (allowed.has(filters.type)) {
+    match.type = filters.type;
+  } else {
+    // 2️⃣ Otherwise use the tab filter
+    if (filters.tab === 'ANNOUNCEMENTS') {
+      match.type = 'ANNOUNCEMENT';
+    } else if (filters.tab === 'REGULAR') {
+      // everything except announcements
+      match.type = { $ne: 'ANNOUNCEMENT' };
+    }
+  }
 
   if (filters.authorId && isObjId(filters.authorId)) {
     match.authorId = filters.authorId;
@@ -114,6 +128,7 @@ function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople })
 
   return match;
 }
+
 
 async function runFeedQuery({ req, scope, groupId = null }) {
   const companyId = cid(req);
@@ -329,10 +344,19 @@ exports.companyFeed = async (req, res, next) => {
           posts: data.posts,
           total: data.total, totalPages: data.totalPages,
           page: data.page, limit: data.limit,
-          filters: { q: data.q, type: data.type, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: data.myGroups }
+          filters: {
+            q: data.q,
+            type: data.type,
+            tab: data.tab,                    // 👈 NEW
+            authorId: data.authorId,
+            people: data.people,
+            from: data.from,
+            to: data.to,
+            myGroups: data.myGroups
+          }
         };
       }
-    });
+    });    
 
     // Pre-warm page 2 (non-blocking) when viewing page 1
     if (Number(value.page) === 1 && value.totalPages > 1) {
@@ -351,7 +375,7 @@ exports.companyFeed = async (req, res, next) => {
               posts: data.posts,
               total: data.total, totalPages: data.totalPages,
               page: data.page, limit: data.limit,
-              filters: { q: data.q, type: data.type, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: data.myGroups }
+              filters: { q: data.q, type: data.type, tab: data.tab, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: data.myGroups }
             };
           }
         }).catch(() => {});
@@ -395,7 +419,7 @@ exports.groupFeed = async (req, res, next) => {
           posts: data.posts,
           total: data.total, totalPages: data.totalPages,
           page: data.page, limit: data.limit,
-          filters: { q: data.q, type: data.type, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: false }
+          filters: { q: data.q, type: data.type, tab: data.tab, authorId: data.authorId, people: data.people, from: data.from, to: data.to, myGroups: false }
         };
       }
     });

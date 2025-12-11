@@ -53,4 +53,17 @@ router.post('/:slug/editions/:number/update-meta',
 );
 
 
+// Generate AI edition (topic + timeframe + internal/external)
+router.post('/:slug/editions/:number/generate-ai',
+  ensureAuth,
+  newslettersController.generateAiEdition
+);
+
+router.post(
+  '/:slug/team',
+  ensureAuth,
+  newslettersController.updateTeam
+);
+
+
 module.exports = router;

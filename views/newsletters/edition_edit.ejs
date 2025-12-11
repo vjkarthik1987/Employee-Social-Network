@@ -1,25 +1,302 @@
 <% layout('layouts/_layout') %>
 
-<div class="wrap" style="max-width:720px;">
-  <h1 class="h2">New edition – <%= newsletter.name %></h1>
+<main class="page page--newsletter-edition-new">
+  <div class="nl-shell">
 
-  <form method="POST" action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions">
-    <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+    <!-- HEADER -->
+    <header class="nl-header">
+      <div class="nl-header-top">
+        <nav class="nl-breadcrumb">
+          <a href="/<%= company.slug %>/newsletters">Newsletters</a>
+          <span>›</span>
+          <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>">
+            <%= newsletter.name %>
+          </a>
+        </nav>
 
-    <div class="field">
-      <label class="label">Title</label>
-      <input type="text" name="title" class="input" placeholder="Issue title (optional)">
+        <h1 class="nl-title">
+          📰 New edition
+        </h1>
+        <p class="nl-tagline">
+          Name this edition, add a short note, and you’ll pick posts and external links on the next screen.
+        </p>
+      </div>
+    </header>
+
+    <!-- LAYOUT: FORM + SIDE CARD (tips) -->
+    <div class="nl-grid">
+      <!-- LEFT: FORM -->
+      <section class="nl-card">
+        <form method="POST"
+              action="/<%= company.slug %>/newsletters/<%= newsletter.slug %>/editions"
+              class="nl-form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+          <!-- Title -->
+          <div class="nl-field">
+            <label class="nl-label" for="edition-title">
+              Title
+              <span class="nl-optional">optional</span>
+            </label>
+            <input
+              id="edition-title"
+              type="text"
+              name="title"
+              class="form-control"
+              placeholder="e.g. January Product & Culture Roundup">
+            <p class="nl-help">
+              Shown as the main heading and often reused in email subjects.
+            </p>
+          </div>
+
+          <!-- Subtitle -->
+          <div class="nl-field">
+            <label class="nl-label" for="edition-subtitle">
+              Subtitle
+              <span class="nl-optional">optional</span>
+            </label>
+            <input
+              id="edition-subtitle"
+              type="text"
+              name="subtitle"
+              class="form-control"
+              placeholder="e.g. Customer wins, releases, and people updates">
+            <p class="nl-help">
+              A one-line explainer under the title. Keep it short and human.
+            </p>
+          </div>
+
+          <!-- Editor note -->
+          <div class="nl-field">
+            <label class="nl-label" for="editor-note">
+              From the editor
+              <span class="nl-optional">optional</span>
+            </label>
+            <textarea
+              id="editor-note"
+              name="editorNoteHtml"
+              rows="5"
+              class="form-control"
+              placeholder="A short note that sets the tone for this edition. HTML is allowed (e.g. &lt;p&gt;...&lt;/p&gt;)."></textarea>
+            <p class="nl-help">
+              Appears at the top of the edition. You can refine this later after you see the full content.
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="nl-actions">
+            <a href="/<%= company.slug %>/newsletters/<%= newsletter.slug %>"
+               class="btn btn-sm nl-btn-ghost">
+              Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+              Create edition
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- RIGHT: TIPS / CONTEXT -->
+      <aside class="nl-side-card">
+        <h2 class="nl-side-title">What happens next?</h2>
+        <ul class="nl-side-list">
+          <li>Pick internal posts to feature in this edition.</li>
+          <li>Add external links and let AI summarise them.</li>
+          <li>Re-order items, tweak the editor note, and preview.</li>
+          <li>Publish when you’re ready — we’ll send it to subscribers.</li>
+        </ul>
+        <p class="nl-side-footnote">
+          You can always come back and edit the edition before publishing.
+        </p>
+      </aside>
     </div>
 
-    <div class="field">
-      <label class="label">Subtitle</label>
-      <input type="text" name="subtitle" class="input" placeholder="Optional subtitle">
-    </div>
+  </div>
+</main>
 
-    <button type="submit" class="btn btn-primary">Create edition</button>
-  </form>
+<style>
+  .page--newsletter-edition-new {
+    display: flex;
+    justify-content: center;
+  }
 
-  <p class="fineprint" style="margin-top:12px;">
-    Items (posts, external links, notes) will be added in the next step.
-  </p>
-</div>
+  .page--newsletter-edition-new .nl-shell {
+    width: 100%;
+    max-width: 960px;
+    padding: 16px 16px 32px;
+    margin: 0 auto;
+  }
+
+  .nl-header {
+    margin-bottom: 16px;
+  }
+
+  .nl-header-top {
+    max-width: 620px;
+  }
+
+  .nl-breadcrumb {
+    font-size: 0.8rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .nl-breadcrumb a {
+    color: #6b7280;
+    text-decoration: none;
+  }
+
+  .nl-breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .nl-title {
+    margin: 0;
+    font-size: 1.6rem;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nl-tagline {
+    margin: 4px 0 0;
+    font-size: 0.92rem;
+    color: #4b5563;
+    max-width: 620px;
+  }
+
+  .nl-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr);
+    gap: 18px;
+    align-items: flex-start;
+  }
+
+  .nl-card {
+    background: #ffffff;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    padding: 16px 18px 18px;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.03);
+  }
+
+  .nl-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .nl-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .nl-label {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #374151;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .nl-optional {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: #9ca3af;
+  }
+
+  .nl-help {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+
+  .nl-actions {
+    margin-top: 4px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .nl-btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: #4b5563;
+  }
+
+  .nl-btn-ghost:hover {
+    background: #f3f4f6;
+    border-color: #e5e7eb;
+  }
+
+  /* SIDE CARD (tips) */
+  .nl-side-card {
+    border-radius: 14px;
+    border: 1px dashed #e5e7eb;
+    background: #f9fafb;
+    padding: 14px 14px 16px;
+    font-size: 0.86rem;
+  }
+
+  .nl-side-title {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .nl-side-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 6px 0 8px;
+  }
+
+  .nl-side-list li {
+    position: relative;
+    padding-left: 16px;
+    margin-bottom: 4px;
+    color: #4b5563;
+  }
+
+  .nl-side-list li::before {
+    content: "•";
+    position: absolute;
+    left: 4px;
+    top: 0;
+    color: #9ca3af;
+    font-size: 0.8rem;
+  }
+
+  .nl-side-footnote {
+    margin: 4px 0 0;
+    font-size: 0.78rem;
+    color: #6b7280;
+  }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    .page--newsletter-edition-new .nl-shell {
+      padding: 12px 10px 24px;
+    }
+
+    .nl-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .nl-card {
+      padding: 14px 12px 16px;
+    }
+
+    .nl-actions {
+      justify-content: flex-start;
+    }
+  }
+</style>

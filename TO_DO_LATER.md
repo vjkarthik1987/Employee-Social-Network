@@ -1,5 +1,5 @@
 #   List of items
-- Image type should be auto-recognized
+- ~~Image type should be auto-recognized~~
 - Multiple images with slider
 - ~~Sidebar instead of navbar~~
 - ~~Sidebar should be fixed~~
@@ -34,7 +34,7 @@
 - Add Show Chat History Button
 - Photo should be bigger in post (based on number of photos)
 - Close poll button
-- If there is no avatar, then initials should come
+- ~~If there is no avatar, then initials should come~~
 - Define gamification - posts, likes, reactions, comments
 - Post from here to MS Teams
 - Unpin post from announcements
@@ -43,3 +43,8 @@
 - Chatbot should summarize new posts
 - ~~Post from LinkedIn~~
 - Connect to company LinkedIn page
+- Improve look and feel of Newsletter by adding plus button for edit
+- ~~Improve look and feel of celebrations~~
+- Edit newsletter
+- Remove bullet from replies
+
