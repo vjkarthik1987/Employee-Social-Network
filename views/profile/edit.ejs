@@ -1,76 +1,162 @@
 <% layout('layouts/_layout') %>
-<%- include('../partials/navbar') %>
 
-<section style="max-width:720px;margin:24px auto;">
-  <h2>Edit Profile</h2>
-  <form method="POST" action="">
-    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-    <div class="form-row">
-      <label>Title</label>
-      <input type="text" name="title" value="<%= profileUser.title || '' %>" maxlength="120"/>
-    </div>
-    <div class="form-row">
-      <label>Department</label>
-      <input type="text" name="department" value="<%= profileUser.department || '' %>" maxlength="120"/>
-    </div>
-    <div class="form-row">
-      <label>LinkedIn URL</label>
-      <input type="url" name="linkedinUrl" value="<%= profileUser.linkedinUrl || '' %>" placeholder="https://www.linkedin.com/in/..." />
-    </div>
-    <div class="field">
-      <label for="avatarUrl" style="display:flex;flex-direction:column;gap:4px;">
-        <span style="font-weight:500;">Profile photo URL</span>
-        <span class="fineprint">
-          Paste a direct image link (from LinkedIn or anywhere) — this is the photo shown in posts and comments.
-        </span>
-      </label>
-      <input
-        type="text"
-        id="avatarUrl"
-        name="avatarUrl"
-        class="input"
-        placeholder="https://…/your-photo.jpg"
-        value="<%= profileUser.avatarUrl || '' %>"
-      >
-    </div>
-    
-    <div class="form-row">
-      <label>Bio</label>
-      <textarea name="bio" rows="5" maxlength="2000"><%= profileUser.bio || '' %></textarea>
-    </div>
-    <div class="form-row">
-      <label>Skills (comma-separated)</label>
-      <input type="text" name="skillsCSV" value="<%= (profileUser.skills||[]).join(', ') %>" />
-    </div>
-    <div class="form-row">
-      <label>Interests (comma-separated)</label>
-      <input type="text" name="interestsCSV" value="<%= (profileUser.interests||[]).join(', ') %>" />
-    </div>
-
-    <% if (isAdmin) { %>
-      <hr/>
-      <h3>Admin fields</h3>
-      <div class="form-row">
-        <label>Role</label>
-        <select name="role">
-          <option value="MEMBER" <%= profileUser.role==='MEMBER'?'selected':'' %> >Member</option>
-          <option value="MODERATOR" <%= profileUser.role==='MODERATOR'?'selected':'' %> >Moderator</option>
-          <option value="ORG_ADMIN" <%= profileUser.role==='ORG_ADMIN'?'selected':'' %> >Org Admin</option>
-        </select>
+<section class="page-wrap">
+  <div class="card card-lg">
+    <div class="card-head">
+      <div>
+        <h2 class="page-title">Edit profile</h2>
+        <p class="page-sub">
+          Update profile details that appear across the feed, comments, and search.
+        </p>
       </div>
-      <div class="form-row">
-        <label>Status</label>
-        <select name="status">
-          <option value="active" <%= profileUser.status==='active'?'selected':'' %> >Active</option>
-          <option value="invited" <%= profileUser.status==='invited'?'selected':'' %> >Invited</option>
-          <option value="suspended" <%= profileUser.status==='suspended'?'selected':'' %> >Suspended</option>
-        </select>
-      </div>
-    <% } %>
 
-    <div style="margin-top:16px;">
-      <button class="btn" type="submit">Save</button>
-      <a class="btn btn-secondary" href="/<%= company.slug %>/profile/<%= String(profileUser._id) %>">Cancel</a>
+      <div class="who">
+        <div class="who-avatar">
+          <% 
+            const _n = (profileUser?.fullName || '').trim();
+            const _initials = _n ? _n.split(' ').slice(0,2).map(x => x[0]).join('').toUpperCase() : 'U';
+          %>
+          <span><%= _initials %></span>
+        </div>
+        <div class="who-meta">
+          <div class="who-name"><%= profileUser.fullName || 'User' %></div>
+          <div class="who-email"><%= profileUser.email || '' %></div>
+        </div>
+      </div>
     </div>
-  </form>
+
+    <form method="POST" action="" class="form">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+      <div class="grid-2">
+        <div class="field">
+          <label class="label">Title</label>
+          <input class="input" type="text" name="title" value="<%= profileUser.title || '' %>" maxlength="120" placeholder="e.g., Product Manager" />
+        </div>
+
+        <div class="field">
+          <label class="label">Department</label>
+          <input class="input" type="text" name="department" value="<%= profileUser.department || '' %>" maxlength="120" placeholder="e.g., Engineering" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">LinkedIn URL</label>
+        <input class="input" type="url" name="linkedinUrl" value="<%= profileUser.linkedinUrl || '' %>" placeholder="https://www.linkedin.com/in/..." />
+        <div class="help">Optional. This will appear on the profile card.</div>
+      </div>
+
+      <div class="field">
+        <label class="label">Profile photo URL</label>
+        <input
+          class="input"
+          type="text"
+          id="avatarUrl"
+          name="avatarUrl"
+          placeholder="https://…/your-photo.jpg"
+          value="<%= profileUser.avatarUrl || '' %>"
+        >
+        <div class="help">
+          Tip: paste a direct image link. This photo is used in posts & comments.
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">Bio</label>
+        <textarea class="textarea" name="bio" rows="5" maxlength="2000" placeholder="A short intro…"><%= profileUser.bio || '' %></textarea>
+        <div class="help">Keep it human. 2–4 lines is perfect.</div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label class="label">Skills</label>
+          <input class="input" type="text" name="skillsCSV" value="<%= (profileUser.skills||[]).join(', ') %>" placeholder="e.g., Pricing, JavaScript, Storytelling" />
+          <div class="help">Comma-separated.</div>
+        </div>
+
+        <div class="field">
+          <label class="label">Interests</label>
+          <input class="input" type="text" name="interestsCSV" value="<%= (profileUser.interests||[]).join(', ') %>" placeholder="e.g., Football, Travel, AI" />
+          <div class="help">Comma-separated.</div>
+        </div>
+      </div>
+
+      <% if (isAdmin) { %>
+        <div class="divider"></div>
+
+        <div class="admin-block">
+          <div class="admin-head">
+            <h3 class="admin-title">Admin fields</h3>
+            <span class="pill">Admin only</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label class="label">Role</label>
+              <select class="select" name="role">
+                <option value="MEMBER" <%= profileUser.role==='MEMBER'?'selected':'' %>>Member</option>
+                <option value="MODERATOR" <%= profileUser.role==='MODERATOR'?'selected':'' %>>Moderator</option>
+                <option value="ORG_ADMIN" <%= profileUser.role==='ORG_ADMIN'?'selected':'' %>>Org Admin</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label class="label">Status</label>
+              <select class="select" name="status">
+                <option value="active" <%= profileUser.status==='active'?'selected':'' %>>Active</option>
+                <option value="invited" <%= profileUser.status==='invited'?'selected':'' %>>Invited</option>
+                <option value="suspended" <%= profileUser.status==='suspended'?'selected':'' %>>Suspended</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="help">
+            Changing role/status affects access immediately. Use cautiously.
+          </div>
+        </div>
+      <% } %>
+
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Save changes</button>
+        <a class="btn btn-secondary" href="/<%= company.slug %>/profile/<%= String(profileUser._id) %>">Cancel</a>
+      </div>
+    </form>
+  </div>
 </section>
+
+<style>
+  .page-wrap{max-width:860px;margin:24px auto;padding:0 14px;}
+  .card{background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:14px;box-shadow:0 10px 26px rgba(15,23,42,.06);}
+  .card-lg{padding:18px;}
+  .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;}
+  .page-title{margin:0;font-size:22px;letter-spacing:-0.02em;}
+  .page-sub{margin:6px 0 0;color:rgba(17,24,39,.65);font-size:13.5px;line-height:1.45;}
+  .who{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(15,23,42,.08);border-radius:12px;background:rgba(15,23,42,.02);}
+  .who-avatar{width:38px;height:38px;border-radius:50%;background:rgba(15,23,42,.10);display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .who-name{font-weight:650;font-size:13.5px;line-height:1.2;}
+  .who-email{font-size:12px;color:rgba(17,24,39,.62);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .form{margin-top:8px;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+  .label{font-weight:600;font-size:13px;color:rgba(17,24,39,.88);}
+  .input,.textarea,.select{border:1px solid rgba(15,23,42,.14);border-radius:12px;padding:10px 12px;font-size:14px;outline:none;background:#fff;}
+  .textarea{resize:vertical;min-height:110px;}
+  .input:focus,.textarea:focus,.select:focus{border-color:rgba(2,132,199,.55);box-shadow:0 0 0 3px rgba(2,132,199,.14);}
+  .help{font-size:12px;color:rgba(17,24,39,.58);line-height:1.35;}
+  .divider{height:1px;background:rgba(15,23,42,.08);margin:16px 0;}
+  .admin-block{background:rgba(15,23,42,.02);border:1px solid rgba(15,23,42,.08);border-radius:12px;padding:12px;}
+  .admin-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .admin-title{margin:0;font-size:15px;}
+  .pill{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid rgba(15,23,42,.10);background:#fff;color:rgba(17,24,39,.7);}
+  .actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:16px;}
+  .btn-primary{background:var(--primary,#0a66c2);border:none;color:#fff;}
+  .btn-primary:hover{filter:brightness(0.97);}
+  .btn-secondary{background:#f4f4f6;border:1px solid #e7e7ea;color:#111;}
+  @media (max-width:720px){
+    .card-head{flex-direction:column;}
+    .grid-2{grid-template-columns:1fr;}
+    .actions{justify-content:stretch;}
+    .actions .btn{flex:1;text-align:center;}
+    .who-email{max-width:100%;}
+  }
+</style>

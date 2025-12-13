@@ -44,20 +44,26 @@
         <% users.forEach(u => { %>
           <tr>
             <td>
-              <div class="admin-user-main">
-                <div class="admin-user-avatar">
-                  <span><%= (u.fullName || '?').charAt(0).toUpperCase() %></span>
+              <a
+                href="/<%= company.slug %>/profile/<%= u._id %>"
+                class="admin-user-link"
+              >
+                <div class="admin-user-main">
+                  <div class="admin-user-avatar">
+                    <span><%= (u.fullName || '?').charAt(0).toUpperCase() %></span>
+                  </div>
+                  <div>
+                    <div class="admin-user-name"><%= u.fullName %></div>
+                    <% if (u.title || u.department) { %>
+                      <div class="admin-user-meta">
+                        <%= [u.title, u.department].filter(Boolean).join(' · ') %>
+                      </div>
+                    <% } %>
+                  </div>
                 </div>
-                <div>
-                  <div class="admin-user-name"><%= u.fullName %></div>
-                  <% if (u.title || u.department) { %>
-                    <div class="admin-user-meta">
-                      <%= [u.title, u.department].filter(Boolean).join(' · ') %>
-                    </div>
-                  <% } %>
-                </div>
-              </div>
+              </a>
             </td>
+            
             <td class="admin-user-email">
               <%= u.email %>
             </td>

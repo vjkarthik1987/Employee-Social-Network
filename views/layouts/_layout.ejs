@@ -19,6 +19,7 @@
     const _prefersDark = (_userPref === true) || (_userPref === null && _companyDefaultDark);
   %>
 
+
   <% if (company?.branding?.logoUrl) { %>
     <link rel="icon" href="<%= company.branding.logoUrl %>" type="image/png">
   <% } %>
@@ -114,8 +115,7 @@
   <% } %>
 
   <!-- Main Page Container -->
-  <div class="page-container" style="
-    display:flex; flex-direction:column; min-height:100vh; padding:20px; box-sizing:border-box;">
+  <div class="page-container" style="display:flex; flex-direction:column; min-height:100vh; box-sizing:border-box;">
     <main class="app-shell">
       <div class="col-center">
         <%- include('../partials/flash') %>

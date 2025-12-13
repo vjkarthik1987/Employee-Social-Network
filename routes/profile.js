@@ -6,9 +6,6 @@ const profile = require('../controllers/profileController');
 const User = require('../models/User');
 
 
-
-router.get('/:userId', ensureAuth, profile.show);
-
 // Self-edit (no :userId)
 router.get('/me/edit', ensureAuth, profile.editForm);
 router.post('/me/edit', ensureAuth, profile.update);
@@ -16,5 +13,7 @@ router.post('/me/edit', ensureAuth, profile.update);
 // Admin edit any user
 router.get('/:userId/edit', ensureAuth, requireRole('ORG_ADMIN'), profile.editForm);
 router.post('/:userId/edit', ensureAuth, requireRole('ORG_ADMIN'), profile.update);
+
+router.get('/:userId', ensureAuth, profile.show);
 
 module.exports = router;

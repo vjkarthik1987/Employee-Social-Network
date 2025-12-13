@@ -1,7 +1,6 @@
 <!-- debug: <%= Array.isArray(internalLinks) ? internalLinks.length : 'no-var' %> -->
 <% if (Array.isArray(internalLinks) && internalLinks.length) { %>
     <div class="card" style="padding:12px;display:grid;gap:8px;">
-      <div style="font-weight:700;">Quick Links</div>
       <div class="il-grid">
         <% internalLinks.forEach(function(l){ %>
           <a class="il-tile" href="<%= l.url %>" target="_blank" rel="noopener"

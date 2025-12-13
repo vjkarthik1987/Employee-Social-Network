@@ -172,7 +172,8 @@ router.post('/:userId/delete', ensureAuth, requireRole('ORG_ADMIN'), async (req,
   } catch (e) { next(e); }
 });
 
+//Edit user
 router.get('/:userId/edit', ensureAuth, requireRole('ORG_ADMIN'), profile.editForm);
-router.post('/:userId', ensureAuth, requireRole('ORG_ADMIN'), profile.update);
+router.post('/:userId/edit', ensureAuth, requireRole('ORG_ADMIN'), profile.update);
 
 module.exports = router;
