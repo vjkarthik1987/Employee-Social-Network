@@ -3,9 +3,12 @@ const sanitizeHtml = require('sanitize-html');
 const { Types } = require('mongoose');
 const User = require('../models/User');
 const Post = require('../models/Post');
+const Comment = require('../models/Comment');
+const Reaction = require('../models/Reaction');
 const Group = require('../models/Group');
 const Attachment = require('../models/Attachment');
 const audit = require('../services/auditService');
+
 
 
 function cid(req) { return req.companyId || req.company?._id; }
@@ -54,6 +57,24 @@ exports.show = async (req, res, next) => {
       .lean();
     if (!profileUser) return res.status(404).render('errors/404');
 
+    const [postsCount, commentsCount, reactionsGivenCount] = await Promise.all([
+      Post.countDocuments({
+        companyId,
+        authorId: profileUser._id,
+        status: 'PUBLISHED',
+        deletedAt: null,
+      }),
+      Comment.countDocuments({
+        companyId: req.companyId,
+        authorId: profileUser._id,
+        status: { $ne: 'deleted' } // adjust if your comment schema uses deletedAt instead
+      }),
+      Reaction.countDocuments({
+        companyId: req.companyId,
+        userId: profileUser._id
+      })
+    ]);
+
     // latest posts by this user
     let posts = await Post.find({
       companyId,
@@ -88,6 +109,9 @@ exports.show = async (req, res, next) => {
       posts,
       groups,
       canEdit,
+      postsCount,
+      commentsCount,
+      reactionsGivenCount
     });
   } catch (e) { next(e); }
 };

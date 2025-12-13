@@ -16,6 +16,7 @@ const microcache = require('../middleware/microcache');
 const cacheStore = require('../services/cacheStore');
 const etag = require('../services/etag');
 
+
 function cid(req) { return req.companyId || req.company?._id; }
 function isObjId(v) { return Types.ObjectId.isValid(v); }
 function stripTags(html = '') { return String(html).replace(/<[^>]*>/g, ' '); }
@@ -325,7 +326,6 @@ async function getUpcomingCelebrations(companyId, limit = 10) {
   return events.slice(0, limit);
 }
 
-
 // ---------- controllers ----------
 
 // GET /:org/feed
@@ -465,7 +465,6 @@ exports.groupFeed = async (req, res, next) => {
     });
   } catch (e) { next(e); }
 };
-
 
 // POST /:org/posts
 // fields: content, type (TEXT|LINK|IMAGE), image (multer), groupId?, imageAlt?
@@ -664,8 +663,6 @@ exports.create = async (req, res, next) => {
     return res.redirect(`/${req.params.org}/feed`);
   } catch (e) { next(e); }
 };
-
-
 
 // GET /:org/posts/:postId
 exports.getPost = async (req, res, next) => {
