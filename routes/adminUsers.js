@@ -154,6 +154,62 @@ router.post('/import', ensureAuth, requireRole('ORG_ADMIN'), upload.single('csv'
   } catch (e) { next(e); }
 });
 
+// Add single user
+router.post('/create', ensureAuth, requireRole('ORG_ADMIN'), async (req, res, next) => {
+  try {
+    const fullName = (req.body.fullName || '').trim();
+    const email = (req.body.email || '').toLowerCase().trim();
+    const role = (req.body.role || 'MEMBER').toUpperCase();
+    const status = (req.body.status || 'active').toLowerCase();
+
+    const allowedRoles = new Set(['MEMBER', 'MODERATOR', 'ORG_ADMIN']);
+    const allowedStatus = new Set(['active', 'invited', 'suspended']);
+
+    if (!fullName || !email || !allowedRoles.has(role) || !allowedStatus.has(status)) {
+      req.flash('error', 'Please enter valid name/email/role/status.');
+      return res.redirect(`/${req.params.org}/admin/users`);
+    }
+
+    // License guard
+    const guard = await checkLicenseGuard(req);
+    if (!guard.ok) {
+      const company = req.company;
+      return res.status(402).render(
+        guard.reason === 'expired' ? 'billing/expired' : 'billing/limit',
+        { company, message: guard.reason === 'expired' ? 'Your trial has ended.' : 'Seat limit reached.' }
+      );
+    }
+
+    const existing = await User.findOne({ companyId: req.companyId, email });
+    if (existing) {
+      req.flash('error', 'A user with this email already exists.');
+      return res.redirect(`/${req.params.org}/admin/users`);
+    }
+
+    const temp = 'password'; // same as CSV import for now
+    const passwordHash = await bcrypt.hash(temp, 12);
+
+    const u = new User({
+      companyId: req.companyId,
+      fullName,
+      email,
+      role,
+      status,
+      passwordHash,
+    });
+
+    await u.save();
+
+    // keep seats accurate (same as your import logic)
+    const count = await User.countDocuments({ companyId: req.companyId, status: 'active' });
+    await Company.updateOne({ _id: req.companyId }, { $set: { 'license.used': count } });
+
+    req.flash('success', `User added: ${email}`);
+    return res.redirect(`/${req.params.org}/admin/users`);
+  } catch (e) { next(e); }
+});
+
+
 // Delete user
 router.post('/:userId/delete', ensureAuth, requireRole('ORG_ADMIN'), async (req, res, next) => {
   try {

@@ -57,6 +57,10 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;');
 }
 
+function stripTags(html = '') {
+  return String(html).replace(/<[^>]*>/g, ' ');
+}
+
 // ---------- intent classification ----------
 //
 // We keep this simple: model must return STRICT JSON:
@@ -73,7 +77,7 @@ async function classifyMessage(message) {
     content:
       'You are an intent classifier for the Jaango Assistant. ' +
       'Your job is to decide if the user wants NORMAL_QA or an ACTION. ' +
-      'Supported actions: create_post, search_groups, show_moderation, send_feedback. ' +
+      'Supported actions: create_post, search_groups, show_moderation, send_feedback, recent_news. ' +
       'Return STRICT JSON with keys: mode, action, params. ' +
       'mode is either "qa" or "action". ' +
       'If mode is "qa", action MUST be null and params {}. ' +
@@ -82,6 +86,7 @@ async function classifyMessage(message) {
       'For search_groups, params: { "topic": "..." }. ' +
       'For show_moderation, params: {}. ' +
       'For send_feedback, params: { "feedback": "..." }. ' +
+      'For recent_news, params: { "limit": optional number }. ' +
       'Respond ONLY with minified JSON. No explanations.',
   };
 
@@ -332,6 +337,90 @@ async function saveExchange({ companyId, userId, question, answer, mode, action,
   }
 }
 
+// recent_news: summarize latest 10–12 posts user can see
+async function handleRecentNews(req, params) {
+  const company = req.company;
+  const me = req.user;
+
+  const limit = Math.min(parseInt(params?.limit || 12, 10) || 12, 20);
+
+  // groups user belongs to (visibility filter)
+  const myGroups = await Group.find({
+    companyId: company._id,
+    $or: [{ owners: me._id }, { moderators: me._id }, { members: me._id }],
+  }).select('_id').lean();
+
+  const myGroupIds = myGroups.map(g => g._id);
+
+  // posts user can see: company feed + groups they belong to
+  const posts = await Post.find({
+    companyId: company._id,
+    status: 'PUBLISHED',
+    deletedAt: null,
+    $or: [
+      { groupId: null },
+      { groupId: { $in: myGroupIds } }
+    ]
+  })
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .populate('authorId', 'fullName title')
+    .lean();
+
+  if (!posts.length) {
+    return {
+      ok: true,
+      answer: "No recent posts yet. You're early 🙂",
+      sources: []
+    };
+  }
+
+  // build compact “digest input”
+  const digest = posts.map((p, i) => {
+    const text = stripTags(p.richText || '').replace(/\s+/g, ' ').trim();
+    const snippet = text.slice(0, 220);
+    const link = `${process.env.APP_BASE_URL || ''}/${company.slug}/p/${p._id}`;
+
+    return {
+      n: i + 1,
+      id: String(p._id),
+      type: p.type || 'TEXT',
+      createdAt: p.createdAt || p.publishedAt,
+      author: p.authorId?.fullName || 'Someone',
+      authorTitle: p.authorId?.title || '',
+      groupId: p.groupId ? String(p.groupId) : null,
+      snippet,
+      commentsCount: p.commentsCount || 0,
+      totalReactions: p.totalReactions || 0,
+      link,
+    };
+  });
+
+  const sys = {
+    role: 'system',
+    content:
+      'You are the Jaango Assistant. Summarise the latest internal posts as a crisp news digest. ' +
+      'Rules: Use ONLY the provided items. Do NOT invent details. ' +
+      'Output format:\n' +
+      '1) A 1–2 line headline summary.\n' +
+      '2) 10–12 bullet items (1–2 lines each). Each bullet MUST end with "↗ <link>".\n' +
+      '3) A short "Most discussed" + "Most reacted" section (if available).\n'
+  };
+
+  const userMsg = {
+    role: 'user',
+    content: JSON.stringify({ company: company.name, items: digest })
+  };
+
+  const answer = await callOpenAIChat([sys, userMsg]);
+
+  // sources are links to posts
+  const sources = digest.map(d => ({ label: `post_${d.n}`, docId: d.id, url: d.link }));
+
+  return { ok: true, answer, sources };
+}
+
+
 
 // ---------- routing ----------
 
@@ -366,6 +455,8 @@ router.post('/chat', async (req, res, next) => {
         payload = await handleShowModeration(req, params);
       } else if (action === 'send_feedback') {
         payload = await handleSendFeedback(req, params);
+      } else if (action === 'recent_news') {
+        payload = await handleRecentNews(req, params);
       } else {
         payload = null;
       }

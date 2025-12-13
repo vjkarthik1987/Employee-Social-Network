@@ -703,18 +703,40 @@ exports.getPost = async (req, res, next) => {
     if (value?.notFound) return res.status(404).render('errors/404');
 
     // Load comments (visible only)
-    const comments = await Comment.find({ postId: value.post._id, status: { $ne: 'deleted' } })
+    const allComments = await Comment.find({
+      companyId,                      // ✅ add tenant guard (important)
+      postId: value.post._id,
+      status: { $ne: 'deleted' }
+    })
       .sort({ createdAt: 1 })
       .populate('authorId', 'fullName avatarUrl title')
       .lean();
+
+    // Split top-level vs replies (assumes replies have parentCommentId set)
+    const topLevel = [];
+    const replies = [];
+
+    for (const c of allComments) {
+      if (c.parentCommentId) replies.push(c);
+      else topLevel.push(c);
+    }
+
+    // ✅ THIS is where your snippet goes
+    const repliesByParent = {};
+    replies.forEach(r => {
+      const k = String(r.parentCommentId);
+      (repliesByParent[k] ||= []).push(r);
+    });
 
     return res.render('posts/show', {
       company: req.company,
       user: req.user,
       post: value.post,
-      comments,
+      comments: topLevel,
+      repliesByParent,
       viewed: true,
     });
+    
   } catch (e) { next(e); }
 };
 

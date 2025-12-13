@@ -3400,3 +3400,25 @@ main.page {
   .profile-actions .btn{ width:100%; justify-content:center; }
   .profile-two{ grid-template-columns: 1fr; }
 }
+
+/* No bullets for comments + replies */
+.cc-list,
+.cc-list ul,
+.replies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Indent replies nicely (instead of bullets) */
+.replies {
+  margin-top: 8px;
+  margin-left: 44px;              /* adjust */
+  padding-left: 12px;
+  border-left: 2px solid rgba(15,23,42,.08);
+}
+
+/* Each reply spacing */
+.replies > li {
+  margin-top: 10px;
+}

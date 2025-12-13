@@ -92,9 +92,10 @@
   
     <ul id="comments-list" class="cc-list">
       <% (comments || []).forEach(function(c){ %>
-        <%- include('../partials/_comment', { company, user, post, comment: c, replies: [], repliesByParent: {} }) %>
-      <% }) %>
-    </ul>
+        <% const r = (repliesByParent && repliesByParent[String(c._id)]) ? repliesByParent[String(c._id)] : []; %>
+        <%- include('../partials/_comment', { company, user, post, comment: c, replies: r, repliesByParent }) %>
+      <% }) %>      
+    </ul>    
   </section>
   
 </section>

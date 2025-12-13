@@ -27,6 +27,46 @@
     </p>    
   </form>
 
+  <!-- Add single user -->
+  <form
+      action="/<%= company.slug %>/admin/users/create"
+      method="POST"
+      class="admin-import-form"
+      style="margin-top:12px;"
+      >
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+
+      <div class="admin-import-label" style="align-items:flex-start;">
+        <span class="admin-import-title">Add one user</span>
+
+        <div style="display:grid; gap:10px; width:100%; max-width:520px;">
+          <input class="input" type="text" name="fullName" placeholder="Full name" required maxlength="120">
+          <input class="input" type="email" name="email" placeholder="Email" required maxlength="200">
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <select class="input" name="role">
+              <option value="MEMBER">Member</option>
+              <option value="MODERATOR">Moderator</option>
+              <option value="ORG_ADMIN">Org Admin</option>
+            </select>
+
+            <select class="input" name="status">
+              <option value="active">Active</option>
+              <option value="invited">Invited</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </div>
+
+          <div class="fineprint" style="opacity:.8;">
+            Default password will be set (same as your CSV import). You can improve this later with invite links.
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-ghost">Add user</button>
+    </form>
+
+
   <!-- Users table -->
   <div class="admin-table-shell">
     <table class="admin-table">

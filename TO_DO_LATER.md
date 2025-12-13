@@ -38,13 +38,13 @@
 - Define gamification - posts, likes, reactions, comments
 - Post from here to MS Teams
 - Unpin post from announcements
-- Edit user and save not working
+- ~~Edit user and save not working~~
 - Pagination of posts
-- Chatbot should summarize new posts
+- ~~Chatbot should summarize new posts~~
 - ~~Post from LinkedIn~~
 - Connect to company LinkedIn page
 - Improve look and feel of Newsletter by adding plus button for edit
 - ~~Improve look and feel of celebrations~~
 - Edit newsletter
-- Remove bullet from replies
+- ~~Remove bullet from replies~~
 
