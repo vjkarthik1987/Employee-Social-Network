@@ -391,6 +391,7 @@ h1,h2,h3{ line-height: 1.25; }
 
 .post-content {
   margin-bottom: 25px;
+  font-size: 1.25rem;
 }
   
   /* Compact card tweaks (feed view) */
@@ -3421,4 +3422,207 @@ main.page {
 /* Each reply spacing */
 .replies > li {
   margin-top: 10px;
+}
+
+.feed-more {
+  display: grid;
+  place-items: center;
+  justify-content:flex-end;
+  padding: 16px 0 32px;
+}
+
+#feed-sentinel {
+  height: 1px;
+}
+
+/* ===== Post images layout (uses your existing .media-grid markup) ===== */
+.media-grid{
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Your existing wrappers */
+.media-thumb-wrap{
+  position: relative;
+  background: #f2f3f5;
+  overflow: hidden;
+}
+
+/* Make image fill its tile */
+.media-thumb{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+/* 1 image: full width, bigger */
+.media-grid--1{
+  grid-template-columns: 1fr;
+}
+.media-grid--1 .media-thumb-wrap{
+  aspect-ratio: 16 / 9; /* change to 4/3 if you want taller */
+}
+
+/* 2 images: 50/50 */
+.media-grid--2{
+  grid-template-columns: 1fr 1fr;
+}
+.media-grid--2 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+
+/* 3 images: 3 columns */
+.media-grid--3{
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.media-grid--3 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+
+/* 4 images: 2 rows, 2 columns */
+.media-grid--4{
+  grid-template-columns: 1fr 1fr;
+}
+.media-grid--4 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+
+/* 5 images: 3 on first row, 2 on second row */
+.media-grid--5{
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.media-grid--5 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+/* Make item 4 span columns 1-2, item 5 span columns 2-3 (so it's 2 tiles in row 2) */
+.media-grid--5 .media-thumb-wrap:nth-child(4){
+  grid-column: 1 / span 2;
+}
+.media-grid--5 .media-thumb-wrap:nth-child(5){
+  grid-column: 3 / span 1;
+}
+/* If you prefer true “2 equal tiles” on row 2, use this instead:
+.media-grid--5 .media-thumb-wrap:nth-child(4){ grid-column: 1 / span 1; }
+.media-grid--5 .media-thumb-wrap:nth-child(5){ grid-column: 2 / span 1; }
+*/
+
+/* 6+ images: 3-column grid */
+.media-grid--6,
+.media-grid--7,
+.media-grid--8,
+.media-grid--9{
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.media-grid--6 .media-thumb-wrap,
+.media-grid--7 .media-thumb-wrap,
+.media-grid--8 .media-thumb-wrap,
+.media-grid--9 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+
+/* ============================
+   Post media layout rules
+   ============================ */
+
+/* base */
+.post-card .media-grid{
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.post-card .media-thumb-wrap{
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f3f4f6;
+}
+
+.post-card .media-thumb{
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+/* 1 image: full width hero */
+.post-card .media-grid--1{
+  grid-template-columns: 1fr;
+}
+.post-card .media-grid--1 .media-thumb-wrap{
+  aspect-ratio: 16 / 9;
+  max-height: 420px;   /* tweak */
+}
+
+/* 2 images: 50% + 50% */
+.post-card .media-grid--2{
+  grid-template-columns: repeat(2, 1fr);
+}
+.post-card .media-grid--2 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+
+/* 3 images: 33% each */
+.post-card .media-grid--3{
+  grid-template-columns: repeat(3, 1fr);
+}
+.post-card .media-grid--3 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+
+/* 4 images: 2 rows, 50% width */
+.post-card .media-grid--4{
+  grid-template-columns: repeat(4, 1fr); /* use spans to make 2 per row */
+}
+.post-card .media-grid--4 .media-thumb-wrap{
+  grid-column: span 2;
+  aspect-ratio: 1 / 1;
+}
+
+/* 5 images:
+   row1: 3 items (each 33%) -> span2 of 6
+   row2: 2 items (each 50%) -> span3 of 6
+*/
+.post-card .media-grid--5{
+  grid-template-columns: repeat(6, 1fr);
+}
+.post-card .media-grid--5 .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+.post-card .media-grid--5 .media-thumb-wrap:nth-child(-n+3){
+  grid-column: span 2; /* first 3 */
+}
+.post-card .media-grid--5 .media-thumb-wrap:nth-child(n+4){
+  grid-column: span 3; /* last 2 */
+}
+
+/* 6+ images: simple 3-column grid */
+.post-card .media-grid--many{
+  grid-template-columns: repeat(3, 1fr);
+}
+.post-card .media-grid--many .media-thumb-wrap{
+  aspect-ratio: 1 / 1;
+}
+
+/* keep your +N overlay working */
+.post-card .multi-overlay{
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.post-card .media-grid--1 .media-thumb-wrap{
+  aspect-ratio: auto;
+  max-height: 520px;
 }

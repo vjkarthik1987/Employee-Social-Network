@@ -138,11 +138,17 @@
   </div>
 
 
-  <div class="feed-grid">
-    <% (posts || []).forEach(function(post){ %>
-      <%- include('../partials/_post_card', { company, user, post, compact: true }) %>
-    <% }) %>
+  <div id="feed-list">
+    <%- include('../partials/_posts_batch', { company, user, posts }) %>
   </div>
+
+  <div class="feed-more">
+    <button id="feed-more-btn" class="btn btn-ghost" type="button" style="display:none;">
+      Load more
+    </button>
+    <div id="feed-sentinel" aria-hidden="true"></div>
+  </div>
+
 </section>
 
 <script>
@@ -459,3 +465,65 @@
   });
 })();
 </script>
+
+<script>
+  (function(){
+    const org = "<%= company.slug %>";
+    const list = document.getElementById('feed-list');
+    const sentinel = document.getElementById('feed-sentinel');
+    const btn = document.getElementById('feed-more-btn');
+  
+    if (!list || !sentinel) return;
+  
+    let page = Number("<%= page || 1 %>");
+    const totalPages = Number("<%= totalPages || 1 %>");
+    let loading = false;
+  
+    const baseQS = new URLSearchParams(window.location.search);
+  
+    async function loadNext(){
+      if (loading) return;
+      if (page >= totalPages) return;
+  
+      loading = true;
+      const nextPage = page + 1;
+  
+      const qs = new URLSearchParams(baseQS);
+      qs.set('page', String(nextPage));
+  
+      try {
+        const url = `/${org}/feed/more?${qs.toString()}`;
+        const resp = await fetch(url, { headers: { 'Accept': 'text/html' } });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  
+        const html = await resp.text();
+  
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+  
+        const nodes = Array.from(temp.children); // ✅ ignores whitespace text nodes
+        nodes.forEach(n => list.appendChild(n));
+  
+        page = nextPage;
+  
+        if (page >= totalPages && btn) btn.style.display = 'none';
+      } catch (e) {
+        console.error('Load more failed', e);
+        if (btn) btn.style.display = 'inline-flex'; // fallback
+      } finally {
+        loading = false;
+      }
+    }
+  
+    if (btn) btn.addEventListener('click', loadNext);
+  
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some(en => en.isIntersecting)) loadNext();
+    }, { rootMargin: '800px 0px' });
+  
+    io.observe(sentinel);
+  })();
+  </script>
+  
+  
+  

@@ -95,6 +95,11 @@ router.use('/posts', postsRouter);
 router.use('/', require('./reports'));
 router.use('/profile', ensureAuth, profileRoutes);
 router.get('/feed', ensureAuth, csrfProtection, pc.companyFeed);
+router.get(
+  '/feed/more',
+  ensureAuth,
+  pc.companyFeedMore
+);
 router.use('/newsletters', ensureAuth, newslettersRouter);
 router.use('/saved-searches', savedSearches);
 router.use('/admin/retention', adminRetention);

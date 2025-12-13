@@ -775,3 +775,18 @@ exports.destroy = async (req, res, next) => {
     return res.redirect(`/${req.params.org}/feed`);
   } catch (e) { next(e); }
 };
+
+exports.companyFeedMore = async (req, res, next) => {
+  try {
+    // same query logic as normal feed
+    const data = await runFeedQuery({ req, scope: 'COMPANY' });
+
+    // return ONLY the HTML for posts (no layout)
+    return res.render('partials/_posts_batch', {
+      company: req.company,
+      user: req.user,
+      posts: data.posts
+    });
+  } catch (e) { next(e); }
+};
+

@@ -60,6 +60,7 @@ router.get('/mentions', ensureAuth, async (req, res, next) => {
 
 router.get('/feed', ensureAuth, csrfProtection, pc.companyFeed);
 
+
 if (typeof pc?.groupFeed !== 'function') {
   throw new Error('postController.groupFeed is not a function (check your exports).');
 }

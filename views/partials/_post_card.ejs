@@ -213,7 +213,17 @@ function timeAgo(date) {
 
 
       <% if (count > 0) { %>
-        <div class="media-grid" data-lightbox-group="<%= post._id %>">
+        <%
+          const gridClass =
+            (count === 1) ? 'media-grid--1' :
+            (count === 2) ? 'media-grid--2' :
+            (count === 3) ? 'media-grid--3' :
+            (count === 4) ? 'media-grid--4' :
+            (count === 5) ? 'media-grid--5' :
+            'media-grid--many';
+        %>
+
+        <div class="media-grid <%= gridClass %>" data-lightbox-group="<%= post._id %>">
           <% imgs.forEach(function(att, i){
               const u = String(att.storageUrl || '');
               const isC = u.includes('/upload/');
