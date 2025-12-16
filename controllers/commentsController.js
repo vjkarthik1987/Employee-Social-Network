@@ -5,6 +5,7 @@ const Comment = require('../models/Comment');
 const Post = require('../models/Post');
 const User = require('../models/User');
 const ejs = require('ejs');
+const pointsService = require('../services/pointsService');
 
 
 
@@ -99,6 +100,18 @@ exports.createAjax = async (req, res, next) => {
       content: safeHtml,
     });
 
+    await pointsService.award({
+      company: req.company,
+      companyId: cid,
+      userId: req.user._id,        // ✅ ADD THIS
+      actorUserId: req.user._id,
+      action: parent ? 'REPLY_CREATED' : 'COMMENT_CREATED',
+      targetType: parent ? 'reply' : 'comment',
+      targetId: comment._id,
+      meta: { postId: String(postId), parentCommentId: parent ? String(parent._id) : null }
+    }).catch(() => {});
+    
+  
     // Denorm bumps in parallel
     const bumps = [
       Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } })

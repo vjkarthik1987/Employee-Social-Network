@@ -18,6 +18,7 @@ const internalLinksApi = require('./api/internalLinks');
 const adminPerf = require('./adminPerf');
 const adminPolls = require('./adminPolls');
 const adminAudit = require('./adminAudit');
+const adminPoints = require('./adminPoints');
 const exportsRouter = require('./exports');
 const newslettersRouter = require('./newsletters');
 
@@ -107,6 +108,7 @@ router.use('/admin/internal-links', adminInternalLinks);
 router.use('/admin/assistant-docs', adminAssistantDocs);
 router.use('/admin/perf', ensureAuth, requireRole('ORG_ADMIN'), adminPerf);
 router.use('/admin/polls', ensureAuth, requireRole('ORG_ADMIN'), adminPolls)
+router.use('/admin/points', adminPoints);
 router.use('/api/assistant', assistantApiRoutes);
 
 router.use('/', exportsRouter);

@@ -25,7 +25,7 @@ try {
 // ---- OpenAI REST via node-fetch (no SDK) ----
 
 const OPENAI_EMBED_MODEL = 'text-embedding-3-small';
-const OPENAI_CHAT_MODEL = 'gpt-3.5-turbo';
+const OPENAI_CHAT_MODEL = 'gpt-4o-mini';
 
 async function callOpenAI(path, body) {
   const apiKey = process.env.OPENAI_API_KEY;

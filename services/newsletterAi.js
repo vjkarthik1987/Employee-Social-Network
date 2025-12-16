@@ -44,7 +44,7 @@ async function summarizeExternalArticle(url, htmlRaw) {
   }
 
   const body = {
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4o-mini',
     temperature: 0.4,
     messages: [
       {
@@ -182,7 +182,7 @@ ${externalBlocks.join('\n\n') || '(none)'}
 `.trim();
 
   const body = {
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4o-mini',
     temperature: 0.5,
     messages: [
       { role: 'system', content: systemPrompt },

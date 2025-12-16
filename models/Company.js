@@ -45,7 +45,40 @@ const companySchema = new mongoose.Schema({
   verifyToken: { type: String, index: true, default: null },
   verifyExpiresAt: { type: Date, default: null },
   verifiedAt: { type: Date, default: null },
-  
+  // Gamification / Points
+  // models/Company.js  (add inside companySchema)
+  gamification: {
+    enabled: { type: Boolean, default: true },
+    rules: {
+      postCreated: { type: Number, default: 5 },
+      commentCreated: { type: Number, default: 2 },
+      replyCreated: { type: Number, default: 1 },
+
+      // optional: when others engage with your content
+      commentReceived: { type: Number, default: 1 },
+      replyReceived: { type: Number, default: 1 },
+
+      // per reaction type
+      reactionsGiven: {
+        LIKE: { type: Number, default: 1 },
+        HEART: { type: Number, default: 1 },
+        CELEBRATE: { type: Number, default: 1 },
+        SUPPORT: { type: Number, default: 1 },
+        LAUGH: { type: Number, default: 1 },
+        INSIGHTFUL: { type: Number, default: 1 },
+        THANKS: { type: Number, default: 1 },
+      },
+      reactionsReceived: {
+        LIKE: { type: Number, default: 1 },
+        HEART: { type: Number, default: 1 },
+        CELEBRATE: { type: Number, default: 1 },
+        SUPPORT: { type: Number, default: 1 },
+        LAUGH: { type: Number, default: 1 },
+        INSIGHTFUL: { type: Number, default: 1 },
+        THANKS: { type: Number, default: 1 },
+      }
+    }
+  },  
   status: { type: String, enum: ['active','suspended'], default: 'active' },
 }, { timestamps: true });
 

@@ -18,7 +18,7 @@ const ragService = require('../services/assistantRagService');
 
 // ---------- helpers ----------
 
-const OPENAI_CHAT_MODEL = 'gpt-3.5-turbo';
+const OPENAI_CHAT_MODEL = 'gpt-4o-mini';
 
 async function callOpenAIChat(messages) {
   const apiKey = process.env.OPENAI_API_KEY;

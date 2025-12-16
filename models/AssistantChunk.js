@@ -34,7 +34,7 @@ const assistantChunkSchema = new Schema(
       required: true,
     },
     embedding: {
-      type: [Number], // GPT-3.5 embedding vector
+      type: [Number],
       required: true,
     },
   },

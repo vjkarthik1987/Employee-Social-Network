@@ -32,7 +32,7 @@
 - ~~Moderation queue should come~~
 - ~~Improve the comment page~~
 - Add Show Chat History Button
-- Photo should be bigger in post (based on number of photos)
+- ~~Photo should be bigger in post (based on number of photos)~~
 - Close poll button
 - ~~If there is no avatar, then initials should come~~
 - Define gamification - posts, likes, reactions, comments

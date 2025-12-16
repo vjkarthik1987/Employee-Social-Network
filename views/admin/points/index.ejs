@@ -1,0 +1,76 @@
+<% layout('layouts/_layout') %>
+
+<section class="admin-users-page">
+  <header class="admin-page-head">
+    <h2 class="h2">Points leaderboard — <%= company.name %></h2>
+    <p class="sub">Points per user for a selected period.</p>
+  </header>
+
+  <form method="GET" class="admin-import-form" style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+    <label class="admin-import-label" style="min-width:220px;">
+      <span class="admin-import-title">From</span>
+      <input type="date" name="from" value="<%= from %>" />
+    </label>
+    <label class="admin-import-label" style="min-width:220px;">
+      <span class="admin-import-title">To</span>
+      <input type="date" name="to" value="<%= to %>" />
+    </label>
+    <button class="btn" type="submit">Apply</button>
+    <a class="btn btn-ghost"
+    href="/<%= company.slug %>/admin/points/export?from=<%= from %>&to=<%= to %>">
+        Export CSV
+    </a>
+  </form>
+
+  <div class="admin-table-shell">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th style="text-align:right;">Points</th>
+            <th style="text-align:right;">Events</th>
+            <th style="text-align:right;">Posts</th>
+            <th style="text-align:right;">Comments</th>
+            <th style="text-align:right;">Replies</th>
+            <th style="text-align:right;">Reactions</th>
+
+        </tr>
+      </thead>
+      <tbody>
+        <% if (leaderboard && leaderboard.length) { %>
+          <% leaderboard.forEach(row => { %>
+            <tr>
+                <td>
+                  <div class="admin-user-main">
+                    <div class="admin-user-avatar">
+                      <span><%= (row.user.fullName || '?').charAt(0).toUpperCase() %></span>
+                    </div>
+                    <div>
+                      <div class="admin-user-name"><%= row.user.fullName %></div>
+                      <% if (row.user.title) { %>
+                        <div class="admin-user-meta"><%= row.user.title %></div>
+                      <% } %>
+                    </div>
+                  </div>
+                </td>
+              
+                <!-- ✅ EMAIL COLUMN -->
+                <td class="admin-user-email"><%= row.user.email || '' %></td>
+              
+                <td style="text-align:right;font-weight:700;"><%= row.points %></td>
+                <td style="text-align:right;"><%= row.events %></td>
+                <td style="text-align:right;"><%= row.posts %></td>
+                <td style="text-align:right;"><%= row.comments %></td>
+                <td style="text-align:right;"><%= row.replies %></td>
+                <td style="text-align:right;"><%= row.reactions %></td>
+              </tr>
+              
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="8" class="admin-table-empty">No points in this period.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</section>

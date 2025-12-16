@@ -3626,3 +3626,43 @@ main.page {
   aspect-ratio: auto;
   max-height: 520px;
 }
+
+.admin-table-shell{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+.admin-table{
+  min-width: 900px;   /* adjust: 900–1100 */
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td{
+  white-space: nowrap;
+}
+
+.admin-table td:first-child{
+  white-space: normal; /* allow user block to wrap */
+}
+
+.admin-table th:first-child,
+.admin-table td:first-child{
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 2;
+}
+.admin-table th, .admin-table td{
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.admin-table thead th{
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity: .7;
+}

@@ -36,6 +36,16 @@ exports.updateSettings = async (req, res, next) => {
     // Identity
     company.productName = (req.body.productName || '').trim();
     company.tagline     = (req.body.tagline || '').trim();
+    company.gamification = company.gamification || {};
+    company.gamification.rules = company.gamification.rules || {};
+
+    company.gamification.enabled = !!req.body.gamificationEnabled;
+
+    company.gamification.rules.POST_CREATED    = Number(req.body.pointsPostCreated || company.gamification.rules.POST_CREATED || 0);
+    company.gamification.rules.COMMENT_CREATED = Number(req.body.pointsCommentCreated || company.gamification.rules.COMMENT_CREATED || 0);
+    company.gamification.rules.REPLY_CREATED   = Number(req.body.pointsReplyCreated || company.gamification.rules.REPLY_CREATED || 0);
+    company.gamification.rules.REACTION_ADDED  = Number(req.body.pointsReactionAdded || company.gamification.rules.REACTION_ADDED || 0);
+
 
     // Branding
     const primary   = (req.body.themePrimary || '').trim();

@@ -25,6 +25,10 @@
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/assistant-docs')) ? 'active' : '' %>">
       🤖 Assistant Docs
     </a>
+    <a href="/<%= company.slug %>/admin/points"
+      class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/points')) ? 'active' : '' %>">
+      ⭐ Points
+   </a>
     <a href="/<%= company.slug %>/admin/settings"
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/settings')) ? 'active' : '' %>">
       ⚙️ Settings
@@ -201,6 +205,38 @@
       </label>
     </div>
 
+    <hr style="margin:18px 0;"/>
+
+    <h3 style="margin:0 0 8px;">Points & Gamification</h3>
+
+    <label style="display:flex;gap:8px;align-items:center;">
+      <input type="checkbox" name="gamificationEnabled" value="1"
+        <%= company.gamification?.enabled ? 'checked' : '' %> />
+      Enable points
+    </label>
+
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;">
+      <label>Points: Post created
+        <input class="input" type="number" name="pointsPostCreated"
+          value="<%= company.gamification?.rules?.POST_CREATED ?? 0 %>">
+      </label>
+
+      <label>Points: Comment created
+        <input class="input" type="number" name="pointsCommentCreated"
+          value="<%= company.gamification?.rules?.COMMENT_CREATED ?? 0 %>">
+      </label>
+
+      <label>Points: Reply created
+        <input class="input" type="number" name="pointsReplyCreated"
+          value="<%= company.gamification?.rules?.REPLY_CREATED ?? 0 %>">
+      </label>
+
+      <label>Points: Reaction added
+        <input class="input" type="number" name="pointsReactionAdded"
+          value="<%= company.gamification?.rules?.REACTION_ADDED ?? 0 %>">
+      </label>
+    </div>
+
     <!-- ===== Plan & Usage (Read-only) ===== -->
     <div class="card" style="padding:16px;display:grid;gap:8px;">
       <h3 style="margin:0 0 4px;">Plan & Usage</h3>
@@ -242,6 +278,9 @@
       <button class="btn" type="submit">Save Settings</button>
     </div>
   </form>
+
+  
+
 
   <!-- ===== Utilities (separate card, but still inside the same section) ===== -->
   <div class="card" style="padding:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">

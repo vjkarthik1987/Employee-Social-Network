@@ -15,7 +15,7 @@ const perf = require('../services/perfService');
 const microcache = require('../middleware/microcache');
 const cacheStore = require('../services/cacheStore');
 const etag = require('../services/etag');
-
+const pointsService = require('../services/pointsService');
 
 function cid(req) { return req.companyId || req.company?._id; }
 function isObjId(v) { return Types.ObjectId.isValid(v); }
@@ -39,7 +39,6 @@ function readFilters(req, { isGroup = false } = {}) {
 
   return { q, type, tab, authorId, people, from, to, myGroups, page, limit, skip };
 }
-
 
 async function resolvePeopleToAuthorIds({ companyId, people }) {
   if (!people) return null;
@@ -571,6 +570,17 @@ exports.create = async (req, res, next) => {
     }
 
     const post = await Post.create(postDoc);
+    await pointsService.award({
+      company: req.company,
+      companyId,
+      userId: req.user._id,        // ✅ earner
+      actorUserId: req.user._id,   // ✅ actor
+      action: 'POST_CREATED',
+      targetType: 'post',
+      targetId: post._id,
+      meta: { type: post.type }
+    }).catch(() => {});
+    
 
     // Multi-image support
     const files = Array.isArray(req.files) ? req.files : [];
@@ -757,6 +767,17 @@ exports.destroy = async (req, res, next) => {
     post.deletedAt = new Date();
     post.deletedBy = req.user._id;
     await post.save();
+
+    await pointsService.award({
+      company: req.company,
+      companyId,
+      actorUserId: req.user._id,
+      action: 'POST_DELETED',
+      targetType: 'post',
+      targetId: post._id,
+      meta: {}
+    }).catch(() => {});
+    
 
     audit.record({
       companyId,
