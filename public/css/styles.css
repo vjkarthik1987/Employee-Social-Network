@@ -20,16 +20,11 @@ html {
   text-size-adjust: 100%;
 }
 
-html {
-  font-size: 15px;
-}
-body {
-  font-size: 1rem;
-}
 
 body {
   min-width: 1200px;
 }
+
 html, body{
   height: 100%;
   background: var(--bg);
@@ -47,6 +42,13 @@ html {
   -webkit-text-size-adjust: 100%; /* Prevent iOS/Chrome zoom scaling */
   text-size-adjust: 100%;         /* For other browsers */
   scroll-behavior: smooth;
+}
+
+html {
+  font-size: 13px;
+}
+body {
+  font-size: 13rem;
 }
 
 
