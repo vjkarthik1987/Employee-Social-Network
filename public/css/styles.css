@@ -15,6 +15,19 @@
   --gutter: 24px;          /* spacing between columns and main */
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html {
+  font-size: 15px;
+}
+body {
+  font-size: 1rem;
+}
+
+
 html, body{
   height: 100%;
   background: var(--bg);
