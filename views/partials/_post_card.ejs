@@ -133,6 +133,10 @@ function timeAgo(date) {
   
       <!-- RIGHT: Actions -->
       <div class="post-header-actions" style="display:flex; align-items:center; gap:10px;">
+        <% if (post.status === 'DRAFT' && String(user._id) === String(post.authorId?._id || post.authorId)) { %>
+          <a class="icon-btn" title="Edit draft" href="/<%= company.slug %>/posts/<%= post._id %>/edit">✏️</a>
+        <% } %>
+        
         <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
           <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');">
             <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">

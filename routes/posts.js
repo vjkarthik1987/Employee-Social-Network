@@ -80,7 +80,11 @@ router.post('/',
 if (typeof pc?.getPost !== 'function') {
   throw new Error('postController.getPost is not a function (check your exports).');
 }
-router.get('/:postId', ensureAuth, pc.getPost);
+
+// Edit draft (or any post you own)
+router.get('/:postId/edit', ensureAuth, csrfProtection, pc.editPost);
+
+
 
 if (typeof pc?.destroy !== 'function') {
   throw new Error('postController.destroy is not a function (check your exports).');
@@ -94,5 +98,10 @@ if (cc && typeof cc?.create === 'function') {
 if (cc && typeof cc?.destroy === 'function') {
   router.post('/:postId/comments/:commentId/delete', ensureAuth, cc.destroy);
 }
+
+// Update (save draft / publish)
+router.post('/:postId', ensureAuth, upload.array('images', 10), csrfProtection, pc.update);
+
+router.get('/:postId', ensureAuth, pc.getPost);
 
 module.exports = router;

@@ -126,7 +126,7 @@
       %>
 
       <a href="<%= baseUrl %>?tab=REGULAR"
-        class="feed-tab <%= activeTab === 'ANNOUNCEMENTS' ? '' : 'is-active' %>">
+        class="feed-tab <%= activeTab === 'REGULAR' ? 'is-active' : '' %>">
         Regular posts
       </a>
 
@@ -134,6 +134,12 @@
         class="feed-tab <%= activeTab === 'ANNOUNCEMENTS' ? 'is-active' : '' %>">
         Announcements
       </a>
+
+      <a href="<%= baseUrl %>?tab=DRAFTS"
+        class="feed-tab <%= activeTab === 'DRAFTS' ? 'is-active' : '' %>">
+        Drafts
+      </a>
+   
     </div>
   </div>
 

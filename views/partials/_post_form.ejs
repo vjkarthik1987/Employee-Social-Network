@@ -1,13 +1,43 @@
 <!-- views/partials/_post_form.ejs -->
-<form method="POST" action="/<%= company.slug %>/posts" enctype="multipart/form-data" class="composer-card" id="composerForm" novalidate>
+<% const noForm   = !!locals.noForm; %>
+<% const editMode = !!locals.editMode; %>
+<% const post     = locals.post || null; %>
+<%
+  const existing =
+    (typeof post !== 'undefined' && post && post.richText)
+      ? post.richText
+      : '';
+%>
+
+<% const formAction = editMode && post
+  ? `/${company.slug}/posts/${post._id}`
+  : `/${company.slug}/posts`;
+%>
+
+<% if (!noForm) { %>
+<form method="POST"
+      action="<%= formAction %>"
+      enctype="multipart/form-data"
+      class="composer-card"
+      id="composerForm" novalidate>
+<% } %>
+
   <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-  <input type="hidden" name="type" id="postTypeSel" value="TEXT">
+
+  <!-- ✅ for drafts/edit: controller will read intent -->
+  <input type="hidden" name="intent" id="intentField" value="<%= editMode ? 'draft' : 'publish' %>">
+
+  <!-- ✅ keep for create-draft flow (optional) -->
+  <input type="hidden" name="saveAsDraft" id="saveAsDraft" value="0">
+
+  <input type="hidden" name="type" id="postTypeSel" value="<%= post?.type || 'TEXT' %>">
+
 
   <% if (typeof groupId !== 'undefined' && groupId) { %>
     <input type="hidden" name="groupId" value="<%= groupId %>">
   <% } %>
 
-  <!-- Header: avatar + hint -->
+  <!-- Header -->
   <div class="composer-head">
     <img class="composer-avatar" src="<%= (currentUser?.avatarUrl || '/img/avatar.png') %>" alt="">
     <div class="composer-head-meta">
@@ -18,180 +48,112 @@
   </div>
 
   <!-- Textarea -->
-    <!-- Plain post textarea (non-announcement) -->
-    <div id="plainComposerWrap">
-      <textarea name="content"
-              id="composerTextarea"
-              rows="1"
-              class="composer-input js-mention"
-              data-mention-source="/<%= company.slug %>/posts/mentions"
-              placeholder="Write something… (paste a link to show a preview)"></textarea>
-    </div>
+  <div id="plainComposerWrap">
+    <textarea name="content"
+  id="composerTextarea"
+  rows="1"
+  class="composer-input js-mention"
+  data-mention-source="/<%= company.slug %>/posts/mentions"
+  placeholder="Write something… (paste a link to show a preview)"
+><%- existing %></textarea>
 
-      <!-- Announcement rich body (shown only for ANNOUNCEMENT) -->
-  <div id="announcementEditorWrap" class="d-none" style="margin-top:.6rem;">
-    <label style="display:flex;flex-direction:column;gap:4px;">
-      <span style="font-size:13px;font-weight:500;">Announcement body</span>
-      <div class="rich-editor-container">
-        <div id="announcementEditor"></div>
-      </div>
-    </label>
-    <div class="fineprint">
-      Use this for your full mailer-style body — formatting, links, inline images, etc.
-    </div>
   </div>
 
-
-  <!-- Inline Previews -->
-  <div class="composer-previews">
-
-    <!-- Media preview -->
-    <div id="mediaPreview" class="media-preview d-none">
-       <div id="mediaGrid" class="media-grid"></div>
-       <button type="button" class="media-remove" id="removeMediaPreview" title="Remove all">× Clear</button>
-    </div>
-  </div>
-
-      <!-- Toolbar: type toggles + Post -->
+  <!-- Toolbar -->
   <div class="composer-toolbar">
     <div class="composer-toolbar-left">
-      <button
-        type="button"
-        class="composer-icon-btn tsel"
-        data-type="IMAGE"
-        title="Image post"
-        aria-label="Image post"
-      >
+      <!-- (keep your type buttons as-is) -->
+      <button type="button" class="composer-icon-btn tsel" data-type="IMAGE" title="Image post" aria-label="Image post">
         <span class="icon" aria-hidden="true">🖼️</span>
       </button>
-
-      <button
-        type="button"
-        class="composer-icon-btn tsel"
-        data-type="POLL"
-        title="Create poll"
-        aria-label="Create poll"
-      >
+      <button type="button" class="composer-icon-btn tsel" data-type="POLL" title="Create poll" aria-label="Create poll">
         <span class="icon" aria-hidden="true">📊</span>
       </button>
-
-      <button
-        type="button"
-        class="composer-icon-btn tsel"
-        data-type="ANNOUNCEMENT"
-        title="Announcement"
-        aria-label="Announcement"
-      >
+      <button type="button" class="composer-icon-btn tsel" data-type="ANNOUNCEMENT" title="Announcement" aria-label="Announcement">
         <span class="icon" aria-hidden="true">📢</span>
       </button>
     </div>
 
-    <button
-      class="composer-post-btn"
-      type="submit"
-      id="postBtn"
-      disabled
-      title="Post"
-      aria-label="Post"
-    >
-      <span class="composer-post-icon" aria-hidden="true">➤</span>
-    </button>
-  </div>
-
-  <!-- Hidden file input for IMAGE -->
-  <input id="composerFile" type="file" name="images" accept="image/*" multiple hidden>
-
-  <!-- Hidden helper row for IMAGE -->
-  <div id="imageRow" class="d-none" style="margin-top:.6rem;">
-    <div class="fineprint">JPG/PNG/GIF/MP4 • up to 2 MB (images) / 10 MB (video)</div>
-    <input type="text" name="imageAlt" class="input" placeholder="Describe the image (alt text, optional)" style="margin-top:.4rem;">
-  </div>
-
-  
-
-  <!-- POLL BUILDER -->
-  <div class="composer-section poll-builder d-none">
-    <div class="poll-builder-header">
-      <div>
-        <h4 class="poll-builder-title">Create a poll</h4>
-        <p class="poll-builder-sub">
-          Add questions and options. You can make some questions multiple choice.
-        </p>
-      </div>
-      <div class="poll-builder-meta">
-        <span class="pill pill-soft">Poll</span>
-      </div>
-    </div>
-
-    <!-- Where questions get injected -->
-    <div class="pb-questions" id="pbQs"></div>
-
-    <div class="pb-footer">
-      <button type="button" class="btn btn-soft pb-add-q">
-        + Add another question
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button type="button" class="btn btn-ghost" id="draftBtn">
+        Save draft
       </button>
-      <span class="fineprint">
-        People can vote once per question. For multiple-choice questions, they can pick more than one option.
-      </span>
+
+      <button
+        class="composer-post-btn"
+        type="submit"
+        id="postBtn"
+        disabled
+        title="<%= editMode ? 'Publish' : 'Post' %>"
+        aria-label="<%= editMode ? 'Publish' : 'Post' %>"
+      >
+        <span class="composer-post-icon" aria-hidden="true">➤</span>
+      </button>
     </div>
   </div>
 
+  <!-- (keep your remaining fields: file input, poll builder, announcement fields, etc.) -->
 
-  <!-- Announcement options -->
-    <!-- Announcement options -->
-      <!-- Announcement options -->
-  <div id="announceRow" class="d-none" style="margin:8px 0;display:flex;flex-direction:column;gap:8px;">
-    <!-- Heading -->
-    <div>
-      <label style="display:flex;flex-direction:column;gap:4px;">
-        <span style="font-size:13px;font-weight:500;">Announcement heading</span>
-        <input
-          type="text"
-          name="title"
-          class="input"
-          maxlength="160"
-          placeholder="e.g. We’ve won ACME Bank! (Q3 big deal)"
-        >
-      </label>
-      <div class="fineprint">This appears as the bold heading above the announcement body.</div>
-    </div>
-
-    <!-- Expiry date -->
-    <div>
-      <label style="display:flex;flex-direction:column;gap:4px;">
-        <span style="font-size:13px;font-weight:500;">Show this announcement until</span>
-        <input
-          type="date"
-          name="expiresAt"
-          class="input"
-        >
-      </label>
-      <div class="fineprint">
-        After this date, the announcement disappears from feeds/search but stays in history & direct links.
-      </div>
-    </div>
-
-    <!-- Pin toggle -->
-    <div>
-      <label style="display:flex;align-items:center;gap:8px;">
-        <input type="checkbox" name="isPinned" value="true">
-        <span>Pin to top</span>
-      </label>
-      <div class="fineprint">Only moderators/admins can actually pin; server enforces it.</div>
-    </div>
-  </div>
-
-
-  <!-- Hidden helper row for IMAGE -->
-  <div id="imageRow" class="d-none" style="margin-top:.6rem;">
-    <div class="fineprint">JPG/PNG/GIF/MP4 • up to 2 MB (images) / 10 MB (video)</div>
-    <input type="text" name="imageAlt" class="input" placeholder="Describe the image (alt text, optional)" style="margin-top:.4rem;">
-  </div>
-</form>
+  <% if (!noForm) { %>
+    </form>
+  <% } %>
 
 <script>
 (function(){
   const form      = document.getElementById('composerForm');
+  if (!form) return;
+
+  const typeSel   = document.getElementById('postTypeSel');
+  const postBtn   = document.getElementById('postBtn');
+  const textarea  = document.getElementById('composerTextarea');
+
+  const draftBtn  = document.getElementById('draftBtn');
+  const draftFlag = document.getElementById('saveAsDraft');
+  const intentField = document.getElementById('intent');
+
+  const IS_EDIT = <%= editMode ? 'true' : 'false' %>;
+
+  function enableIfHasContent(){
+    const hasText = (textarea.value || '').trim().length > 0;
+    postBtn.disabled = !hasText;
+  }
+
+  textarea.addEventListener('input', enableIfHasContent);
+
+  // ✅ Save Draft
+  if (draftBtn) {
+    draftBtn.addEventListener('click', () => {
+      if (IS_EDIT) {
+        // edit flow -> updatePost expects intent
+        intentField.value = 'draft';
+      } else {
+        // create flow -> create() expects saveAsDraft=1
+        draftFlag.value = '1';
+      }
+      form.requestSubmit ? form.requestSubmit() : form.submit();
+    });
+  }
+
+  // ✅ Publish / Post (arrow)
+  postBtn.addEventListener('click', () => {
+    if (IS_EDIT) {
+      intentField.value = 'publish';
+    } else {
+      draftFlag.value = '0';
+    }
+  });
+
+  // Initial
+  enableIfHasContent();
+})();
+</script>
+
+
+<script>
+(function(){
+  const form      = document.getElementById('composerForm');
+  if (!form) return;
+
   const typeSel   = document.getElementById('postTypeSel');
   const fileInp   = document.getElementById('composerFile');
   const postBtn   = document.getElementById('postBtn');
@@ -203,6 +165,24 @@
   const plainWrap   = document.getElementById('plainComposerWrap');
   const annWrap     = document.getElementById('announcementEditorWrap');
   const textarea    = document.getElementById('composerTextarea');
+
+  const intentField = document.getElementById('intentField');
+  const draftBtn = document.getElementById('draftBtn');
+  const postBtn  = document.getElementById('postBtn');
+
+  if (draftBtn && intentField) {
+    draftBtn.addEventListener('click', () => {
+      intentField.value = 'draft';
+      form.requestSubmit ? form.requestSubmit() : form.submit();
+    });
+  }
+
+  if (postBtn && intentField) {
+    postBtn.addEventListener('click', () => {
+      intentField.value = 'publish';
+    });
+  }
+
 
   let annQuill = null;
   function ensureAnnQuill() {
@@ -220,32 +200,26 @@
       }
     });
     annQuill.on('text-change', enableIfHasContent);
+    // If editing: seed quill with existing HTML
+    const existingHtml = (textarea.value || '').trim();
+    if (existingHtml && existingHtml.includes('<')) {
+      annQuill.root.innerHTML = existingHtml;
+    }
   }
 
-
-  // Link preview nodes
-  const lpUrl       = document.getElementById('lpUrl');
-
-  // Media preview nodes
-  const mediaPreview = document.getElementById('mediaPreview');
-  const mediaGrid    = document.getElementById('mediaGrid');
-  const removeMediaPreview = document.getElementById('removeMediaPreview');
-
-  // —————————————————————————————
-  // Helpers
-  // —————————————————————————————
   function setType(t){
     typeSel.value = t;
     imageRow.classList.toggle('d-none', t !== 'IMAGE');
     pollBuilder.classList.toggle('d-none', t !== 'POLL');
     announceRow.classList.toggle('d-none', t !== 'ANNOUNCEMENT');
+
     if (t === 'ANNOUNCEMENT') {
       ensureAnnQuill();
-      if (plainWrap) plainWrap.classList.add('d-none');
-      if (annWrap) annWrap.classList.remove('d-none');
+      plainWrap?.classList.add('d-none');
+      annWrap?.classList.remove('d-none');
     } else {
-      if (plainWrap) plainWrap.classList.remove('d-none');
-      if (annWrap) annWrap.classList.add('d-none');
+      plainWrap?.classList.remove('d-none');
+      annWrap?.classList.add('d-none');
     }
   }
 
@@ -254,88 +228,57 @@
     el.style.height = Math.min(el.scrollHeight, 320) + 'px';
   }
 
-
   function enableIfHasContent(){
     let hasText = false;
-
     if (typeSel.value === 'ANNOUNCEMENT' && annQuill) {
       hasText = annQuill.getText().trim().length > 0;
     } else {
       hasText = (textarea.value || '').trim().length > 0;
     }
-
     const hasMedia = !!(fileInp.files && fileInp.files.length);
     const hasPoll = (typeSel.value === 'POLL') && pbQs && pbQs.querySelectorAll('.pb-q').length > 0;
-    const hasAnnouncement = (typeSel.value === 'ANNOUNCEMENT') && hasText;
-
-    postBtn.disabled = !(hasText || hasMedia || hasPoll || hasAnnouncement);
+    postBtn.disabled = !(hasText || hasMedia || hasPoll);
   }
 
-
-
-
-  function resetMediaPreview(){
-   mediaGrid.innerHTML = '';
-   mediaPreview.classList.add('d-none');
-   if (fileInp) fileInp.value = '';
-   if (typeSel.value === 'IMAGE') setType('TEXT');
-  }
-
-
-  // —————————————————————————————
-  // Textarea auto-expand + link detect
-  // —————————————————————————————
+  // textarea input
   autoGrow(textarea);
-  textarea.addEventListener('input', () => {
-    autoGrow(textarea);
-    enableIfHasContent();
+  textarea.addEventListener('input', () => { autoGrow(textarea); enableIfHasContent(); });
+
+  // Type icon clicks
+  form.querySelectorAll('.tsel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.getAttribute('data-type');
+      setType(t);
+
+      if (t === 'IMAGE') fileInp?.click();
+
+      if (t === 'POLL' && pbQs && !pbQs.querySelector('.pb-q')) {
+        pbQs.appendChild(renderQuestion(0, null));
+      }
+      enableIfHasContent();
+    });
   });
 
-  // Action button → LINK (puts focus and hints user to paste)
-  // form.querySelectorAll('.composer-action[data-action="LINK"]').forEach(btn => {
-  //   btn.addEventListener('click', () => {
-  //     setType('LINK');
-  //     textarea.focus();
-  //     // if a URL already exists in text, show it
-  //     const found = firstUrlFromText(textarea.value);
-  //     if (found) {
-  //       linkUrlHidden.value = found;
-  //       lpUrl.textContent = found;
-  //       linkPreview.classList.remove('d-none');
-  //     }
-  //     enableIfHasContent();
-  //   });
-  // });
+  // Media preview
+  const mediaPreview = document.getElementById('mediaPreview');
+  const mediaGrid    = document.getElementById('mediaGrid');
+  const removeMediaPreview = document.getElementById('removeMediaPreview');
 
-  // removeLinkPreview.addEventListener('click', () => {
-  //   resetLinkPreview();
-  //   enableIfHasContent();
-  // });
-
-  // —————————————————————————————
-  // File picker → media preview (Image/Video)
-  // —————————————————————————————
-  fileInp.addEventListener('click', () => setType('IMAGE'));
+  function resetMediaPreview(){
+    if (mediaGrid) mediaGrid.innerHTML = '';
+    mediaPreview?.classList.add('d-none');
+    if (fileInp) fileInp.value = '';
+    if (typeSel.value === 'IMAGE') setType('TEXT');
+  }
 
   fileInp.addEventListener('change', () => {
-    if (!(fileInp.files && fileInp.files.length)) {
-      resetMediaPreview();
-      enableIfHasContent();
-      return;
-    }
-    // Switching away from link preview if any
-    // resetLinkPreview();
-
-    // v1 rules: images only; 2 MB per file; max 6 files
     const files = Array.from(fileInp.files || []);
-    if (files.length > 6) {
-      alert('Please select up to 6 images.');
-      resetMediaPreview();
-      return;
-    }
+    if (!files.length) { resetMediaPreview(); enableIfHasContent(); return; }
+
+    if (files.length > 6) { alert('Please select up to 6 images.'); resetMediaPreview(); return; }
     const tooBig = files.find(f => f.size > 2 * 1024 * 1024);
     const notImg = files.find(f => !/^image\//i.test(f.type));
-    if (notImg) { alert('Only images are supported for now.'); resetMediaPreview(); return; }
+    if (notImg) { alert('Only images are supported.'); resetMediaPreview(); return; }
     if (tooBig) { alert('Each image must be ≤ 2 MB.'); resetMediaPreview(); return; }
 
     mediaGrid.innerHTML = '';
@@ -350,49 +293,27 @@
     enableIfHasContent();
   });
 
-  removeMediaPreview.addEventListener('click', () => {
-    resetMediaPreview();
-    enableIfHasContent();
+  removeMediaPreview?.addEventListener('click', () => { resetMediaPreview(); enableIfHasContent(); });
+
+  // Draft button
+  draftBtn?.addEventListener('click', () => {
+    if (intentInp) intentInp.value = 'draft';
+    if (draftFlag) draftFlag.value = '1';
+    form.requestSubmit ? form.requestSubmit() : form.submit();
   });
 
-  // —————————————————————————————
-  // Submit handling
-  // —————————————————————————————
+  // Normal submit (publish)
   form.addEventListener('submit', () => {
-    // 🔹 If announcement, copy Quill HTML → textarea (which is sent as `content`)
+    if (intentInp && intentInp.value !== 'draft') intentInp.value = 'publish';
     if (typeSel.value === 'ANNOUNCEMENT' && annQuill) {
-      textarea.value = annQuill.root.innerHTML;
+      textarea.value = annQuill.root.innerHTML; // send HTML
     }
-    postBtn.disabled = true;
-    postBtn.textContent = 'Posting…';
   });
 
-    // Type icon clicks
-    form.querySelectorAll('.tsel').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const t = btn.getAttribute('data-type');
-      setType(t);
-
-      if (t === 'IMAGE') {
-        // Prompt for files immediately
-        if (fileInp) fileInp.click();
-      }
-
-      if (t === 'POLL' && pbQs && !pbQs.querySelector('.pb-q')) {
-        pbQs.appendChild(renderQuestion(0, null));
-      }
-
-      enableIfHasContent();
-    });
-  });
-
-  // You can now remove this if you still have it:
-  // fileInp.addEventListener('click', () => setType('IMAGE'));
-
-
-  // Poll builder helpers
+  // Poll builder (same as yours, kept minimal)
   function qName(i, inner){ return `poll[questions][${i}]` + (inner ? `[${inner}]` : ''); }
   function optName(i, j){ return `poll[questions][${i}][options][${j}]`; }
+
   function renderQuestion(i, data){
     const wrap = document.createElement('div');
     wrap.className = 'pb-q';
@@ -408,13 +329,15 @@
           <button type="button" class="btn" data-del-q>Remove</button>
         </div>
       </div>
-      <input type="text" name="${qName(i,'text')}" class="input" placeholder="Question text" value="${(data?.text||'').replace(/"/g,'&quot;')}" style="margin:6px 0;max-width:520px;">
+      <input type="text" name="${qName(i,'text')}" class="input" placeholder="Question text"
+             value="${(data?.text||'').replace(/"/g,'&quot;')}" style="margin:6px 0;max-width:520px;">
       <div class="pb-opts"></div>
       <button type="button" class="btn" data-add-opt>+ Add option</button>
     `;
     const optsWrap = wrap.querySelector('.pb-opts');
     const addOptBtn = wrap.querySelector('[data-add-opt]');
     const delQBtn = wrap.querySelector('[data-del-q]');
+
     function renderOpt(j, label){
       const row = document.createElement('div');
       row.className = 'pb-opt';
@@ -424,151 +347,33 @@
                value="${(label||'').replace(/"/g,'&quot;')}" style="max-width:420px;">
         <button type="button" class="btn" data-del-opt title="Remove option">×</button>
       `;
-      row.querySelector('[data-del-opt]').addEventListener('click', () => {
-        row.remove(); renumberOptions(); enableIfHasContent();
-      });
+      row.querySelector('[data-del-opt]').addEventListener('click', () => { row.remove(); enableIfHasContent(); });
       optsWrap.appendChild(row);
     }
-    function renumberOptions(){
-      Array.from(optsWrap.querySelectorAll('.pb-opt')).forEach((row, j) => {
-        const inp = row.querySelector('input[type="text"]');
-        inp.name = `${optName(i,j)}[label]`;
-      });
-    }
+
     addOptBtn.addEventListener('click', () => {
       const count = optsWrap.querySelectorAll('.pb-opt').length;
-      if (count >= 10) { alert('Max 10 options per question.'); return; }
+      if (count >= 10) return alert('Max 10 options per question.');
       renderOpt(count, '');
       enableIfHasContent();
     });
-    delQBtn.addEventListener('click', () => {
-      wrap.remove(); renumberQuestions(); enableIfHasContent();
-    });
+
+    delQBtn.addEventListener('click', () => { wrap.remove(); enableIfHasContent(); });
+
     const seed = Array.isArray(data?.options) && data.options.length ? data.options.map(o=>o.label) : ['',''];
     seed.forEach((lbl, j) => renderOpt(j, lbl||''));
     return wrap;
   }
-  function renumberQuestions(){
-    const qs = Array.from(pbQs.querySelectorAll('.pb-q'));
-    qs.forEach((qEl, i) => {
-      const data = {
-        text: qEl.querySelector(`input[name$="[text]"]`)?.value || '',
-        multiSelect: qEl.querySelector(`input[name$="[multiSelect]"]`)?.checked || false,
-        options: Array.from(qEl.querySelectorAll('.pb-opt input')).map(inp => ({ label: inp.value }))
-      };
-      const fresh = renderQuestion(i, data);
-      qEl.replaceWith(fresh);
-    });
-  }
-  addQ && addQ.addEventListener('click', () => {
+
+  addQ?.addEventListener('click', () => {
     const count = pbQs.querySelectorAll('.pb-q').length;
-    if (count >= 10) { alert('Max 10 questions per poll.'); return; }
+    if (count >= 10) return alert('Max 10 questions per poll.');
     pbQs.appendChild(renderQuestion(count, null));
     enableIfHasContent();
   });
 
-  // Initial
-  setType('TEXT');
+  // initial
+  setType(typeSel.value || 'TEXT');
   enableIfHasContent();
-
-    // —————————————————————————————
-  // @mention autocomplete (textarea-based)
-  // —————————————————————————————
-  (function setupMentions(){
-    const src = textarea.dataset.mentionSource;
-    if (!src) return;
-
-    // inline dropdown
-    const menu = document.createElement('div');
-    menu.className = 'mention-menu';
-    Object.assign(menu.style, {
-      position:'absolute', zIndex:9999, minWidth:'220px', maxHeight:'240px',
-      overflowY:'auto', border:'1px solid #ddd', background:'#fff',
-      boxShadow:'0 6px 18px rgba(0,0,0,0.08)', borderRadius:'8px', padding:'6px 0'
-    });
-    menu.hidden = true;
-    document.body.appendChild(menu);
-
-    function positionMenu() {
-      const r = textarea.getBoundingClientRect();
-      menu.style.left = (window.scrollX + r.left) + 'px';
-      menu.style.top  = (window.scrollY + r.bottom + 6) + 'px';
-      menu.style.width = r.width + 'px';
-    }
-    function open(){ positionMenu(); menu.hidden = false; }
-    function close(){ menu.hidden = true; }
-
-    function caretInfo(el){ return { pos: el.selectionStart, value: el.value }; }
-    function trigger(val, pos){
-      const left = val.slice(0, pos);
-      const at = left.lastIndexOf('@');
-      if (at === -1) return null;
-      const token = left.slice(at + 1);
-      if (/\s/.test(token)) return null; // space/newline ended token
-      return { start: at, query: token };
-    }
-
-    function render(users, onPick){
-      menu.innerHTML = '';
-      users.forEach(u => {
-        const row = document.createElement('div');
-        row.style.cssText = 'padding:8px 12px;display:grid;grid-template-columns:28px 1fr;gap:8px;cursor:pointer;';
-        row.addEventListener('mouseenter', () => {
-          Array.from(menu.children).forEach(c => c.style.background = '');
-          row.style.background = '#f6f8fa';
-        });
-        row.addEventListener('mousedown', (e) => { e.preventDefault(); onPick(u); });
-
-        const avatar = document.createElement('div');
-        Object.assign(avatar.style, {width:'28px',height:'28px',borderRadius:'50%',background:'#eee'});
-        if (u.avatarUrl) avatar.style.background = `center/cover no-repeat url(${u.avatarUrl})`;
-
-        const text = document.createElement('div');
-        text.innerHTML = `<div style="font-size:14px;"><strong>${u.fullName}</strong>${u.handle ? ' · @'+u.handle : ''}</div>
-                          <div style="font-size:12px;color:#666;">${u.subtitle || u.email}</div>`;
-
-        row.appendChild(avatar); row.appendChild(text);
-        menu.appendChild(row);
-      });
-      menu.hidden = users.length === 0;
-    }
-
-    function insert(u, trig){
-      const { value, pos } = caretInfo(textarea);
-      const before = value.slice(0, trig.start);
-      const after  = value.slice(pos);
-      const token  = u.handle ? '@' + u.handle : '@' + u.fullName;
-      textarea.value = before + token + ' ' + after;
-      const newPos = (before + token + ' ').length;
-      textarea.setSelectionRange(newPos, newPos);
-      textarea.focus();
-      close();
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    let lastQ = '', timer = null;
-    window.addEventListener('resize', () => { if (!menu.hidden) positionMenu(); });
-    textarea.addEventListener('blur', () => setTimeout(close, 120));
-
-    textarea.addEventListener('keyup', () => {
-      const { value, pos } = caretInfo(textarea);
-      const t = trigger(value, pos);
-      if (!t || t.query.length < 1) { close(); return; }
-
-      if (t.query === lastQ) return;
-      lastQ = t.query;
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        try {
-          const r = await fetch(`${src}?q=` + encodeURIComponent(t.query), { headers: { 'Accept':'application/json' }});
-          const j = await r.json();
-          const users = (j && j.ok) ? j.users : [];
-          render(users, u => insert(u, t));
-          if (users.length) open(); else close();
-        } catch { close(); }
-      }, 120);
-    });
-  })();
-
 })();
 </script>

@@ -35,11 +35,11 @@
 - ~~Photo should be bigger in post (based on number of photos)~~
 - Close poll button
 - ~~If there is no avatar, then initials should come~~
-- Define gamification - posts, likes, reactions, comments
+- ~~Define gamification - posts, likes, reactions, comments~~
 - Post from here to MS Teams
 - Unpin post from announcements
 - ~~Edit user and save not working~~
-- Pagination of posts
+- ~~Pagination of posts~~
 - ~~Chatbot should summarize new posts~~
 - ~~Post from LinkedIn~~
 - Connect to company LinkedIn page
@@ -47,4 +47,6 @@
 - ~~Improve look and feel of celebrations~~
 - Edit newsletter
 - ~~Remove bullet from replies~~
+- Posting in groups is not possible
+- Announcement picture is not coming
 

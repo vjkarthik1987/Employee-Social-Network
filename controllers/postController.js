@@ -95,23 +95,27 @@ async function attachThumbs(posts, companyId, limit = 9) {
 }
 
 
-function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople }) {
+function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople, viewerUserId }) {
   const allowed = new Set(['TEXT','IMAGE','LINK','POLL','ANNOUNCEMENT']);
-  const match = { companyId, deletedAt: null, status: 'PUBLISHED' };
+  const match = { companyId, deletedAt: null };
+
+  // ✅ DRAFTS tab (only my drafts)
+  if (filters.tab === 'DRAFTS') {
+    match.status = 'DRAFT';
+    match.authorId = viewerUserId;     // << no req here
+    return match;
+  }
+
+  // ✅ Normal feed = published only
+  match.status = 'PUBLISHED';
 
   if (scope === 'GROUP' && groupId) match.groupId = groupId;
 
-  // 1️⃣ If a specific type filter is set, respect that first
   if (allowed.has(filters.type)) {
     match.type = filters.type;
   } else {
-    // 2️⃣ Otherwise use the tab filter
-    if (filters.tab === 'ANNOUNCEMENTS') {
-      match.type = 'ANNOUNCEMENT';
-    } else if (filters.tab === 'REGULAR') {
-      // everything except announcements
-      match.type = { $ne: 'ANNOUNCEMENT' };
-    }
+    if (filters.tab === 'ANNOUNCEMENTS') match.type = 'ANNOUNCEMENT';
+    else if (filters.tab === 'REGULAR') match.type = { $ne: 'ANNOUNCEMENT' };
   }
 
   if (filters.authorId && isObjId(filters.authorId)) {
@@ -128,6 +132,8 @@ function buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople })
 
   return match;
 }
+
+
 
 
 async function runFeedQuery({ req, scope, groupId = null }) {
@@ -148,7 +154,16 @@ async function runFeedQuery({ req, scope, groupId = null }) {
     ? await resolvePeopleToAuthorIds({ companyId, people: filters.people })
     : null;
 
-  const match = buildMatch({ companyId, scope, groupId, filters, authorIdsFromPeople });
+    const match = buildMatch({
+      companyId,
+      scope,
+      groupId,
+      filters,
+      authorIdsFromPeople,
+      viewerUserId: req.user?._id
+    });
+    
+    
 
   if (scope === 'COMPANY' && myGroupSet) {
     match.groupId = { $in: Array.from(myGroupSet).map(Types.ObjectId.createFromHexString) };
@@ -331,6 +346,7 @@ async function getUpcomingCelebrations(companyId, limit = 10) {
 exports.companyFeed = async (req, res, next) => {
   try {
     const filters = readFilters(req, { isGroup: false });
+    const cacheSuffix = (filters.tab === 'DRAFTS') ? `:u:${req.user._id}` : '';
     const key = `feed:v1:${req.company.slug}:${cacheStore.hash(filters)}`;
     const ttl = microcache.computeTTL(req.path);   // dynamic TTL
     const celebrations = await getUpcomingCelebrations(cid(req), 10);
@@ -470,8 +486,12 @@ exports.groupFeed = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const companyId = cid(req);
+    const saveAsDraft = String(req.body.saveAsDraft || '0') === '1';
+
     const mode = (req.company?.policies?.postingMode || 'OPEN').toUpperCase();
-    const status = mode === 'MODERATED' ? 'QUEUED' : 'PUBLISHED';
+    let status = 'PUBLISHED';
+    if (mode === 'MODERATED') status = 'QUEUED';
+    if (saveAsDraft) status = 'DRAFT';
 
     const type = (req.body.type || 'TEXT').toUpperCase();
     const groupId = req.body.groupId && isObjId(req.body.groupId) ? req.body.groupId : null;
@@ -570,16 +590,19 @@ exports.create = async (req, res, next) => {
     }
 
     const post = await Post.create(postDoc);
-    await pointsService.award({
-      company: req.company,
-      companyId,
-      userId: req.user._id,        // ✅ earner
-      actorUserId: req.user._id,   // ✅ actor
-      action: 'POST_CREATED',
-      targetType: 'post',
-      targetId: post._id,
-      meta: { type: post.type }
-    }).catch(() => {});
+    if (status === 'PUBLISHED') {
+      await pointsService.award({
+        company: req.company,
+        companyId,
+        userId: req.user._id,
+        actorUserId: req.user._id,
+        action: 'POST_CREATED',
+        targetType: 'post',
+        targetId: post._id,
+        meta: { type: post.type }
+      }).catch(() => {});
+    }
+    
     
 
     // Multi-image support
@@ -632,8 +655,11 @@ exports.create = async (req, res, next) => {
     }).catch(() => {});
 
     // Invalidate cached feeds
-    await microcache.bustTenant(req.company.slug);
-    if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
+    if (status === 'PUBLISHED') {
+      await microcache.bustTenant(req.company.slug);
+      if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
+    }
+    
 
     // --- send @mention emails (only if tenant allows) ---
     try {
@@ -669,8 +695,13 @@ exports.create = async (req, res, next) => {
       req.logger && req.logger.warn('[post mention mail] failed', e);
     }
 
-    req.flash('success', status === 'PUBLISHED' ? 'Posted.' : 'Submitted for review.');
-    return res.redirect(`/${req.params.org}/feed`);
+    req.flash('success', status === 'DRAFT'
+      ? 'Draft saved.'
+      : (status === 'PUBLISHED' ? 'Posted.' : 'Submitted for review.')
+    );
+
+    return res.redirect(`/${req.params.org}/feed?tab=${status === 'DRAFT' ? 'DRAFTS' : 'REGULAR'}`);
+
   } catch (e) { next(e); }
 };
 
@@ -810,4 +841,75 @@ exports.companyFeedMore = async (req, res, next) => {
     });
   } catch (e) { next(e); }
 };
+
+exports.editPost = async (req, res, next) => {
+  try {
+    const companyId = cid(req);
+    const { postId } = req.params;
+    if (!isObjId(postId)) return res.status(404).render('errors/404');
+
+    const post = await Post.findOne({ _id: postId, companyId, deletedAt: null }).lean();
+    if (!post) return res.status(404).render('errors/404');
+
+    // Only author can edit drafts; allow admins/moderators for published if you want
+    const isAuthor = String(post.authorId) === String(req.user._id);
+    const isPriv = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
+
+    if (!isAuthor && !isPriv) return res.status(403).render('errors/403');
+
+    return res.render('posts/edit', {
+      company: req.company,
+      user: req.user,
+      post,
+      csrfToken: req.csrfToken && req.csrfToken()
+    });
+  } catch (e) { next(e); }
+};
+
+exports.update = async (req, res, next) => {
+  try {
+    const companyId = cid(req);
+    const { postId } = req.params;
+    const intent = req.body.intent || 'draft'; // draft | publish
+
+    const post = await Post.findOne({
+      _id: postId,
+      companyId,
+      authorId: req.user._id
+    });
+
+    if (!post) return res.status(404).render('errors/404');
+
+    // Update content
+    post.richText = (req.body.content || '').toString().slice(0, 10000);
+
+    // Decide status
+    if (intent === 'draft') {
+      post.status = 'DRAFT';
+      post.publishedAt = null;
+    } else {
+      const mode = (req.company?.policies?.postingMode || 'OPEN').toUpperCase();
+      post.status = mode === 'MODERATED' ? 'QUEUED' : 'PUBLISHED';
+      post.publishedAt = new Date();
+    }
+
+    await post.save();
+
+    // bust caches
+    await microcache.bustTenant(req.company.slug);
+    await microcache.bustPost(req.company.slug, post._id);
+
+    return res.redirect(
+      intent === 'draft'
+        ? `/${req.params.org}/feed?tab=DRAFTS`
+        : `/${req.params.org}/feed`
+    );
+  } catch (e) {
+    next(e);
+  }
+};
+
+
+
+
 

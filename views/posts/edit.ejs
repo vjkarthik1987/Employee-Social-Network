@@ -1,0 +1,43 @@
+<% layout('layouts/_layout') %>
+
+<section style="max-width:860px;margin:0 auto;">
+  <h2>Edit draft</h2>
+
+  <%- include('../partials/_post_form', {
+    company,
+    groupId: post.groupId || null,
+    currentUser: user,
+    csrfToken,
+    post,
+    editMode: true,
+    noForm: true
+  }) %>
+  
+
+  <div style="display:flex;gap:10px;margin-top:10px;">
+    <a class="btn btn-ghost" href="/<%= company.slug %>/feed?tab=DRAFTS">Back to Drafts</a>
+  </div>
+</section>
+
+
+<script>
+(function () {
+  const intent = document.getElementById('postIntent');
+  const draftBtn = document.getElementById('editDraftBtn');
+  const publishBtn = document.getElementById('editPublishBtn');
+  const form = document.getElementById('composerForm');
+
+  if (draftBtn) {
+    draftBtn.addEventListener('click', () => {
+      intent.value = 'draft';
+      form.requestSubmit ? form.requestSubmit() : form.submit();
+    });
+  }
+
+  if (publishBtn) {
+    publishBtn.addEventListener('click', () => {
+      intent.value = 'publish';
+    });
+  }
+})();
+</script>
