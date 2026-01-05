@@ -26,8 +26,10 @@
 }
 
 html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
+  font-size: 15px; /* Slightly smaller than browser default */
+  -webkit-text-size-adjust: 100%; /* Prevent iOS/Chrome zoom scaling */
+  text-size-adjust: 100%;         /* For other browsers */
+  scroll-behavior: smooth;
 }
 
 html,body{margin:0;background:var(--paper);color:var(--ink-900);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;}

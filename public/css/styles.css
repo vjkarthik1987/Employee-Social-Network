@@ -27,6 +27,14 @@ html, body{
   overflow-x: hidden;      /* no horizontal scroll */
 }
 
+html {
+  font-size: 15px; /* Slightly smaller than browser default */
+  -webkit-text-size-adjust: 100%; /* Prevent iOS/Chrome zoom scaling */
+  text-size-adjust: 100%;         /* For other browsers */
+  scroll-behavior: smooth;
+}
+
+
 /* ===== Left Navbar (fixed) ===== */
 .navbar {
   position: fixed;
