@@ -51,6 +51,11 @@ body {
   font-size: 13rem;
 }
 
+body {
+  min-width: 1250px;
+}
+
+
 
 /* ===== Left Navbar (fixed) ===== */
 .navbar {
