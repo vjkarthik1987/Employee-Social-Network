@@ -27,7 +27,7 @@ async function getTransport() {
         fromEmail: cfg.fromEmail,
         fromName: cfg.fromName || 'EngageHQ'
       };
-      return cached;
+      return cached;Of
     }
   
     // 2️⃣ Fallback to .env if DB config not found or disabled

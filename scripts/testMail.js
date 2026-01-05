@@ -17,7 +17,7 @@ const nodemailer = require('nodemailer');
       from: `"SunTec Engage" <${process.env.SMTP_FROM}>`,
       to: process.env.SMTP_FROM,
       subject: 'SMTP test ✔',
-      text: 'If you received this, Office 365 SMTP works!'
+      text: 'If you received this, Gmail SMTP works!'
     });
     console.log('Mail sent:', info.messageId);
   } catch (err) {
