@@ -4,8 +4,8 @@
     "description": "Internal employee engagement app - MVP",
     "main": "app/server.js",
     "scripts": {
-        "start": "node app/server.js",
-        "dev": "nodemon app/server.js",
+        "start": "node server.js",
+        "dev": "nodemon server.js",
         "retention": "node scripts/retention.js",
         "retention:org": "node scripts/retention.js --org $ORG"
     },
