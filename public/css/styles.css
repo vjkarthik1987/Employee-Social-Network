@@ -3674,3 +3674,6 @@ main.page {
   text-transform: uppercase;
   opacity: .7;
 }
+
+html { font-size: 15px !important; }
+body { font-size: 15px !important; }
