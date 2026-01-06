@@ -30,7 +30,6 @@ html, body{
   background: var(--bg);
   color: var(--text);
   font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, sans-serif;
-  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -45,14 +44,11 @@ html {
 }
 
 html {
-  font-size: 13px;
-}
-body {
-  font-size: 13rem;
+  font-size: inherit; /* or remove entirely */
 }
 
 body {
-  min-width: 1250px;
+  font-size: 1rem;
 }
 
 
