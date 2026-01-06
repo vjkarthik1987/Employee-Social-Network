@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="csrf-token" content="<%= csrfToken || '' %>">
   <title><%= typeof title !== 'undefined' ? title : 'Engage' %></title>
+  <script>
+    (function () {
+      const dpr = window.devicePixelRatio || 1;
+    
+      // If DPR is low (things look bigger), reduce base font
+      if (dpr < 1) {
+        document.documentElement.style.fontSize = '12px';
+      } else {
+        document.documentElement.style.fontSize = '15px';
+      }
+    })();
+    </script>
   <link rel="stylesheet" href="/css/styles.css">
   <% 
     // --- Theme variables ---
@@ -583,15 +595,4 @@
   })();
 </script>
  
-<script>
-(function () {
-  const dpr = window.devicePixelRatio || 1;
 
-  // If DPR is low (things look bigger), reduce base font
-  if (dpr < 1) {
-    document.documentElement.style.fontSize = '12px';
-  } else {
-    document.documentElement.style.fontSize = '15px';
-  }
-})();
-</script>
