@@ -584,17 +584,14 @@
 </script>
  
 <script>
-  (function () {
-    const dpr = window.devicePixelRatio || 1;
+(function () {
+  const dpr = window.devicePixelRatio || 1;
 
-    // Choose the "baseline" root size you want when everything looks correct
-    const BASE = 15; // you seem to use 15px in your app
-
-    // If DPR is < 1 (your earlier 0.8 case), things can look bigger.
-    // If DPR is > 1.2 (125%+ scaling), things can also look bigger.
-    // Normalize by scaling the root font size.
-    const normalized = Math.round((BASE / dpr) * 100) / 100;
-
-    document.documentElement.style.fontSize = normalized + 'px';
-  })();
+  // If DPR is low (things look bigger), reduce base font
+  if (dpr < 1) {
+    document.documentElement.style.fontSize = '12px';
+  } else {
+    document.documentElement.style.fontSize = '15px';
+  }
+})();
 </script>
