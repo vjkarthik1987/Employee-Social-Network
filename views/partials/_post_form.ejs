@@ -92,6 +92,58 @@
     </div>
   </div>
 
+    <!-- IMAGE upload (required for IMAGE button) -->
+    <input
+    type="file"
+    id="composerFile"
+    name="images"
+    accept="image/*"
+    multiple
+    hidden
+  />
+
+  <!-- IMAGE row -->
+  <div id="imageRow" class="d-none" style="margin-top:10px;">
+    <div id="mediaPreview" class="d-none">
+      <div id="mediaGrid" class="mediaGrid" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      <button type="button" id="removeMediaPreview" class="btn btn-ghost" style="margin-top:8px;">
+        Remove images
+      </button>
+    </div>
+  </div>
+
+  <!-- POLL builder -->
+  <div class="poll-builder d-none" style="margin-top:12px;">
+    <div class="pb-questions"></div>
+    <button type="button" class="btn pb-add-q">+ Add question</button>
+  </div>
+
+  <!-- ANNOUNCEMENT editor -->
+  <div id="announceRow" class="d-none" style="margin-top:12px;">
+    <div id="announcementEditorWrap" class="d-none">
+      <div class="rich-editor-container">
+        <div id="announcementEditor"></div>
+      </div>
+    </div>
+
+    <input
+      type="text"
+      name="title"
+      placeholder="Announcement title (optional)"
+      class="input"
+      style="margin-top:10px;max-width:520px;"
+    />
+
+    <input
+      type="file"
+      name="coverImage"
+      accept="image/*"
+      class="input"
+      style="margin-top:10px;max-width:520px;"
+    />
+  </div>
+
+
   <!-- (keep your remaining fields: file input, poll builder, announcement fields, etc.) -->
 
   <% if (!noForm) { %>
@@ -100,93 +152,39 @@
 
 <script>
 (function(){
-  const form      = document.getElementById('composerForm');
+  const form = document.getElementById('composerForm');
   if (!form) return;
 
   const typeSel   = document.getElementById('postTypeSel');
-  const postBtn   = document.getElementById('postBtn');
   const textarea  = document.getElementById('composerTextarea');
-
-  const draftBtn  = document.getElementById('draftBtn');
-  const draftFlag = document.getElementById('saveAsDraft');
-  const intentField = document.getElementById('intent');
-
-  const IS_EDIT = <%= editMode ? 'true' : 'false' %>;
-
-  function enableIfHasContent(){
-    const hasText = (textarea.value || '').trim().length > 0;
-    postBtn.disabled = !hasText;
-  }
-
-  textarea.addEventListener('input', enableIfHasContent);
-
-  // ✅ Save Draft
-  if (draftBtn) {
-    draftBtn.addEventListener('click', () => {
-      if (IS_EDIT) {
-        // edit flow -> updatePost expects intent
-        intentField.value = 'draft';
-      } else {
-        // create flow -> create() expects saveAsDraft=1
-        draftFlag.value = '1';
-      }
-      form.requestSubmit ? form.requestSubmit() : form.submit();
-    });
-  }
-
-  // ✅ Publish / Post (arrow)
-  postBtn.addEventListener('click', () => {
-    if (IS_EDIT) {
-      intentField.value = 'publish';
-    } else {
-      draftFlag.value = '0';
-    }
-  });
-
-  // Initial
-  enableIfHasContent();
-})();
-</script>
-
-
-<script>
-(function(){
-  const form      = document.getElementById('composerForm');
-  if (!form) return;
-
-  const typeSel   = document.getElementById('postTypeSel');
-  const fileInp   = document.getElementById('composerFile');
   const postBtn   = document.getElementById('postBtn');
-  const imageRow  = document.getElementById('imageRow');
-  const pollBuilder = form.querySelector('.poll-builder');
-  const announceRow = document.getElementById('announceRow');
-  const pbQs        = form.querySelector('.pb-questions');
-  const addQ        = form.querySelector('.pb-add-q');
-  const plainWrap   = document.getElementById('plainComposerWrap');
-  const annWrap     = document.getElementById('announcementEditorWrap');
-  const textarea    = document.getElementById('composerTextarea');
 
+  // IMPORTANT: your hidden input is id="intentField"
   const intentField = document.getElementById('intentField');
-  const draftBtn = document.getElementById('draftBtn');
-  const postBtn  = document.getElementById('postBtn');
+  const draftFlag   = document.getElementById('saveAsDraft');
+  const draftBtn    = document.getElementById('draftBtn');
 
-  if (draftBtn && intentField) {
-    draftBtn.addEventListener('click', () => {
-      intentField.value = 'draft';
-      form.requestSubmit ? form.requestSubmit() : form.submit();
-    });
-  }
+  // Optional sections (may or may not exist depending on your partial)
+  const fileInp      = document.getElementById('composerFile');         // must match your <input id="">
+  const imageRow     = document.getElementById('imageRow');
+  const pollBuilder  = form.querySelector('.poll-builder');
+  const announceRow  = document.getElementById('announceRow');
+  const pbQs         = form.querySelector('.pb-questions');
+  const addQ         = form.querySelector('.pb-add-q');
+  const plainWrap    = document.getElementById('plainComposerWrap');
+  const annWrap      = document.getElementById('announcementEditorWrap');
 
-  if (postBtn && intentField) {
-    postBtn.addEventListener('click', () => {
-      intentField.value = 'publish';
-    });
-  }
-
+  const mediaPreview = document.getElementById('mediaPreview');
+  const mediaGrid    = document.getElementById('mediaGrid');
+  const removeMediaPreview = document.getElementById('removeMediaPreview');
 
   let annQuill = null;
+
   function ensureAnnQuill() {
     if (annQuill || !window.Quill) return;
+    const editorEl = document.getElementById('announcementEditor');
+    if (!editorEl) return;
+
     annQuill = new Quill('#announcementEditor', {
       theme: 'snow',
       modules: {
@@ -199,19 +197,22 @@
         ]
       }
     });
+
     annQuill.on('text-change', enableIfHasContent);
+
     // If editing: seed quill with existing HTML
-    const existingHtml = (textarea.value || '').trim();
+    const existingHtml = (textarea?.value || '').trim();
     if (existingHtml && existingHtml.includes('<')) {
       annQuill.root.innerHTML = existingHtml;
     }
   }
 
   function setType(t){
-    typeSel.value = t;
-    imageRow.classList.toggle('d-none', t !== 'IMAGE');
-    pollBuilder.classList.toggle('d-none', t !== 'POLL');
-    announceRow.classList.toggle('d-none', t !== 'ANNOUNCEMENT');
+    if (typeSel) typeSel.value = t;
+
+    imageRow?.classList.toggle('d-none', t !== 'IMAGE');
+    pollBuilder?.classList.toggle('d-none', t !== 'POLL');
+    announceRow?.classList.toggle('d-none', t !== 'ANNOUNCEMENT');
 
     if (t === 'ANNOUNCEMENT') {
       ensureAnnQuill();
@@ -224,25 +225,30 @@
   }
 
   function autoGrow(el){
+    if (!el) return;
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 320) + 'px';
   }
 
   function enableIfHasContent(){
     let hasText = false;
-    if (typeSel.value === 'ANNOUNCEMENT' && annQuill) {
+
+    const currentType = (typeSel?.value || 'TEXT');
+    if (currentType === 'ANNOUNCEMENT' && annQuill) {
       hasText = annQuill.getText().trim().length > 0;
     } else {
-      hasText = (textarea.value || '').trim().length > 0;
+      hasText = (textarea?.value || '').trim().length > 0;
     }
-    const hasMedia = !!(fileInp.files && fileInp.files.length);
-    const hasPoll = (typeSel.value === 'POLL') && pbQs && pbQs.querySelectorAll('.pb-q').length > 0;
-    postBtn.disabled = !(hasText || hasMedia || hasPoll);
+
+    const hasMedia = !!(fileInp?.files && fileInp.files.length);
+    const hasPoll  = (currentType === 'POLL') && !!pbQs?.querySelector('.pb-q');
+
+    if (postBtn) postBtn.disabled = !(hasText || hasMedia || hasPoll);
   }
 
-  // textarea input
+  // Textarea
   autoGrow(textarea);
-  textarea.addEventListener('input', () => { autoGrow(textarea); enableIfHasContent(); });
+  textarea?.addEventListener('input', () => { autoGrow(textarea); enableIfHasContent(); });
 
   // Type icon clicks
   form.querySelectorAll('.tsel').forEach(btn => {
@@ -250,28 +256,40 @@
       const t = btn.getAttribute('data-type');
       setType(t);
 
+      // IMAGE: open picker
       if (t === 'IMAGE') fileInp?.click();
 
+      // POLL: seed one question if none
       if (t === 'POLL' && pbQs && !pbQs.querySelector('.pb-q')) {
         pbQs.appendChild(renderQuestion(0, null));
       }
+
       enableIfHasContent();
     });
   });
 
-  // Media preview
-  const mediaPreview = document.getElementById('mediaPreview');
-  const mediaGrid    = document.getElementById('mediaGrid');
-  const removeMediaPreview = document.getElementById('removeMediaPreview');
+  // Draft
+  draftBtn?.addEventListener('click', () => {
+    if (intentField) intentField.value = 'draft';
+    if (draftFlag) draftFlag.value = '1';
+    form.requestSubmit ? form.requestSubmit() : form.submit();
+  });
 
+  // Publish
+  postBtn?.addEventListener('click', () => {
+    if (intentField) intentField.value = 'publish';
+    if (draftFlag) draftFlag.value = '0';
+  });
+
+  // Media preview
   function resetMediaPreview(){
     if (mediaGrid) mediaGrid.innerHTML = '';
     mediaPreview?.classList.add('d-none');
     if (fileInp) fileInp.value = '';
-    if (typeSel.value === 'IMAGE') setType('TEXT');
+    if ((typeSel?.value || '') === 'IMAGE') setType('TEXT');
   }
 
-  fileInp.addEventListener('change', () => {
+  fileInp?.addEventListener('change', () => {
     const files = Array.from(fileInp.files || []);
     if (!files.length) { resetMediaPreview(); enableIfHasContent(); return; }
 
@@ -281,36 +299,33 @@
     if (notImg) { alert('Only images are supported.'); resetMediaPreview(); return; }
     if (tooBig) { alert('Each image must be ≤ 2 MB.'); resetMediaPreview(); return; }
 
-    mediaGrid.innerHTML = '';
+    if (mediaGrid) mediaGrid.innerHTML = '';
     files.forEach(f => {
       const url = URL.createObjectURL(f);
       const img = document.createElement('img');
       img.src = url;
-      mediaGrid.appendChild(img);
+      mediaGrid?.appendChild(img);
     });
-    mediaPreview.classList.remove('d-none');
+
+    mediaPreview?.classList.remove('d-none');
     setType('IMAGE');
     enableIfHasContent();
   });
 
-  removeMediaPreview?.addEventListener('click', () => { resetMediaPreview(); enableIfHasContent(); });
-
-  // Draft button
-  draftBtn?.addEventListener('click', () => {
-    if (intentInp) intentInp.value = 'draft';
-    if (draftFlag) draftFlag.value = '1';
-    form.requestSubmit ? form.requestSubmit() : form.submit();
+  removeMediaPreview?.addEventListener('click', () => {
+    resetMediaPreview();
+    enableIfHasContent();
   });
 
-  // Normal submit (publish)
+  // Submit: if ANNOUNCEMENT, copy Quill HTML into textarea
   form.addEventListener('submit', () => {
-    if (intentInp && intentInp.value !== 'draft') intentInp.value = 'publish';
-    if (typeSel.value === 'ANNOUNCEMENT' && annQuill) {
-      textarea.value = annQuill.root.innerHTML; // send HTML
+    const currentType = (typeSel?.value || 'TEXT');
+    if (currentType === 'ANNOUNCEMENT' && annQuill && textarea) {
+      textarea.value = annQuill.root.innerHTML;
     }
   });
 
-  // Poll builder (same as yours, kept minimal)
+  // Poll builder helpers (same logic, but safe)
   function qName(i, inner){ return `poll[questions][${i}]` + (inner ? `[${inner}]` : ''); }
   function optName(i, j){ return `poll[questions][${i}][options][${j}]`; }
 
@@ -334,6 +349,7 @@
       <div class="pb-opts"></div>
       <button type="button" class="btn" data-add-opt>+ Add option</button>
     `;
+
     const optsWrap = wrap.querySelector('.pb-opts');
     const addOptBtn = wrap.querySelector('[data-add-opt]');
     const delQBtn = wrap.querySelector('[data-del-q]');
@@ -348,17 +364,17 @@
         <button type="button" class="btn" data-del-opt title="Remove option">×</button>
       `;
       row.querySelector('[data-del-opt]').addEventListener('click', () => { row.remove(); enableIfHasContent(); });
-      optsWrap.appendChild(row);
+      optsWrap?.appendChild(row);
     }
 
-    addOptBtn.addEventListener('click', () => {
-      const count = optsWrap.querySelectorAll('.pb-opt').length;
+    addOptBtn?.addEventListener('click', () => {
+      const count = optsWrap?.querySelectorAll('.pb-opt').length || 0;
       if (count >= 10) return alert('Max 10 options per question.');
       renderOpt(count, '');
       enableIfHasContent();
     });
 
-    delQBtn.addEventListener('click', () => { wrap.remove(); enableIfHasContent(); });
+    delQBtn?.addEventListener('click', () => { wrap.remove(); enableIfHasContent(); });
 
     const seed = Array.isArray(data?.options) && data.options.length ? data.options.map(o=>o.label) : ['',''];
     seed.forEach((lbl, j) => renderOpt(j, lbl||''));
@@ -366,14 +382,15 @@
   }
 
   addQ?.addEventListener('click', () => {
-    const count = pbQs.querySelectorAll('.pb-q').length;
+    const count = pbQs?.querySelectorAll('.pb-q').length || 0;
     if (count >= 10) return alert('Max 10 questions per poll.');
-    pbQs.appendChild(renderQuestion(count, null));
+    pbQs?.appendChild(renderQuestion(count, null));
     enableIfHasContent();
   });
 
-  // initial
-  setType(typeSel.value || 'TEXT');
+  // Initial
+  setType(typeSel?.value || 'TEXT');
   enableIfHasContent();
 })();
 </script>
+
