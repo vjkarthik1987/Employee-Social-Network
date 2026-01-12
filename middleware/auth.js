@@ -2,7 +2,7 @@
 exports.ensureAuth = (req, res, next) => {
   if (req.isAuthenticated()) return next();
   const org = (req.params && req.params.org) || (req.company && req.company.slug) || req.session?.companySlug;
-  if (org) return res.redirect(`/${org}/auth/login`);
+  if (org) return res.redirect(`/auth/login`);
   return res.redirect('/auth/login'); // or '/auth/register-org'
 };
 

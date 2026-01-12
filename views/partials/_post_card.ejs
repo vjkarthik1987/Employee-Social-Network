@@ -60,57 +60,8 @@ function timeAgo(date) {
   
     <!-- Header -->
     <header class="post-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-      <!-- LEFT: Avatar + meta -->
-      <div class="post-header-left" style="display:flex; align-items:center; gap:10px;">
-          <a class="post-avatar-link" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>">
-            <%
-              const _fullName = post.authorId?.fullName || '';
-              const _nameParts = _fullName.trim().split(/\s+/);
-              let _initials = '';
-              if (_nameParts.length === 1 && _nameParts[0]) {
-                _initials = _nameParts[0].slice(0, 2).toUpperCase();
-              } else if (_nameParts.length > 1) {
-                _initials =
-                  (_nameParts[0][0] || '').toUpperCase() +
-                  (_nameParts[1][0] || '').toUpperCase();
-              }
-              const _avatarUrl = post.authorId?.avatarUrl;  // usually your LinkedIn-synced photo
-            %>
-  
-            <% if (_avatarUrl) { %>
-              <!-- Use LinkedIn / stored avatar when available -->
-              <img
-                class="post-avatar"
-                src="<%= _avatarUrl %>"
-                alt="<%= _fullName || 'User' %>"
-                loading="lazy"
-                decoding="async"
-                onerror="this.src='/img/avatar.png'; this.onerror=null;"
-              />
-            <% } else { %>
-              <!-- Fallback: initials avatar -->
-              <div
-                class="post-avatar initials-avatar"
-                aria-hidden="true"
-                style="
-                  width:40px;
-                  height:40px;
-                  border-radius:50%;
-                  display:flex;
-                  align-items:center;
-                  justify-content:center;
-                  background:#4a5568;
-                  color:#fff;
-                  font-weight:600;
-                  text-transform:uppercase;
-                  font-size:0.9rem;
-                "
-              >
-                <%= _initials || '?' %>
-              </div>
-            <% } %>
-          </a>  
-  
+      <!-- LEFT: Meta (no avatar) -->
+      <div class="post-header-left post-header-left--noavatar" style="display:flex; align-items:center; gap:10px;">
         <div class="post-meta">
           <div class="post-author">
             <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight:bold;">
@@ -121,7 +72,7 @@ function timeAgo(date) {
               <% if (post.isPinned) { %><span class="badge" title="Pinned to top" style="margin-left:4px;">📌 Pinned</span><% } %>
             <% } %>
           </div>
-  
+
           <div class="post-time">
             <time datetime="<%= ts.toISOString() %>"><%= timeAgo(ts) %></time>
             <% if (inGroup) { %>
@@ -130,6 +81,7 @@ function timeAgo(date) {
           </div>
         </div>
       </div>
+
   
       <!-- RIGHT: Actions -->
       <div class="post-header-actions" style="display:flex; align-items:center; gap:10px;">

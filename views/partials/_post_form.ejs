@@ -38,12 +38,13 @@
   <% } %>
 
   <!-- Header -->
-  <div class="composer-head">
-    <img class="composer-avatar" src="<%= (currentUser?.avatarUrl || '/img/avatar.png') %>" alt="">
+  <!-- Header -->
+  <div class="composer-head composer-head--clean">
     <div class="composer-head-meta">
       <div class="composer-hint">
         <%= currentUser ? `What's on your mind, ${currentUser.fullName?.split(' ')[0] || ''}?` : 'Start a post' %>
       </div>
+      <div class="composer-subhint">Share an update, ask a question, or run a quick poll.</div>
     </div>
   </div>
 
@@ -59,38 +60,31 @@
 
   </div>
 
-  <!-- Toolbar -->
-  <div class="composer-toolbar">
-    <div class="composer-toolbar-left">
-      <!-- (keep your type buttons as-is) -->
-      <button type="button" class="composer-icon-btn tsel" data-type="IMAGE" title="Image post" aria-label="Image post">
-        <span class="icon" aria-hidden="true">🖼️</span>
-      </button>
-      <button type="button" class="composer-icon-btn tsel" data-type="POLL" title="Create poll" aria-label="Create poll">
-        <span class="icon" aria-hidden="true">📊</span>
-      </button>
-      <button type="button" class="composer-icon-btn tsel" data-type="ANNOUNCEMENT" title="Announcement" aria-label="Announcement">
-        <span class="icon" aria-hidden="true">📢</span>
-      </button>
-    </div>
-
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button type="button" class="btn btn-ghost" id="draftBtn">
-        Save draft
-      </button>
-
-      <button
-        class="composer-post-btn"
-        type="submit"
-        id="postBtn"
-        disabled
-        title="<%= editMode ? 'Publish' : 'Post' %>"
-        aria-label="<%= editMode ? 'Publish' : 'Post' %>"
-      >
-        <span class="composer-post-icon" aria-hidden="true">➤</span>
-      </button>
-    </div>
+ <!-- Toolbar -->
+<div class="composer-toolbar composer-toolbar--clean">
+  <div class="composer-toolbar-left">
+    <button type="button" class="composer-icon-btn tsel" data-type="IMAGE" title="Image post" aria-label="Image post">
+      <span class="icon" aria-hidden="true">🖼️</span><span class="lbl">Image</span>
+    </button>
+    <button type="button" class="composer-icon-btn tsel" data-type="POLL" title="Create poll" aria-label="Create poll">
+      <span class="icon" aria-hidden="true">📊</span><span class="lbl">Poll</span>
+    </button>
+    <button type="button" class="composer-icon-btn tsel" data-type="ANNOUNCEMENT" title="Announcement" aria-label="Announcement">
+      <span class="icon" aria-hidden="true">📢</span><span class="lbl">Announcement</span>
+    </button>
   </div>
+
+  <div class="composer-toolbar-right">
+    <button type="button" class="btn btn-ghost" id="draftBtn">Save draft</button>
+
+    <button class="composer-post-btn" type="submit" id="postBtn" disabled
+      title="<%= editMode ? 'Publish' : 'Post' %>"
+      aria-label="<%= editMode ? 'Publish' : 'Post' %>">
+      <span class="composer-post-icon" aria-hidden="true">➤</span>
+      <!-- <span class="lbl"><%= editMode ? 'Publish' : 'Post' %></span> -->
+    </button>
+  </div>
+</div>
 
     <!-- IMAGE upload (required for IMAGE button) -->
     <input
@@ -102,46 +96,33 @@
     hidden
   />
 
-  <!-- IMAGE row -->
-  <div id="imageRow" class="d-none" style="margin-top:10px;">
-    <div id="mediaPreview" class="d-none">
-      <div id="mediaGrid" class="mediaGrid" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
-      <button type="button" id="removeMediaPreview" class="btn btn-ghost" style="margin-top:8px;">
-        Remove images
-      </button>
+ <!-- IMAGE row -->
+<div id="imageRow" class="d-none composer-section" style="margin-top:10px;">
+  <div id="mediaPreview" class="d-none media-preview-card">
+    <div id="mediaGrid" class="mediaGrid mediaGrid--composer"></div>
+    <button type="button" id="removeMediaPreview" class="btn btn-ghost media-remove-btn">Remove images</button>
+  </div>
+</div>
+
+<!-- POLL builder -->
+<div class="poll-builder d-none composer-section poll-builder--card" style="margin-top:12px;">
+  <div class="pb-questions"></div>
+  <button type="button" class="btn pb-add-q">+ Add question</button>
+</div>
+
+<!-- ANNOUNCEMENT editor -->
+<div id="announceRow" class="d-none composer-section announce--card" style="margin-top:12px;">
+  <div id="announcementEditorWrap" class="d-none">
+    <div class="rich-editor-container rich-editor-container--clean">
+      <div id="announcementEditor"></div>
     </div>
   </div>
 
-  <!-- POLL builder -->
-  <div class="poll-builder d-none" style="margin-top:12px;">
-    <div class="pb-questions"></div>
-    <button type="button" class="btn pb-add-q">+ Add question</button>
+  <div class="announce-fields">
+    <input type="text" name="title" placeholder="Announcement title (optional)" class="input announce-title" />
+    <input type="file" name="coverImage" accept="image/*" class="input announce-cover" />
   </div>
-
-  <!-- ANNOUNCEMENT editor -->
-  <div id="announceRow" class="d-none" style="margin-top:12px;">
-    <div id="announcementEditorWrap" class="d-none">
-      <div class="rich-editor-container">
-        <div id="announcementEditor"></div>
-      </div>
-    </div>
-
-    <input
-      type="text"
-      name="title"
-      placeholder="Announcement title (optional)"
-      class="input"
-      style="margin-top:10px;max-width:520px;"
-    />
-
-    <input
-      type="file"
-      name="coverImage"
-      accept="image/*"
-      class="input"
-      style="margin-top:10px;max-width:520px;"
-    />
-  </div>
+</div>
 
 
   <!-- (keep your remaining fields: file input, poll builder, announcement fields, etc.) -->
@@ -324,6 +305,8 @@
       textarea.value = annQuill.root.innerHTML;
     }
   });
+
+  
 
   // Poll builder helpers (same logic, but safe)
   function qName(i, inner){ return `poll[questions][${i}]` + (inner ? `[${inner}]` : ''); }

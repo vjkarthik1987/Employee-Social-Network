@@ -21,7 +21,6 @@
 - Search should go to first page, not second page or others
 - View for the posts that have been reported
 - ~~Birthdays and anniversaries should come in the feed~~
-- Follow Feature
 - ~~Add Links~~
 - Hashtags  
 - ~~Mentions~~
@@ -43,10 +42,39 @@
 - ~~Chatbot should summarize new posts~~
 - ~~Post from LinkedIn~~
 - Connect to company LinkedIn page
-- Improve look and feel of Newsletter by adding plus button for edit
 - ~~Improve look and feel of celebrations~~
-- Edit newsletter
+- Newsletter
+    - Edit newsletter
+    - Newsletter home should be better
+    - When newsletter is published, a post should come
+    - Improve look and feel of Newsletter by adding plus button for edit
 - ~~Remove bullet from replies~~
-- Posting in groups is not possible
 - Announcement picture is not coming
+- ~~Post card should not contain profile picture~~
+- Admin page
+    - Admin page should be better
+    - Dashboard showing daily posts
+    - Request for new user/license etc.
+    - Stop/start subscription
+    - Make sure blocked page concepts works
+- Work on user restriction
+- Style external links
+- Posting from chat should ask for details
+- Mail
+    - Improve signup mail
+- Profile should be better
+- Bugs
+    - Two lines are coming in posts
+    - Post in groups
+    - Edit profile should enable us to edit all fields
+- Chatbot
+    - Summarize posts
+    - Answering based on X documents
+- Website
+    - AI powered social media platform
+    - Has a chatbot
+    - Mention about simplicity
+    - Reduce pricing complexity
+    - Add login page link
+- Instruction/documentation
 

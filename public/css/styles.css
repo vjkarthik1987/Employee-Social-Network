@@ -3692,3 +3692,217 @@ main.page {
   text-transform: uppercase;
   opacity: .7;
 }
+
+/* =========================
+   Composer (stylish refresh)
+   ========================= */
+
+   .composer-card {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 14px;
+    background: #fff;
+    padding: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  }
+  
+  .composer-head--clean {
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    margin-bottom: 10px;
+  }
+  
+  .composer-hint {
+    font-weight: 650;
+    letter-spacing: -0.1px;
+    font-size: 0.98rem;
+  }
+  
+  .composer-subhint {
+    margin-top: 4px;
+    font-size: 0.82rem;
+    opacity: 0.72;
+  }
+  
+  .composer-input {
+    width: 100%;
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 12px;
+    padding: 12px 12px;
+    background: rgba(0,0,0,0.02);
+    outline: none;
+    transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
+  }
+  
+  .composer-input:focus {
+    background: #fff;
+    border-color: rgba(0,0,0,0.18);
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.06);
+  }
+  
+  .composer-toolbar--clean {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  
+  .composer-toolbar-left {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .composer-toolbar-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  /* Icon buttons with label */
+  .composer-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 999px;
+    padding: 8px 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: transform .08s ease, box-shadow .15s ease, background .15s ease;
+  }
+  
+  .composer-icon-btn .icon { font-size: 1rem; }
+  .composer-icon-btn .lbl  { font-size: 0.85rem; opacity: 0.9; }
+  
+  .composer-icon-btn:hover {
+    box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+  }
+  
+  .composer-icon-btn:active {
+    transform: translateY(0px);
+  }
+  
+  /* Primary post button */
+  .composer-post-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 14px;
+    cursor: pointer;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+  }
+  
+  .composer-post-btn .lbl { font-weight: 650; }
+  .composer-post-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  /* Sections */
+  .composer-section {
+    margin-top: 12px;
+  }
+  
+  /* Media preview card */
+  .media-preview-card {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 14px;
+    background: rgba(0,0,0,0.02);
+    padding: 12px;
+  }
+  
+  .mediaGrid--composer {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 6px 0 10px;
+  }
+  
+  .mediaGrid--composer img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  
+  .media-remove-btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+  }
+  
+  /* Poll builder card */
+  .poll-builder--card {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 14px;
+    background: #fff;
+    padding: 12px;
+  }
+  
+  .pb-q {
+    background: rgba(0,0,0,0.02);
+    border-radius: 14px;
+    border: 1px dashed rgba(0,0,0,0.20);
+  }
+  
+  .pb-q .input {
+    border-radius: 12px;
+  }
+  
+  .pb-opt .input {
+    border-radius: 12px;
+  }
+  
+  .pb-add-q {
+    margin-top: 10px;
+    border-radius: 12px;
+  }
+  
+  /* Announcement card */
+  .announce--card {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 14px;
+    background: #fff;
+    padding: 12px;
+  }
+  
+  .announce-fields {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .announce-title,
+  .announce-cover {
+    border-radius: 12px;
+  }
+  
+  /* Quill wrapper (clean) */
+  .rich-editor-container--clean {
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+  }
+  
+  .rich-editor-container--clean .ql-toolbar {
+    border: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    background: rgba(0,0,0,0.02);
+  }
+  
+  .rich-editor-container--clean .ql-container {
+    border: 0;
+    min-height: 160px;
+  }
+
+  
+  
