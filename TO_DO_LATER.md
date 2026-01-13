@@ -64,7 +64,7 @@
     - Improve signup mail
 - Profile should be better
 - Bugs
-    - Two lines are coming in posts
+    - ~~Two lines are coming in posts~~
     - Post in groups
     - Edit profile should enable us to edit all fields
     - Flash message should go away in few time
@@ -76,6 +76,6 @@
     - Has a chatbot
     - Mention about simplicity
     - Reduce pricing complexity
-    - Add login page link
+    - ~~Add login page link~~
 - Instruction/documentation
 

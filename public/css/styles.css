@@ -3904,5 +3904,35 @@ main.page {
     min-height: 160px;
   }
 
-  
+  /* Remove header divider to avoid double lines */
+.post-header {
+  border-bottom: none !important;
+}
+
+.post-footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+/* --- FIX: remove double divider inside post card --- */
+/* Keep only ONE separator (footer top border). */
+.post-card .post-body{
+  border-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 10px !important;
+}
+
+.post-card .post-footer{
+  border-top: 1px solid rgba(0,0,0,0.06) !important;
+  margin-top: 0 !important;
+  padding-top: 10px !important;
+}
+
+/* defensive: if anything inside footer adds its own top border/HR */
+.post-card .reactions-bar,
+.post-card hr{
+  border-top: 0 !important;
+}
+
   
