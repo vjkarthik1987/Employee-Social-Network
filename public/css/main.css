@@ -306,3 +306,8 @@ vertical-align:middle;         /* fix baseline wiggle */
   color: var(--jaango-green);
   font-weight: 600;
 }
+
+.topbar .btn-ghost {
+  box-shadow: none;
+  border: 1px solid rgba(0,0,0,.08);
+}

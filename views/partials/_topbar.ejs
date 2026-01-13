@@ -10,7 +10,13 @@
         <a href="/features">Features</a>
         <a href="/about-us">About Us</a>
         <a href="/pricing">Pricing</a>
-        <a href="/auth/register-org" class="btn btn-primary start-cta">Start your Club</a>
+
+        <% if (!currentUser) { %>
+          <a href="/auth/login" class="btn btn-ghost">Log in</a>
+          <a href="/auth/register-org" class="btn btn-primary start-cta">Start your Club</a>
+        <% } else { %>
+          <a href="/<%= company?.slug %>" class="btn btn-primary start-cta">Go to App</a>
+        <% } %>
       </nav>
     </div>
   </div>

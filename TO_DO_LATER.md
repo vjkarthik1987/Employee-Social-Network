@@ -67,6 +67,7 @@
     - Two lines are coming in posts
     - Post in groups
     - Edit profile should enable us to edit all fields
+    - Flash message should go away in few time
 - Chatbot
     - Summarize posts
     - Answering based on X documents

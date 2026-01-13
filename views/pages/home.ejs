@@ -64,8 +64,13 @@
           A familiar, secure space where voices meet, ideas ripen, and teams stay connected.
         </p>
         <div class="btn-row">
-          <a class="btn btn-primary" href="/auth/register-org">🍋 Start your Club</a>
-          <a class="btn btn-ghost" href="#how">🌿 See how it works</a>
+          <% if (!currentUser) { %>
+            <a href="/auth/login" class="btn btn-ghost">Log in</a>
+            <a href="/auth/register-org" class="btn btn-primary">Start your Club</a>
+            <a class="btn btn-ghost" href="#how">🌿 See how it works</a>
+          <% } else { %>
+            <a href="/<%= company?.slug %>" class="btn btn-primary">Go to App</a>
+          <% } %>
         </div>
       </div>
       <div class="hero-logo">
