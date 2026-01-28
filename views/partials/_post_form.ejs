@@ -37,54 +37,33 @@
     <input type="hidden" name="groupId" value="<%= groupId %>">
   <% } %>
 
-  <!-- Header -->
-  <!-- Header -->
-  <div class="composer-head composer-head--clean">
-    <div class="composer-head-meta">
-      <div class="composer-hint">
-        <%= currentUser ? `What's on your mind, ${currentUser.fullName?.split(' ')[0] || ''}?` : 'Start a post' %>
+
+  <div class="composer-row">
+    <div id="plainComposerWrap">
+      <textarea
+        name="content"
+        id="composerTextarea"
+        rows="1"
+        class="composer-input js-mention"
+        data-mention-source="/<%= company.slug %>/posts/mentions"
+        placeholder="Write something… (paste a link to show a preview)"
+      ><%- existing %></textarea>
+    </div>
+  
+    <div class="composer-toolbar composer-toolbar--clean">
+      <div class="composer-toolbar-left">
+        <button type="button" class="composer-icon-btn tsel" data-type="IMAGE">🖼️</button>
+        <button type="button" class="composer-icon-btn tsel" data-type="POLL">📊</button>
+        <button type="button" class="composer-icon-btn tsel" data-type="ANNOUNCEMENT">📢</button>
       </div>
-      <div class="composer-subhint">Share an update, ask a question, or run a quick poll.</div>
+  
+      <div class="composer-toolbar-right">
+        <button type="button" class="btn btn-ghost" id="draftBtn">Save draft</button>
+        <button class="composer-post-btn" type="submit" id="postBtn">➤</button>
+      </div>
     </div>
   </div>
-
-  <!-- Textarea -->
-  <div id="plainComposerWrap">
-    <textarea name="content"
-  id="composerTextarea"
-  rows="1"
-  class="composer-input js-mention"
-  data-mention-source="/<%= company.slug %>/posts/mentions"
-  placeholder="Write something… (paste a link to show a preview)"
-><%- existing %></textarea>
-
-  </div>
-
- <!-- Toolbar -->
-<div class="composer-toolbar composer-toolbar--clean">
-  <div class="composer-toolbar-left">
-    <button type="button" class="composer-icon-btn tsel" data-type="IMAGE" title="Image post" aria-label="Image post">
-      <span class="icon" aria-hidden="true">🖼️</span><span class="lbl">Image</span>
-    </button>
-    <button type="button" class="composer-icon-btn tsel" data-type="POLL" title="Create poll" aria-label="Create poll">
-      <span class="icon" aria-hidden="true">📊</span><span class="lbl">Poll</span>
-    </button>
-    <button type="button" class="composer-icon-btn tsel" data-type="ANNOUNCEMENT" title="Announcement" aria-label="Announcement">
-      <span class="icon" aria-hidden="true">📢</span><span class="lbl">Announcement</span>
-    </button>
-  </div>
-
-  <div class="composer-toolbar-right">
-    <button type="button" class="btn btn-ghost" id="draftBtn">Save draft</button>
-
-    <button class="composer-post-btn" type="submit" id="postBtn" disabled
-      title="<%= editMode ? 'Publish' : 'Post' %>"
-      aria-label="<%= editMode ? 'Publish' : 'Post' %>">
-      <span class="composer-post-icon" aria-hidden="true">➤</span>
-      <!-- <span class="lbl"><%= editMode ? 'Publish' : 'Post' %></span> -->
-    </button>
-  </div>
-</div>
+  
 
     <!-- IMAGE upload (required for IMAGE button) -->
     <input
@@ -306,7 +285,6 @@
     }
   });
 
-  
 
   // Poll builder helpers (same logic, but safe)
   function qName(i, inner){ return `poll[questions][${i}]` + (inner ? `[${inner}]` : ''); }

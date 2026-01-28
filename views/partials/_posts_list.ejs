@@ -1,0 +1,11 @@
+<% (posts || []).forEach(function(p){ %>
+    <%- include('./_post_card', {
+      post: p,
+      company,
+      user,
+      csrfToken,
+      viewedPostIds,
+      compact: false
+    }) %>
+  <% }) %>
+  

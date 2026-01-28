@@ -2,37 +2,18 @@
 
 <section>
   <!-- Search + Filters -->
-  <form
-    id="feed-search-form"
-    method="GET"
-    action="<%= (typeof searchAction !== 'undefined' && searchAction) ? searchAction : '' %>"
-    class="feed-search"
-    style="display:grid;gap:8px;margin:12px 0 6px;"
-  >
-    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-    <input type="hidden" name="page"  value="<%= typeof page !== 'undefined' ? page : 1 %>"/>
-    <input type="hidden" name="limit" value="<%= typeof limit !== 'undefined' ? limit : 15 %>"/>
+  
 
-    <!-- ROW 1: Search box + Search button -->
-    <div class="search-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap; margin-bottom: 1px;">
-      <input
-        type="text"
-        name="q"
-        list="search-suggestions"
-        placeholder="Search posts…"
-        value="<%= (filters && filters.q) ? filters.q : '' %>"
-        class="search-input"
-      />
-      <% if (Array.isArray(recentSearches) && recentSearches.length) { %>
-        <datalist id="search-suggestions">
-          <% recentSearches.forEach(function(s){ %>
-            <option value="<%= s %>"></option>
-          <% }) %>
-        </datalist>
-      <% } %>
-      <button class="btn" type="submit">Search</button>
-    </div>
-  </form>
+  <!-- ✏️ Post Composer (only if logged in) -->
+  <% if (user) { %>
+    <%- include('../partials/_post_form', {
+      company,
+      groupId: (typeof group !== 'undefined' && group) ? group._id : null,
+      currentUser: user,
+      csrfToken
+    }) %>
+  <% } %>
+  
 
   <!-- 🎉 Upcoming celebrations (above composer) -->
   <% if (user && Array.isArray(celebrations) && celebrations.length) { %>
@@ -102,15 +83,6 @@
     </div>
   <% } %>
 
-  <!-- ✏️ Post Composer (only if logged in) -->
-  <% if (user) { %>
-    <%- include('../partials/_post_form', {
-      company,
-      groupId: (typeof group !== 'undefined' && group) ? group._id : null,
-      currentUser: user,
-      csrfToken
-    }) %>
-  <% } %>
   
   <!-- Results + Posts -->
   <% if (!posts || posts.length === 0) { %>
@@ -118,35 +90,38 @@
   <% } %>
 
   <!-- Feed tabs: Regular posts vs Announcements -->
-  <div class="feed-tabs-wrap">
-    <div class="feed-tabs">
-      <%
-        const activeTab = (filters && filters.tab) || 'REGULAR';
-        const baseUrl = searchAction || ('/' + company.slug + '/feed');
-      %>
+  <div class="feed-rail">
+    <div class="feed-tabs-wrap">
+      <div class="feed-tabs">
+        <%
+          const activeTab = (filters && filters.tab) || 'REGULAR';
+          const baseUrl = searchAction || ('/' + company.slug + '/feed');
+        %>
+  
+        <a href="<%= baseUrl %>?tab=REGULAR"
+           class="feed-tab <%= activeTab === 'REGULAR' ? 'is-active' : '' %>">
+          Regular posts
+        </a>
+  
+        <a href="<%= baseUrl %>?tab=ANNOUNCEMENTS"
+           class="feed-tab <%= activeTab === 'ANNOUNCEMENTS' ? 'is-active' : '' %>">
+          Announcements
+        </a>
+  
+        <a href="<%= baseUrl %>?tab=DRAFTS"
+           class="feed-tab <%= activeTab === 'DRAFTS' ? 'is-active' : '' %>">
+          Drafts
+        </a>
+      </div>
+    </div>
 
-      <a href="<%= baseUrl %>?tab=REGULAR"
-        class="feed-tab <%= activeTab === 'REGULAR' ? 'is-active' : '' %>">
-        Regular posts
-      </a>
-
-      <a href="<%= baseUrl %>?tab=ANNOUNCEMENTS"
-        class="feed-tab <%= activeTab === 'ANNOUNCEMENTS' ? 'is-active' : '' %>">
-        Announcements
-      </a>
-
-      <a href="<%= baseUrl %>?tab=DRAFTS"
-        class="feed-tab <%= activeTab === 'DRAFTS' ? 'is-active' : '' %>">
-        Drafts
-      </a>
-   
+    <div id="feed-list">
+      <%- include('../partials/_posts_batch', { company, user, posts }) %>
     </div>
   </div>
 
 
-  <div id="feed-list">
-    <%- include('../partials/_posts_batch', { company, user, posts }) %>
-  </div>
+  
 
   <div class="feed-more">
     <button id="feed-more-btn" class="btn btn-ghost" type="button" style="display:none;">

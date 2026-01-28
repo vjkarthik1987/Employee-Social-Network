@@ -52,11 +52,13 @@
 - Announcement picture is not coming
 - ~~Post card should not contain profile picture~~
 - Admin page
-    - Admin page should be better
+    - ~~Admin page should be better~~
     - Dashboard showing daily posts
     - Request for new user/license etc.
     - Stop/start subscription
     - Make sure blocked page concepts works
+    - Have a back page to admin 
+    - Better way to save/place it properly
 - Work on user restriction
 - Style external links
 - Posting from chat should ask for details
@@ -68,6 +70,7 @@
     - Post in groups
     - Edit profile should enable us to edit all fields
     - Flash message should go away in few time
+    - Go to App should take me to my login feed
 - Chatbot
     - Summarize posts
     - Answering based on X documents

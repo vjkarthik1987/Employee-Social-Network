@@ -25,24 +25,26 @@
   <!-- Links -->
   <div class="nav-links">
     <% if (org) { %>
-      <a href="/<%= org.slug %>/feed">Feed</a>
+      <a href="/<%= org.slug %>/feed">Home</a>
       <a href="/<%= org.slug %>/groups">Groups</a>
-      <a href="/<%= org.slug %>/newsletters"
-        class="nav-link"> Newsletters
-     </a>
+      <a href="/<%= org.slug %>/newsletters" class="nav-link">Newsletters</a>
+
       <% if (currentUser) { %>
         <a href="/<%= org.slug %>/profile/<%= currentUser._id %>">My Profile</a>
       <% } %>
-        <a href="/<%= company.slug %>/mod/queue" class="<%= currentPath.includes('/mod/queue') ? 'active' : '' %>">
-          Moderation
-          <% if (typeof moderationQueueCount !== 'undefined' && moderationQueueCount > 0) { %>
-            <span class="nav-pill"><%= moderationQueueCount %></span>
-          <% } %>
-        </a>
+
+      <a href="/<%= company.slug %>/mod/queue" class="<%= currentPath.includes('/mod/queue') ? 'active' : '' %>">
+        Moderation
+        <% if (typeof moderationQueueCount !== 'undefined' && moderationQueueCount > 0) { %>
+          <span class="nav-pill"><%= moderationQueueCount %></span>
+        <% } %>
+      </a>
+
       <% if (currentUser && currentUser.role === 'ORG_ADMIN') { %>
         <a href="/<%= org.slug %>/admin/settings">Admin</a>
         <a href="/<%= org.slug %>/admin/users">Users</a>
       <% } %>
+
       <% if (currentUser) { %>
         <form method="POST" action="/<%= org.slug %>/auth/logout" class="logout-form">
           <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
@@ -61,23 +63,29 @@
 (function () {
   const navbar = document.querySelector('.navbar');
   const backdrop = document.getElementById('nav-backdrop');
+
+  function closeDrawer() {
+    navbar.classList.remove('open');
+    backdrop.classList.remove('show');
+    backdrop.hidden = true; // ✅ important (since element starts as hidden)
+    document.querySelector('.hamburger')?.setAttribute('aria-expanded','false');
+  }
+
   window.toggleDrawer = function (btn) {
     navbar.classList.toggle('open');
     const isOpen = navbar.classList.contains('open');
-    btn?.setAttribute('aria-expanded', isOpen);
+
+    btn?.setAttribute('aria-expanded', String(isOpen));
+
+    // ✅ make backdrop actually clickable/visible
+    backdrop.hidden = !isOpen;
     backdrop.classList.toggle('show', isOpen);
   };
-  backdrop.addEventListener('click', () => {
-    navbar.classList.remove('open');
-    backdrop.classList.remove('show');
-    document.querySelector('.hamburger')?.setAttribute('aria-expanded','false');
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      navbar.classList.remove('open');
-      backdrop.classList.remove('show');
-      document.querySelector('.hamburger')?.setAttribute('aria-expanded','false');
-    }
+
+  backdrop.addEventListener('click', closeDrawer);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
   });
 })();
 </script>

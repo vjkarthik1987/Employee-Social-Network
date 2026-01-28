@@ -43,9 +43,6 @@ html {
   scroll-behavior: smooth;
 }
 
-html {
-  font-size: inherit; /* or remove entirely */
-}
 
 body {
   font-size: 1rem;
@@ -3935,4 +3932,1215 @@ main.page {
   border-top: 0 !important;
 }
 
+/* =========================
+   Admin Settings page
+   ========================= */
+
+   .admin-page{
+    max-width: 960px;
+    margin: 26px auto;
+    padding: 0 14px;
+    display: grid;
+    gap: 16px;
+  }
   
+  .admin-page-head{
+    display: grid;
+    gap: 6px;
+  }
+  
+  .admin-title{
+    margin: 0;
+    font-size: 1.35rem;
+    letter-spacing: -0.2px;
+  }
+  
+  .admin-subtitle{
+    font-size: 0.92rem;
+    opacity: 0.75;
+  }
+  
+  /* Pills nav */
+  .admin-pills{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 6px 0 6px;
+  }
+  
+  .pill-link{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.10);
+    background: #fff;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: transform .08s ease, box-shadow .15s ease;
+  }
+  
+  .pill-link:hover{
+    box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+  }
+  
+  .pill-link.active{
+    background: rgba(0,0,0,0.03);
+    border-color: rgba(0,0,0,0.18);
+    font-weight: 650;
+  }
+  
+  /* Cards */
+  .admin-card{
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+    border: 1px solid rgba(0,0,0,0.10);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  }
+  
+  .admin-card h3{
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: -0.1px;
+  }
+  
+  .admin-card p{
+    margin: 0;
+    opacity: 0.75;
+  }
+  
+  /* Form layout helpers */
+  .admin-grid{
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    align-items: end;
+  }
+  
+  .admin-row{
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  .admin-divider{
+    border: 0;
+    height: 1px;
+    background: rgba(0,0,0,0.08);
+    margin: 6px 0;
+  }
+  
+  /* Inputs – normalize */
+  .form-input,
+  .input,
+  textarea,
+  input[type="number"],
+  input[type="url"],
+  input[type="text"]{
+    width: 100%;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.02);
+    outline: none;
+    transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
+  }
+  
+  textarea{
+    min-height: 92px;
+    resize: vertical;
+  }
+  
+  .form-input:focus,
+  .input:focus,
+  textarea:focus,
+  input[type="number"]:focus,
+  input[type="url"]:focus,
+  input[type="text"]:focus{
+    background: #fff;
+    border-color: rgba(0,0,0,0.18);
+    box-shadow: 0 0 0 4px rgba(0,0,0,0.06);
+  }
+  
+  /* Color input */
+  .form-input-color{
+    width: 64px;
+    height: 40px;
+    padding: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.12);
+    background: transparent;
+  }
+  
+  /* Section headings inside the form */
+  .admin-section-title{
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+  
+  /* Actions */
+  .admin-actions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  
+  /* Utilities card */
+  .admin-utilities{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .admin-utilities .util-actions{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  /* Buttons – if you already have these, keep; these are safe fallbacks */
+  .btn.btn-primary{
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 14px;
+    box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+    font-weight: 650;
+  }
+  
+  .btn.danger{
+    border-radius: 999px;
+  }
+  
+  .admin-form{ display:grid; gap:18px; }
+
+.admin-card-head{ display:grid; gap:4px; }
+.admin-card-head p{ margin:0; color:#555; font-size:14px; }
+
+.admin-field{ display:block; }
+.admin-label{ margin-bottom:6px; font-weight:600; font-size:13px; color:#374151; }
+
+.admin-stack{ display:grid; gap:10px; }
+.admin-block{ display:grid; gap:6px; }
+
+.admin-radio, .admin-check{
+  display:flex; align-items:center; gap:8px;
+  font-size:14px;
+}
+
+.admin-textarea{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid rgba(0,0,0,0.12);
+  border-radius:12px;
+  background: rgba(0,0,0,0.02);
+}
+
+.admin-inline{ display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.admin-number{ width:110px; }
+
+.admin-muted{ color:#6b7280; font-size:13px; }
+
+.admin-swatch{ margin-left:auto; display:flex; align-items:center; gap:8px; }
+.admin-swatch-box{ width:24px; height:24px; border-radius:6px; border:1px solid #ddd; }
+
+.admin-logo-preview{ margin-top:8px; display:flex; align-items:center; gap:8px; }
+.admin-logo-img{ width:40px; height:40px; border-radius:10px; object-fit:cover; border:1px solid #eee; }
+
+.admin-grid-2{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-row-tight{ gap:16px; }
+
+.admin-kv{ display:grid; gap:8px; }
+.admin-kv-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+.admin-actions-left{ justify-content:flex-start; }
+
+.admin-utilities-title{ font-weight:700; }
+/* =========================
+   ADMIN PAGE – HARD RESET
+   ========================= */
+
+   .admin-page {
+    font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #0f172a;
+  }
+  
+  /* spacing rhythm */
+  .admin-page .card {
+    padding: 18px;
+  }
+  
+  .admin-page h2,
+  .admin-page h3 {
+    font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  
+  /* ---- Inputs: FORCE sane UI ---- */
+  .admin-page input[type="text"],
+  .admin-page input[type="url"],
+  .admin-page input[type="number"],
+  .admin-page textarea {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    font-size: 14px;
+    line-height: 1.4;
+    font-family: inherit;
+  }
+  
+  .admin-page textarea {
+    min-height: 90px;
+    resize: vertical;
+  }
+  
+  /* focus */
+  .admin-page input:focus,
+  .admin-page textarea:focus {
+    outline: none;
+    border-color: var(--primary, #0a66c2);
+    box-shadow: 0 0 0 3px rgba(10,102,194,0.12);
+  }
+  
+  /* labels */
+  .admin-page label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+  }
+  
+  /* radios & checkboxes */
+  .admin-page input[type="checkbox"],
+  .admin-page input[type="radio"] {
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* spacing between form rows */
+  .admin-page .admin-field,
+  .admin-page label {
+    display: block;
+    margin-bottom: 12px;
+  }
+  
+  /* cards separation */
+  .admin-page .admin-card + .admin-card {
+    margin-top: 16px;
+  }
+  
+  /* section descriptions */
+  .admin-page p {
+    font-size: 13px;
+    color: #64748b;
+  }
+  
+  /* pills row spacing */
+  .admin-page .admin-pills {
+    margin-bottom: 18px;
+  }
+  
+  /* buttons */
+  .admin-page .btn {
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  
+  /* Admin grids */
+.admin-page .admin-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.admin-page .admin-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 700px) {
+  .admin-page .admin-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================
+   X / Twitter-style feed
+   ========================= */
+
+/* Kill the masonry-gap look in the feed */
+.feed-grid {
+  gap: 0 !important;                 /* was 16px */
+}
+
+/* Flat rows + dividers instead of “cards” */
+
+
+/* ===== X-like dense feed ===== */
+.feed-grid { gap: 0; }
+
+.post-card {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  border: 0;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 16px;
+  background: #fff;
+  display: block;          /* you had inline-block in another block */
+}
+
+.post-card:hover {
+  transform: none;
+  box-shadow: none;
+  background: rgba(0,0,0,0.02);
+}
+
+/* Remove your internal divider if you want only ONE divider per post */
+.post-body {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* Flat, no-rounded, no-spacing cards */
+.post-card {
+  display: block !important;
+  margin: 0 !important;
+  padding: 12px 16px !important;
+
+  border: 0 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+
+  background: #fff !important;
+}
+
+/* Optional top border for first post */
+.feed-grid > .post-card:first-child {
+  border-top: 1px solid #e5e7eb !important;
+}
+
+/* Hover like X */
+.post-card:hover {
+  background: rgba(0,0,0,0.02) !important;
+}
+
+/* IMPORTANT: remove inner divider so you don't see double lines */
+.post-card .post-body {
+  border-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Also remove footer top border you added earlier (optional) */
+.post-card .post-footer {
+  border-top: 0 !important;
+  margin-top: 10px !important;
+  padding-top: 6px !important;
+}
+
+/* =========================================================
+   FINAL HARD OVERRIDE (MUST BE LAST IN FILE)
+   Goal: X-style flat feed = no gaps, no rounded cards
+   ========================================================= */
+
+/* kill any grid gap that might be reintroduced */
+.feed-grid {
+  gap: 0 !important;
+}
+
+/* if you have any wrapper around cards, kill its spacing too */
+.feed-grid > * {
+  margin: 0 !important;
+}
+
+/* force the actual card to be flat */
+.feed-grid > article.post-card,
+.feed-grid > .post-card,
+article.post-card.xcard {
+  display: block !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+
+  /* keep only the bottom divider like X */
+  border: 0 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+
+  /* keep your dense padding (adjust if you want tighter) */
+  padding: 12px 16px !important;
+}
+
+/* optional: add top divider only once */
+.feed-grid > article.post-card:first-child,
+.feed-grid > .post-card:first-child {
+  border-top: 1px solid #e5e7eb !important;
+}
+
+/* remove ANY internal borders that look like spacing/double lines */
+article.post-card .post-body,
+article.post-card .post-footer,
+article.post-card .reactions-bar,
+article.post-card hr {
+  border: 0 !important;
+}
+
+/* if cards look "separated" due to background bleed, force full white */
+.feed-grid,
+.feed-grid > article.post-card,
+.feed-grid > .post-card {
+  background: #fff !important;
+}
+
+/* Header: left + right on same row */
+.xhead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+/* Left side can shrink + wrap */
+.xhead-left{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;            /* IMPORTANT: allows truncation instead of pushing right side */
+  flex:1 1 auto;
+  flex-wrap:wrap;         /* optional: allows time/group to wrap nicely */
+}
+
+/* Right side stays pinned to the right */
+.xhead-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:0 0 auto;
+  margin-left:auto;       /* extra safety */
+  white-space:nowrap;     /* prevents report button wrapping */
+}
+
+.xname{
+  font-size: 15.5px;
+  font-weight: 600;
+}
+
+
+
+/* ================================
+   FEED: Mobile responsiveness fix
+   Put this at the END of the CSS
+   ================================ */
+
+/* 1) Stop forcing desktop width */
+body { min-width: 0 !important; }
+
+/* If you still want a minimum on desktop only */
+@media (min-width: 1201px) {
+  body { min-width: 1200px; }
+}
+
+/* 2) Mobile layout: remove the 3-column calc system */
+@media (max-width: 900px) {
+  :root{
+    --leftW: 0px;
+    --rightW: 0px;
+    --chatW: 0px;
+    --gutter: 12px;
+  }
+
+  /* left nav is top bar in your mobile rules */
+  .navbar{
+    width: 100% !important;
+    height: var(--navH, 56px) !important;
+  }
+
+  /* chat dock hidden already, but make sure it doesn't reserve space */
+  .chatDock{ display: none !important; }
+
+  /* rightBar becomes bottom bar — ensure it doesn't steal layout width */
+  .rightBar{
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* THIS is crucial: kill margin-left/right calc widths */
+  .page-container{
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+
+    /* top padding for fixed top navbar */
+    padding-top: calc(var(--navH, 56px) + 12px) !important;
+
+    /* bottom padding for fixed bottom bar */
+    padding-bottom: calc(var(--bottomH, 72px) + 16px) !important;
+
+    overflow-x: hidden !important;
+  }
+
+  /* 3) Feed/search row: prevent button wrap weirdness */
+  .search-row{
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+  }
+  .search-input{
+    min-width: 0 !important;     /* IMPORTANT inside flex */
+    width: 100% !important;
+  }
+  .search-row .btn{
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  /* 4) Cards should never overflow */
+  .post-card{ padding-left: 12px !important; padding-right: 12px !important; }
+}
+
+/* 5) Make images/media never cause horizontal scroll */
+img, video, iframe { max-width: 100%; height: auto; }
+
+/* Report / flag icon – no boundary */
+.xicon,
+.xiconform button {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 4px;
+  border-radius: 0; /* ensure no rounding */
+}
+
+.xicon:hover {
+  background: transparent;
+}
+
+/* ================================
+   Composer: remove rounded corners
+   ================================ */
+
+   .composer-card,
+   .composer-head,
+   .composer-toolbar,
+   .composer-input,
+   .media-preview-card,
+   .poll-builder--card,
+   .announce--card,
+   .rich-editor-container,
+   .input,
+   textarea,
+   button {
+     border-radius: 0 !important;
+   }
+   
+   /* ================================
+   Celebrations: compact height
+   ================================ */
+
+.cele-strip {
+  padding: 6px 0;            /* reduce vertical padding */
+}
+
+.cele-strip-label {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+/* Horizontal scroller */
+.cele-strip-scroll {
+  gap: 8px;
+  padding-bottom: 4px;
+}
+
+/* Individual celebration card */
+.cele-card {
+  padding: 8px 10px;         /* was likely 12–16px */
+  min-height: unset;
+  line-height: 1.2;
+}
+
+/* Avatar smaller */
+.cele-avatar {
+  width: 28px;
+  height: 28px;
+}
+
+/* Emoji/icon slightly smaller */
+.cele-card-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Text tightening */
+.cele-card-type {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.cele-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 2px 0;
+}
+
+.cele-card-meta {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* Action button tighter */
+.cele-wish-btn {
+  font-size: 11px;
+  padding: 4px 6px;
+  margin-top: 4px;
+}
+
+/* ================================
+   Navbar typography uplift
+   ================================ */
+
+/* Main nav links */
+
+.navbar a,
+.navbar .nav-link {
+  font-size: 18px;       /* BIG jump */
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* Active / current section */
+.navbar .active,
+.navbar a.active {
+  font-weight: 600;
+}
+
+/* Section headers / titles in navbar */
+.navbar .nav-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Icons aligned with bigger text */
+.navbar .nav-icon {
+  font-size: 17px;
+}
+
+@media (max-width: 640px) {
+  .navbar a,
+  .navbar .nav-link {
+    font-size: 16.5px;
+  }
+}
+
+/* ================================
+   Composer: single-line layout
+   ================================ */
+
+   .composer-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* tighter */
+  }
+  
+  /* Wrap textarea + toolbar into one row */
+  #plainComposerWrap,
+  .composer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  /* Make textarea behave like inline input */
+  #plainComposerWrap {
+    flex: 1 1 auto;
+  }
+  
+  .composer-input {
+    width: 100%;
+    min-height: 36px;
+    max-height: 120px;
+    resize: none;
+    padding: 6px 8px;
+    font-size: 14px;
+  }
+  
+  /* Toolbar becomes inline controls */
+  .composer-toolbar {
+    flex: 0 0 auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+  }
+  
+  /* Left icons inline & compact */
+  .composer-toolbar-left {
+    display: flex;
+    gap: 6px;
+  }
+  
+  .composer-icon-btn {
+    padding: 4px 6px;
+  }
+  
+  /* Hide labels, keep icons */
+  .composer-icon-btn .lbl {
+    display: none;
+  }
+  
+  /* Right actions pinned */
+  .composer-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  /* Draft button compact */
+  #draftBtn {
+    padding: 4px 8px;
+    font-size: 13px;
+  }
+  
+  /* Post button stays strong */
+  .composer-post-btn {
+    height: 32px;
+    padding: 0 10px;
+  }
+  
+
+  @media (max-width: 640px) {
+    .composer-card {
+      flex-direction: column;
+    }
+  
+    #plainComposerWrap,
+    .composer-toolbar {
+      width: 100%;
+    }
+  
+    .composer-toolbar {
+      justify-content: space-between;
+    }
+  }
+  
+  /* ================================
+   Composer – TRUE single line
+   ================================ */
+
+.composer-head {
+  display: none; /* remove header text */
+}
+
+/* Main row */
+.composer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Textarea column */
+#plainComposerWrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Textarea behaves like input */
+.composer-input {
+  width: 100%;
+  min-height: 36px;
+  max-height: 90px;
+  resize: none;
+  padding: 6px 8px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+/* Toolbar inline */
+.composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  flex: 0 0 auto;
+}
+
+/* Left icons */
+.composer-toolbar-left {
+  display: flex;
+  gap: 6px;
+}
+
+.composer-icon-btn {
+  padding: 4px 6px;
+}
+
+/* Hide labels */
+.composer-icon-btn .lbl {
+  display: none;
+}
+
+/* Right actions */
+.composer-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Buttons compact */
+#draftBtn {
+  padding: 4px 8px;
+  font-size: 12.5px;
+}
+
+.composer-post-btn {
+  height: 32px;
+  padding: 0 10px;
+}
+
+@media (max-width: 640px) {
+  .composer-row {
+    flex-wrap: wrap;
+  }
+
+  #plainComposerWrap {
+    width: 100%;
+  }
+}
+
+/* =================================
+   Composer toolbar: uniform buttons
+   ================================= */
+
+/* Match icon buttons to Post button size */
+.composer-icon-btn {
+  height: 32px;              /* SAME as .composer-post-btn */
+  min-width: 32px;
+  padding: 0 10px;           /* horizontal balance */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;           /* emoji/icon size */
+  line-height: 1;
+}
+
+/* Keep icons centered */
+.composer-icon-btn .icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* =================================
+   Composer toolbar: uniform buttons
+   ================================= */
+
+/* Base size for ALL composer buttons */
+.composer-icon-btn,
+#draftBtn,
+.composer-post-btn {
+  height: 32px;
+  min-width: 32px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  line-height: 1;
+  border-radius: 0 !important; /* keep flat */
+}
+
+/* Save draft should not look secondary in size */
+#draftBtn {
+  font-weight: 500;
+}
+
+#draftBtn {
+  opacity: 0.85;
+}
+
+#draftBtn:hover {
+  opacity: 1;
+}
+
+.nav-right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.nav-icon-btn{
+  height:40px;
+  width:40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #e8e8ee;
+  background:#fff;
+  cursor:pointer;
+  font-size:18px;
+}
+
+.nav-search{
+  display:flex;
+  align-items:center;
+  gap:8px;
+
+  width:0;
+  opacity:0;
+  overflow:hidden;
+  pointer-events:none;
+
+  transition: width .18s ease, opacity .18s ease;
+}
+
+.nav-search.is-open{
+  width:420px;          /* adjust */
+  opacity:1;
+  pointer-events:auto;
+}
+
+.nav-search-input{
+  width:100%;
+  height:40px;
+  padding:0 12px;
+  border:1px solid #e8e8ee;
+  font-size:15px;
+}
+
+.nav-search-btn{
+  height:40px;
+  white-space:nowrap;
+}
+
+/* mobile: make it not too wide */
+@media (max-width: 640px){
+  .nav-search.is-open{
+    width: calc(100vw - 140px);
+  }
+}
+
+/* === POST COMPOSER: FLAT, EDGE-TO-EDGE === */
+
+.composer-card {
+  margin: 0;                 /* remove outer spacing */
+  padding: 8px 0;            /* vertical breathing only */
+  border: none;              /* no card border */
+  border-bottom: 1px solid #e6e6e6; /* subtle divider like X */
+  border-radius: 0;          /* no rounded corners */
+  background: transparent;   /* blend into feed */
+}
+
+/* If composer is inside a padded section */
+section > .composer-card,
+.feed > .composer-card {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+
+/* Bigger, more confident composer text */
+.composer-input {
+  font-size: 17px;        /* default ~14–15px → this feels premium */
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+/* Placeholder also bigger (important!) */
+.composer-input::placeholder {
+  font-size: 17px;
+  color: #777;
+}
+
+/* Kill any bluish tint / glow around composer */
+.composer-card,
+.post-composer,
+.post-form-wrap,
+.post-form {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* If the tint appears only when typing (focus-within glow) */
+.composer-card:focus-within,
+.post-composer:focus-within,
+.post-form-wrap:focus-within,
+.post-form:focus-within {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Keep the input looking clean */
+.composer-card input,
+.composer-card textarea {
+  background: #fff;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Optional: if browser shows blue focus ring */
+.composer-card input:focus,
+.composer-card textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Remove rounded corners from celebrations strip */
+.cele-strip,
+.cele-strip-scroll {
+  border-radius: 0 !important;
+}
+
+/* Remove rounded corners from individual celebration cards */
+.cele-card {
+  border-radius: 0 !important;
+}
+
+/* If avatar/image inside has rounding */
+.cele-avatar {
+  border-radius: 0 !important;
+}
+
+/* If there is a hover/focus shadow glow */
+.cele-card:hover,
+.cele-card:focus-within {
+  box-shadow: none !important;
+}
+
+.cele-strip {
+  background: transparent;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+
+/* ✅ Desktop: make feed full width */
+@media (min-width: 992px) {
+  /* If you have a global container/wrapper limiting width */
+  .container,
+  .page,
+  .page-content,
+  .main,
+  .main-content,
+  .content,
+  .content-wrap {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  /* Your feed rail + tabs + list should stretch */
+  .feed-rail,
+  .feed-tabs-wrap,
+  .feed-tabs,
+  #feed-list {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Each post card should also take the full rail width */
+  .post,
+  .post-card,
+  .feed-item {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+/* ❌ Kill rounded corners everywhere in feed area */
+.post,
+.post-card,
+.feed-item,
+.feed-tabs,
+.feed-tab,
+.feed-tabs-wrap,
+.cele-strip,
+.cele-card,
+.post-composer,
+.post-form,
+.post-form textarea,
+.post-form input,
+.btn,
+.navbar,
+.nav-links,
+input,
+textarea {
+  border-radius: 0 !important;
+}
+
+/* Make composer feel embedded, not floating */
+.post-composer,
+.post-form {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Post body text */
+.post-content,
+.post-body,
+.post-text {
+  font-size: 15.5px !important;
+  line-height: 1.55;
+}
+
+/* Author name */
+.post-author,
+.post-author-name {
+  font-size: 14.5px !important;
+  font-weight: 600;
+}
+
+/* Time / meta */
+.post-meta,
+.post-time {
+  font-size: 12.5px !important;
+}
+
+.feed-tabs {
+  width: 100%;
+  padding: 0;
+  background: transparent;
+}
+
+.feed-tab {
+  font-size: 14.5px;
+  padding: 8px 14px;
+  border-bottom: 2px solid transparent;
+}
+
+.feed-tab.is-active {
+  border-bottom-color: #1a1a1a;
+  font-weight: 600;
+}
+
+.cele-strip {
+  padding: 8px 0;
+}
+
+.cele-card {
+  padding: 8px;
+  border-radius: 0 !important;
+}
+
+

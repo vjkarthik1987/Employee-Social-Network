@@ -1,10 +1,13 @@
 <% layout('layouts/_layout') %>
 
-<section style="max-width:900px;margin:24px auto;display:grid;gap:16px;">
-  <h2 style="margin:0;">Admin Settings</h2>
+<section class="admin-page">
+  <div class="admin-page-head">
+    <h2 class="admin-title">Admin Settings</h2>
+    <div class="admin-subtitle">Configure branding, posting policies, retention, and points.</div>
+  </div>
 
   <!-- Admin Quick Nav -->
-  <div class="admin-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px;">
+  <div class="admin-pills">
     <a href="/<%= company.slug %>/admin/internal-links"
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/internal-links')) ? 'active' : '' %>">
       🔗 Internal Links
@@ -26,28 +29,29 @@
       🤖 Assistant Docs
     </a>
     <a href="/<%= company.slug %>/admin/points"
-      class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/points')) ? 'active' : '' %>">
+       class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/points')) ? 'active' : '' %>">
       ⭐ Points
-   </a>
+    </a>
     <a href="/<%= company.slug %>/admin/settings"
        class="pill-link <%= (typeof currentPath !== 'undefined' && currentPath.includes('/admin/settings')) ? 'active' : '' %>">
       ⚙️ Settings
     </a>
   </div>
 
-
   <!-- ONE MAIN FORM FOR ALL SETTINGS -->
-  <form action="/<%= company.slug %>/admin/settings" method="POST" style="display:grid;gap:18px;">
+  <form action="/<%= company.slug %>/admin/settings" method="POST" class="admin-form">
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
 
-    <!-- ===== Branding: Name, Tagline, Logo ===== -->
-    <div class="card" style="padding:16px;display:grid;gap:12px;">
-      <h3 style="margin:0 0 4px;">Branding</h3>
-      <p style="margin:0 0 8px;color:#555;">How the product appears inside your company.</p>
+    <!-- ===== Branding ===== -->
+    <div class="card admin-card">
+      <div class="admin-card-head">
+        <h3>Branding</h3>
+        <p>How the product appears inside your company.</p>
+      </div>
 
-      <div style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:flex-end;">
-        <label style="display:block;">
-          <div style="margin-bottom:6px;">Product Name (internal brand)</div>
+      <div class="admin-grid">
+        <label class="admin-field">
+          <div class="admin-label">Product Name (internal brand)</div>
           <input
             name="productName"
             type="text"
@@ -57,8 +61,8 @@
           >
         </label>
 
-        <label style="display:block;">
-          <div style="margin-bottom:6px;">Tagline (optional)</div>
+        <label class="admin-field">
+          <div class="admin-label">Tagline (optional)</div>
           <input
             name="tagline"
             type="text"
@@ -68,8 +72,8 @@
           >
         </label>
 
-        <label style="display:block;">
-          <div style="margin-bottom:6px;">Logo URL (square works best)</div>
+        <label class="admin-field">
+          <div class="admin-label">Logo URL (square works best)</div>
           <input
             name="logoUrl"
             type="url"
@@ -81,25 +85,27 @@
       </div>
 
       <% if (company.branding?.logoUrl) { %>
-        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
-          <span style="font-size:13px;color:#666;">Preview:</span>
+        <div class="admin-logo-preview">
+          <span class="admin-muted">Preview:</span>
           <img
             src="<%= company.branding.logoUrl %>"
             alt="Logo preview"
-            style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid #eee;"
+            class="admin-logo-img"
           >
         </div>
       <% } %>
     </div>
 
     <!-- ===== Theme Colors ===== -->
-    <div class="card" style="padding:16px;display:grid;gap:12px;">
-      <h3 style="margin:0 0 4px;">Theme Colors</h3>
-      <p style="margin:0 0 8px;color:#555;">These colours are used across headers, buttons, and highlights.</p>
+    <div class="card admin-card">
+      <div class="admin-card-head">
+        <h3>Theme Colors</h3>
+        <p>Used across headers, buttons, and highlights.</p>
+      </div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
-        <label style="display:block;">
-          <div style="margin-bottom:6px;">Primary Color</div>
+      <div class="admin-row admin-row-tight">
+        <label class="admin-field">
+          <div class="admin-label">Primary Color</div>
           <input
             name="themePrimary"
             type="color"
@@ -107,9 +113,9 @@
             class="form-input-color"
           >
         </label>
-        
-        <label style="display:block;">
-          <div style="margin-bottom:6px;">Secondary / Accent Color</div>
+
+        <label class="admin-field">
+          <div class="admin-label">Secondary / Accent Color</div>
           <input
             name="themeSecondary"
             type="color"
@@ -117,26 +123,31 @@
             class="form-input-color"
           >
         </label>
-        
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-          <div>Preview:</div>
-          <div title="Primary"
-              style="width:24px;height:24px;border-radius:6px;border:1px solid #ddd;background:<%= company.branding?.theme?.primary || '#0a66c2' %>;"></div>
-          <div title="Secondary"
-              style="width:24px;height:24px;border-radius:6px;border:1px solid #ddd;background:<%= company.branding?.theme?.secondary || company.branding?.theme?.primary || '#0a66c2' %>;"></div>
+
+        <div class="admin-swatch">
+          <div class="admin-muted">Preview:</div>
+          <div class="admin-swatch-box"
+               title="Primary"
+               style="background:<%= company.branding?.theme?.primary || '#0a66c2' %>;"></div>
+          <div class="admin-swatch-box"
+               title="Secondary"
+               style="background:<%= company.branding?.theme?.secondary || company.branding?.theme?.primary || '#0a66c2' %>;"></div>
         </div>
       </div>
     </div>
 
-
     <!-- ===== Posting & Notifications ===== -->
-    <div class="card" style="padding:16px;display:grid;gap:12px;">
-      <h3 style="margin:0 0 4px;">Posting & Notifications</h3>
+    <div class="card admin-card">
+      <div class="admin-card-head">
+        <h3>Posting & Notifications</h3>
+        <p>Control who can post, and whether email notifications are enabled.</p>
+      </div>
 
-      <div style="display:grid;gap:8px;">
-        <div>
-          <div style="font-weight:500;margin-bottom:4px;">Posting mode</div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:14px;margin-bottom:4px;">
+      <div class="admin-stack">
+        <div class="admin-block">
+          <div class="admin-label">Posting mode</div>
+
+          <label class="admin-radio">
             <input
               type="radio"
               name="postingMode"
@@ -145,7 +156,8 @@
             >
             <span>Open — anyone in the org can post</span>
           </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+
+          <label class="admin-radio">
             <input
               type="radio"
               name="postingMode"
@@ -156,7 +168,7 @@
           </label>
         </div>
 
-        <label style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <label class="admin-check">
           <input
             type="checkbox"
             name="notificationsEnabled"
@@ -168,100 +180,121 @@
       </div>
     </div>
 
-    <!-- ===== Content Policy: Blocked Words ===== -->
-    <div class="card" style="padding:16px;display:grid;gap:8px;">
-      <h3 style="margin:0 0 4px;">Content Policy</h3>
-      <p style="margin:0 0 8px;color:#555;font-size:14px;">
-        Blocked words will be flagged in posts and comments. Separate them with commas.
-      </p>
+    <!-- ===== Content Policy ===== -->
+    <div class="card admin-card">
+      <div class="admin-card-head">
+        <h3>Content Policy</h3>
+        <p>Blocked words will be flagged in posts and comments. Separate them with commas.</p>
+      </div>
 
-      <label style="display:block;">
-        <div style="margin-bottom:6px;">Blocked Words (comma-separated)</div>
+      <label class="admin-field">
+        <div class="admin-label">Blocked Words (comma-separated)</div>
         <textarea
           name="blockedWordsCSV"
           rows="3"
-          style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;"
+          class="admin-textarea"
         ><%= (company.policies?.blockedWords || []).join(', ') %></textarea>
       </label>
     </div>
 
     <!-- ===== Data Retention ===== -->
-    <div class="card" style="padding:16px;display:grid;gap:8px;">
-      <h3 style="margin:0 0 4px;">Data Retention</h3>
-      <p style="margin:0 0 8px;color:#555;font-size:14px;">
-        Soft-deleted items older than this many days can be permanently removed by the retention job.
-      </p>
+    <div class="card admin-card">
+      <div class="admin-card-head">
+        <h3>Data Retention</h3>
+        <p>Soft-deleted items older than this many days can be permanently removed by the retention job.</p>
+      </div>
 
-      <label style="display:inline-flex;align-items:center;gap:8px;">
-        <span>Retention period&nbsp;(days)</span>
+      <label class="admin-inline">
+        <span class="admin-label">Retention period (days)</span>
         <input
           type="number"
           name="retentionDays"
           min="1"
           max="3650"
           value="<%= company.policies?.retentionDays || 365 %>"
-          style="width:90px;"
+          class="admin-number"
         >
       </label>
     </div>
 
-    <hr style="margin:18px 0;"/>
+    <hr class="admin-divider" />
 
-    <h3 style="margin:0 0 8px;">Points & Gamification</h3>
+    <!-- ===== Points & Gamification ===== -->
+    <div class="card admin-card">
+      <div class="admin-card-head">
+        <h3>Points & Gamification</h3>
+        <p>Assign points to actions like posting, comments, replies, and reactions.</p>
+      </div>
 
-    <label style="display:flex;gap:8px;align-items:center;">
-      <input type="checkbox" name="gamificationEnabled" value="1"
-        <%= company.gamification?.enabled ? 'checked' : '' %> />
-      Enable points
-    </label>
-
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px;">
-      <label>Points: Post created
-        <input class="input" type="number" name="pointsPostCreated"
-          value="<%= company.gamification?.rules?.POST_CREATED ?? 0 %>">
+      <label class="admin-check">
+        <input type="checkbox" name="gamificationEnabled" value="1"
+          <%= company.gamification?.enabled ? 'checked' : '' %> />
+        <span>Enable points</span>
       </label>
 
-      <label>Points: Comment created
-        <input class="input" type="number" name="pointsCommentCreated"
-          value="<%= company.gamification?.rules?.COMMENT_CREATED ?? 0 %>">
-      </label>
+      <div class="admin-grid admin-grid-2">
+        <label class="admin-field">
+          <div class="admin-label">Points: Post created</div>
+          <input class="input" type="number" name="pointsPostCreated"
+            value="<%= company.gamification?.rules?.POST_CREATED ?? 0 %>">
+        </label>
 
-      <label>Points: Reply created
-        <input class="input" type="number" name="pointsReplyCreated"
-          value="<%= company.gamification?.rules?.REPLY_CREATED ?? 0 %>">
-      </label>
+        <label class="admin-field">
+          <div class="admin-label">Points: Comment created</div>
+          <input class="input" type="number" name="pointsCommentCreated"
+            value="<%= company.gamification?.rules?.COMMENT_CREATED ?? 0 %>">
+        </label>
 
-      <label>Points: Reaction added
-        <input class="input" type="number" name="pointsReactionAdded"
-          value="<%= company.gamification?.rules?.REACTION_ADDED ?? 0 %>">
-      </label>
+        <label class="admin-field">
+          <div class="admin-label">Points: Reply created</div>
+          <input class="input" type="number" name="pointsReplyCreated"
+            value="<%= company.gamification?.rules?.REPLY_CREATED ?? 0 %>">
+        </label>
+
+        <label class="admin-field">
+          <div class="admin-label">Points: Reaction added</div>
+          <input class="input" type="number" name="pointsReactionAdded"
+            value="<%= company.gamification?.rules?.REACTION_ADDED ?? 0 %>">
+        </label>
+      </div>
     </div>
 
     <!-- ===== Plan & Usage (Read-only) ===== -->
-    <div class="card" style="padding:16px;display:grid;gap:8px;">
-      <h3 style="margin:0 0 4px;">Plan & Usage</h3>
+    <div class="card admin-card">
+      <div class="admin-card-head">
+        <h3>Plan & Usage</h3>
+        <p>Read-only subscription status and license usage.</p>
+      </div>
 
-      <div>
-        Plan:
-        <strong><%= company.planState || 'FREE_TRIAL' %></strong>
+      <div class="admin-kv">
+        <div class="admin-kv-row">
+          <span class="admin-muted">Plan</span>
+          <strong><%= company.planState || 'FREE_TRIAL' %></strong>
+        </div>
+
         <% if (company.trialEndsAt) { %>
-          &nbsp;•&nbsp;Ends:
-          <strong><%= new Date(company.trialEndsAt).toDateString() %></strong>
+          <div class="admin-kv-row">
+            <span class="admin-muted">Trial ends</span>
+            <strong><%= new Date(company.trialEndsAt).toDateString() %></strong>
+          </div>
         <% } %>
-      </div>
 
-      <div>
-        Seats:
-        <strong><%= company.license?.used || 0 %></strong> /
-        <strong><%= company.license?.seats || 25 %></strong>
+        <div class="admin-kv-row">
+          <span class="admin-muted">Seats</span>
+          <strong><%= company.license?.used || 0 %></strong>
+          <span class="admin-muted">/</span>
+          <strong><%= company.license?.seats || 25 %></strong>
+        </div>
+
         <% if (company.license?.validTill) { %>
-          &nbsp;•&nbsp;Valid till:
-          <strong><%= new Date(company.license.validTill).toDateString() %></strong>
+          <div class="admin-kv-row">
+            <span class="admin-muted">Valid till</span>
+            <strong><%= new Date(company.license.validTill).toDateString() %></strong>
+          </div>
         <% } %>
       </div>
 
-      <!-- Upgrade button WITHOUT nested form -->
-      <div style="margin-top:8px;">
+      <div class="admin-actions admin-actions-left">
         <button
           class="btn"
           type="submit"
@@ -274,29 +307,24 @@
     </div>
 
     <!-- ===== Main Save Button ===== -->
-    <div style="display:flex;gap:8px;justify-content:flex-end;">
-      <button class="btn" type="submit">Save Settings</button>
+    <div class="admin-actions">
+      <button class="btn btn-primary" type="submit">Save Settings</button>
     </div>
   </form>
 
-  
+  <!-- ===== Utilities ===== -->
+  <div class="card admin-card admin-utilities">
+    <div class="admin-utilities-title">Utilities</div>
 
-
-  <!-- ===== Utilities (separate card, but still inside the same section) ===== -->
-  <div class="card" style="padding:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;">
-    <div style="font-weight:600;">Utilities</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <!-- JSON Backup -->
+    <div class="util-actions">
       <form method="GET" action="/<%= company.slug %>/admin/export/backup.json">
         <button class="btn" type="submit">⬇️ Download JSON Backup</button>
       </form>
 
-      <!-- NDJSON Backup -->
       <form method="GET" action="/<%= company.slug %>/admin/export/backup.ndjson">
         <button class="btn" type="submit">⬇️ Download NDJSON Backup</button>
       </form>
 
-      <!-- Run Retention -->
       <form
         method="POST"
         action="/<%= company.slug %>/admin/retention/run"

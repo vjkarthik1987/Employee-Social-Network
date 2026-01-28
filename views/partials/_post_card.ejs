@@ -1,32 +1,42 @@
 <%
-function timeAgo(date) {
-  const seconds = Math.floor((Date.now() - date) / 1000);
-  const intervals = [
-    { label: 'y', secs: 31536000 },
-    { label: 'm', secs: 2592000 },
-    { label: 'd', secs: 86400 },
-    { label: 'h', secs: 3600 },
-    { label: 'm', secs: 60 },
-  ];
-  for (let i of intervals) {
-    const v = Math.floor(seconds / i.secs);
-    if (v >= 1) return `${v}${i.label} ago`;
+  // ------------------------------------------------------------
+  // views/partials/_post_card.ejs  (X/Twitter dense layout)
+  // ------------------------------------------------------------
+
+  function timeAgo(date) {
+    if (!date) return '';
+    const seconds = Math.floor((Date.now() - date) / 1000);
+    const intervals = [
+      { label: 'y', secs: 31536000 },
+      { label: 'mo', secs: 2592000 },
+      { label: 'd', secs: 86400 },
+      { label: 'h', secs: 3600 },
+      { label: 'm', secs: 60 },
+    ];
+    for (let i of intervals) {
+      const v = Math.floor(seconds / i.secs);
+      if (v >= 1) return `${v}${i.label}`;
+    }
+    return 'Just now';
   }
-  return "Just now";
-}
+
+  // Safe autolink for plain text (used in compact excerpt)
+  function autolink(txt=''){
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const urlRx = /(https?:\/\/[^\s<]+)/g;
+    return esc(txt).replace(urlRx, m => `<a class="inline-link" href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
+  }
 %>
 
 <% (function(){ %>
-  <!-- views/partials/_post_card.ejs -->
-  
   <%
     // ---- top-level derivations (compute once) ----
     const isCompact = typeof compact !== 'undefined' && compact;
-  
-    const maxLength = 200;
-    const plainText = (post.richText || '').replace(/<[^>]*>/g, ''); // strip HTML
+
+    const maxLength = 220;
+    const plainText = (post.richText || '').replace(/<[^>]*>/g, '');
     const shortText = plainText.length > maxLength ? plainText.slice(0, maxLength) + '…' : plainText;
-  
+
     const _vals = Object.values(post.reactionsCountByType || {});
     const __totalReactions = (typeof post.totalReactions === 'number')
       ? post.totalReactions
@@ -37,348 +47,319 @@ function timeAgo(date) {
       ? post.engagementRate
       : (((__totalReactions + __comments) / Math.max(__views, 1)) * 100);
     const __viewed = (typeof viewedPostIds !== 'undefined') && viewedPostIds && viewedPostIds.has(String(post._id));
-  
+
     const tsRaw = post.createdAt || post.publishedAt || post.updatedAt || Date.now();
     const ts = new Date(tsRaw);
+
+    // Author in this app is post.authorId (usually populated)
+    const author =
+      (post.authorId && typeof post.authorId === 'object') ? post.authorId :
+      (post.author && typeof post.author === 'object') ? post.author :
+      (post.createdBy && typeof post.createdBy === 'object') ? post.createdBy :
+      { _id: post.authorId || post.author || post.createdBy };
+
+    const authorName =
+      author.fullName || author.name || author.displayName || 'Unknown User';
+
+    const authorTitle = author.title || author.designation || author.roleTitle || '';
+    const authorDept  = author.department || author.dept || '';
+    const authorMeta  = [authorTitle, authorDept].filter(Boolean).join(' • ');
+
+    const avatarUrl = author.avatarUrl || author.profileImageUrl || author.photoUrl || author.imageUrl || '';
+
+
     const inGroup = !!(post.groupId && post.group);
-  %>
+    const groupName = (post.group && (post.group.name || post.group.title)) ? (post.group.name || post.group.title) : '';
 
-  <%
-    // Safe autolink for plain text (used in compact excerpt)
-    function autolink(txt=''){
-      const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-      const urlRx = /(https?:\/\/[^\s<]+)/g;
-      return esc(txt).replace(urlRx, m => `<a class="inline-link" href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
+    // ----- attachments (images) -----
+    const heroUrl = (post.type === 'ANNOUNCEMENT' && post.coverImageUrl)
+      ? String(post.coverImageUrl)
+      : null;
+
+    let imgs = [];
+    if (Array.isArray(post.attachments) && post.attachments.length) {
+      imgs = post.attachments.map(a => ({ storageUrl: a.storageUrl || a }));
+    } else if (Array.isArray(post._thumbs) && post._thumbs.length) {
+      imgs = post._thumbs.map(u => ({ storageUrl: u }));
+    } else if (post.firstAttachmentUrl) {
+      imgs = [{ storageUrl: post.firstAttachmentUrl }];
     }
+
+    // If we have a hero image, avoid duplicating it in the grid
+    if (heroUrl && imgs.length) {
+      imgs = imgs.filter(a => String(a.storageUrl) !== heroUrl);
+    }
+
+    const count = imgs.length;
   %>
 
-  
-  <article class="post-card"
-           data-post-id="<%= post._id %>"
-           data-href="/<%= company.slug %>/posts/<%= post._id %>"
-           aria-labelledby="post-title-<%= post._id %>">
-  
-    <!-- Header -->
-    <header class="post-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-      <!-- LEFT: Meta (no avatar) -->
-      <div class="post-header-left post-header-left--noavatar" style="display:flex; align-items:center; gap:10px;">
-        <div class="post-meta">
-          <div class="post-author">
-            <a id="post-title-<%= post._id %>" href="/<%= company.slug %>/profile/<%= post.authorId?._id %>" style="font-weight:bold;">
-              <%= post.authorId?.fullName || 'Unknown User' %>
+  <article
+    class="post-card xcard <%= __viewed ? 'is-viewed' : '' %>"
+    data-post-id="<%= post._id %>"
+    data-href="/<%= company.slug %>/posts/<%= post._id %>"
+    aria-labelledby="post-title-<%= post._id %>"
+  >
+    <!-- Dense row layout: avatar column + content column -->
+    <div class="xrow">
+
+      <div class="xmain">
+        <!-- Header -->
+        <header class="xhead">
+          <div class="xhead-left">
+            <a
+              id="post-title-<%= post._id %>"
+              class="xname"
+              href="/<%= company.slug %>/profile/<%= author._id || author.id || '' %>"
+              onclick="event.stopPropagation()"
+              title="<%= authorMeta || authorName %>"
+            >
+              <%= authorName %>
             </a>
-            <% if (post.type === 'ANNOUNCEMENT') { %>
-              <span class="badge" style="margin-left:6px;">📢 Announcement</span>
-              <% if (post.isPinned) { %><span class="badge" title="Pinned to top" style="margin-left:4px;">📌 Pinned</span><% } %>
+
+
+            <span class="xdot" aria-hidden="true">·</span>
+
+            <span class="xtime post-time">
+              <time datetime="<%= ts.toISOString() %>"><%= timeAgo(ts) %></time>
+            </span>
+
+            <% if (inGroup && groupName) { %>
+              <span class="xdot" aria-hidden="true">·</span>
+              <a
+                class="xgroup"
+                href="/<%= company.slug %>/groups/<%= post.groupId %>"
+                onclick="event.stopPropagation()"
+                title="Group"
+              >
+                <%= groupName %>
+              </a>
             <% } %>
+
           </div>
 
-          <div class="post-time">
-            <time datetime="<%= ts.toISOString() %>"><%= timeAgo(ts) %></time>
-            <% if (inGroup) { %>
-              · in <a href="/<%= company.slug %>/g/<%= post.groupId %>" class="post-group"><%= post.group?.name %></a>
+          <div class="xhead-right">
+            <% if (user && post.author && String(user._id) === String(post.author._id || post.author.id)) { %>
+              <form method="POST" action="/<%= company.slug %>/posts/<%= post._id %>?_method=DELETE" class="xiconform" onsubmit="event.stopPropagation();">
+                <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+                <button type="submit" class="xicon danger" title="Delete" aria-label="Delete">🗑️</button>
+              </form>
             <% } %>
+
+            <form method="POST" action="/<%= company.slug %>/report" class="xiconform" onsubmit="event.stopPropagation();">
+              <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+              <input type="hidden" name="targetType" value="post">
+              <input type="hidden" name="targetId" value="<%= post._id %>">
+              <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
+              <button type="submit" class="xicon" title="Report" aria-label="Report">🚩</button>
+            </form>
           </div>
-        </div>
-      </div>
+        </header>
 
-  
-      <!-- RIGHT: Actions -->
-      <div class="post-header-actions" style="display:flex; align-items:center; gap:10px;">
-        <% if (post.status === 'DRAFT' && String(user._id) === String(post.authorId?._id || post.authorId)) { %>
-          <a class="icon-btn" title="Edit draft" href="/<%= company.slug %>/posts/<%= post._id %>/edit">✏️</a>
-        <% } %>
-        
-        <% if (user && (String(user._id) === String(post.authorId?._id) || ['MODERATOR','ORG_ADMIN'].includes(user.role))) { %>
-          <form action="/<%= company.slug %>/posts/<%= post._id %>/delete" method="POST" onsubmit="return confirm('Delete this post?');">
-            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-            <button type="submit" title="Delete post" class="icon-btn danger" aria-label="Delete post">🗑️</button>
-          </form>
-        <% } %>
-  
-        <form method="POST" action="/<%= company.slug %>/report" style="display:inline;">
-          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-          <input type="hidden" name="targetType" value="post">
-          <input type="hidden" name="targetId" value="<%= post._id %>">
-          <input type="hidden" name="reasonCode" value="INAPPROPRIATE">
-          <button type="submit" title="Report post" class="icon-btn" aria-label="Report post">🚩</button>
-        </form>
-      </div>
-    </header>
-  
-    <!-- Post Body -->
-    <section class="post-body">
-      <% if (post.type === 'POLL' && post.poll && Array.isArray(post.poll.questions)) { %>
-        <%- include('./_post_card_poll', { company, user, post }) %>
-      <% } else { %>
+        <!-- Body -->
+        <section class="xbody post-body">
+          <% if (post.type === 'POLL' && post.poll && Array.isArray(post.poll.questions)) { %>
+            <div class="xblock">
+              <%- include('./_post_card_poll', { company, user, post }) %>
+            </div>
+          <% } else { %>
 
-      <% /* 🔹 Announcement heading (optional) */ %>
-      <% if (post.type === 'ANNOUNCEMENT' && post.title) { %>
-        <h3 class="post-announcement-title" style="margin:0 0 8px;font-size:1.05rem;font-weight:600;">
-          <%= post.title %>
-        </h3>
-      <% } %>
+            <% if (post.type === 'ANNOUNCEMENT' && post.title) { %>
+              <h3 class="xannounce-title"><%= post.title %></h3>
+            <% } %>
 
-      <% /* Content (sanitized HTML); compact shows excerpt */ %>
-      <% if (post.richText) { %>
-        <% if (isCompact) { %>
-          <div class="post-content compact"><%- autolink(shortText) %></div>
-        <% } else { %>
-          <div class="post-content"><%- post.richText %></div>
-        <% } %>
-      <% } %>
-     
-  
-      <%
-      // Prefer: detail view → full attachments; feed/compact → _thumbs; fallback → firstAttachmentUrl
-      // 🔹 ANNOUNCEMENT hero image
-      const heroUrl = (post.type === 'ANNOUNCEMENT' && post.coverImageUrl)
-        ? String(post.coverImageUrl)
-        : null;
+            <% if (post.richText) { %>
+              <% if (isCompact) { %>
+                <div class="xcontent compact"><%- autolink(shortText) %></div>
+              <% } else { %>
+                <div class="xcontent"><%- post.richText %></div>
+              <% } %>
+            <% } %>
 
-      let imgs = [];
-      if (Array.isArray(post.attachments) && post.attachments.length) {
-        imgs = post.attachments.map(a => ({ storageUrl: a.storageUrl || a }));
-      } else if (Array.isArray(post._thumbs) && post._thumbs.length) {
-        imgs = post._thumbs.map(u => ({ storageUrl: u }));
-      } else if (post.firstAttachmentUrl) {
-        imgs = [{ storageUrl: post.firstAttachmentUrl }];
-      }
-
-      // 🔹 If we have a hero image, avoid duplicating it in the grid
-      if (heroUrl && imgs.length) {
-        imgs = imgs.filter(a => String(a.storageUrl) !== heroUrl);
-      }
-
-      const count = imgs.length;
-    %>
-
-    <% /* 🔹 ANNOUNCEMENT hero block */ %>
-    <% if (heroUrl) { %>
-      <div class="announcement-hero" style="margin:0 0 10px;">
-        <img
-          src="<%= heroUrl %>"
-          alt="<%= post.imageAlt || 'Announcement image' %>"
-          class="announcement-hero-img"
-          style="max-width:100%;height:auto;border-radius:10px;display:block;"
-          loading="lazy"
-          decoding="async"
-        >
-      </div>
-    <% } %>
-
-
-      <% if (count > 0) { %>
-        <%
-          const gridClass =
-            (count === 1) ? 'media-grid--1' :
-            (count === 2) ? 'media-grid--2' :
-            (count === 3) ? 'media-grid--3' :
-            (count === 4) ? 'media-grid--4' :
-            (count === 5) ? 'media-grid--5' :
-            'media-grid--many';
-        %>
-
-        <div class="media-grid <%= gridClass %>" data-lightbox-group="<%= post._id %>">
-          <% imgs.forEach(function(att, i){
-              const u = String(att.storageUrl || '');
-              const isC = u.includes('/upload/');
-              const thumb = isC
-                ? u.replace('/upload/', '/upload/w_240,h_240,c_fill,q_auto,f_auto/')
-                : u;
-              const full = isC
-                ? u.replace('/upload/', '/upload/w_1600,h_1200,c_fit,q_auto,f_auto/')
-                : u;
-              const extra = (post.attachmentsCount || count) - 9; // respects true count if denorm exists
-          %>
-            <% if (i < 9) { %>
-              <div class="media-thumb-wrap">
+            <% if (heroUrl) { %>
+              <div class="xhero">
                 <img
-                  src="<%= thumb %>"
-                  data-full="<%= full %>"
-                  alt="<%= post.imageAlt || 'Attached image' %>"
-                  class="media-thumb"
+                  src="<%= heroUrl %>"
+                  alt="<%= post.imageAlt || 'Announcement image' %>"
+                  class="xhero-img"
                   loading="lazy"
                   decoding="async"
                   onclick="openLightbox(event, this)"
+                  data-full="<%= heroUrl %>"
                 >
-                <% if (i === 8 && extra > 0) { %>
-                  <div class="multi-overlay">+<%= extra %></div>
-                <% } %>
               </div>
             <% } %>
-          <% }) %>
-        </div>
-      <% } %>
 
-  
-  
-      <% /* Link preview */ %>
-      <% if (post.type === 'LINK' && post.linkPreview?.url) { 
-        const url      = String(post.linkPreview.url || '');
-        const host     = (()=>{ try { return new URL(url).hostname.replace(/^www\./,''); } catch(_e){ return url; } })();
-        const title    = post.linkPreview.title || host;
-        const desc     = post.linkPreview.description || '';
-        const imgUrl   = post.linkPreview.imageUrl || ''; // may be empty
-        const isCloud  = imgUrl.includes('/upload/');
-        const thumb    = imgUrl
-           ? (isCloud ? imgUrl.replace('/upload/','/upload/w_640,h_360,c_fill,q_auto,f_auto/') : imgUrl)
-           : ''; // fallback handled in markup
-   %>
-   <a class="link-preview <%= isCompact ? 'lp--compact' : 'lp--full' %>"
-    style="margin-top:10px; margin-bottom:8px;"
-        href="<%= url %>"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Open linked page: <%= title %>">
-        
-       <% /* IMAGE (optional) */ %>
-       <% if (!isCompact) { %>
-         <div class="lp-media">
-           <% if (thumb) { %>
-             <img class="lp-img" src="<%= thumb %>" alt="" loading="lazy" decoding="async">
-           <% } else { %>
-             <div class="lp-img lp-img--fallback">🔗</div>
-           <% } %>
-         </div>
-       <% } else { %>
-         <% /* compact: small square thumb at left */ %>
-         <div class="lp-media lp-media--sm">
-           <% if (thumb) { %>
-             <img class="lp-img lp-img--sm" src="<%= thumb %>" alt="" loading="lazy" decoding="async">
-           <% } else { %>
-             <div class="lp-img lp-img--sm lp-img--fallback">🔗</div>
-           <% } %>
-         </div>
-       <% } %>
-   
-       <% /* TEXT META */ %>
-       <div class="lp-body">
-         <div class="lp-host">
-           <span class="lp-fav" aria-hidden="true">🌐</span>
-           <span class="lp-hostname"><%= host %></span>
-         </div>
-         <div class="lp-title"><%= title %></div>
-         <% if (!isCompact && desc) { %>
-           <div class="lp-desc"><%= desc %></div>
-         <% } %>
-       </div>
-     </a>
-   <% } %>
-   
-  
-      <% } /* end non-poll */ %>
-    </section>
-  
-    <!-- Post Footer -->
-    <footer class="post-footer">
-      <div class="post-reactions reactions" data-react-scope data-target-type="post" data-target-id="<%= post._id %>">
-        <%- include('./_reactions_bar', { company, user, post }) %>
+            <% if (count > 0) { %>
+              <%
+                const gridClass =
+                  (count === 1) ? 'media-grid--1' :
+                  (count === 2) ? 'media-grid--2' :
+                  (count === 3) ? 'media-grid--3' :
+                  (count === 4) ? 'media-grid--4' :
+                  (count === 5) ? 'media-grid--5' :
+                  'media-grid--many';
+              %>
+
+              <div class="media-grid <%= gridClass %> xmedia" data-lightbox-group="<%= post._id %>">
+                <% imgs.forEach(function(att, i){
+                    const u = String(att.storageUrl || '');
+                    const isC = u.includes('/upload/');
+                    const thumb = isC
+                      ? u.replace('/upload/', '/upload/w_360,h_360,c_fill,q_auto,f_auto/')
+                      : u;
+                    const full = isC
+                      ? u.replace('/upload/', '/upload/w_1600,h_1200,c_fit,q_auto,f_auto/')
+                      : u;
+                    const extra = (post.attachmentsCount || count) - 9;
+                %>
+                  <% if (i < 9) { %>
+                    <div class="media-thumb-wrap">
+                      <img
+                        src="<%= thumb %>"
+                        data-full="<%= full %>"
+                        alt="<%= post.imageAlt || 'Attached image' %>"
+                        class="media-thumb"
+                        loading="lazy"
+                        decoding="async"
+                        onclick="openLightbox(event, this)"
+                      >
+                      <% if (i === 8 && extra > 0) { %>
+                        <div class="multi-overlay">+<%= extra %></div>
+                      <% } %>
+                    </div>
+                  <% } %>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <% /* Link preview */ %>
+            <% if (post.type === 'LINK' && post.linkPreview?.url) {
+              const url      = String(post.linkPreview.url || '');
+              const host     = (()=>{ try { return new URL(url).hostname.replace(/^www\./,''); } catch(_e){ return url; } })();
+              const title    = post.linkPreview.title || host;
+              const desc     = post.linkPreview.description || '';
+              const imgUrl   = post.linkPreview.imageUrl || '';
+              const isCloud  = imgUrl.includes('/upload/');
+              const thumb    = imgUrl
+                ? (isCloud ? imgUrl.replace('/upload/','/upload/w_640,h_360,c_fill,q_auto,f_auto/') : imgUrl)
+                : '';
+            %>
+              <a
+                class="link-preview <%= isCompact ? 'lp--compact' : 'lp--full' %> xlink"
+                href="<%= url %>"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open linked page: <%= title %>"
+                onclick="event.stopPropagation()"
+              >
+                <% if (!isCompact) { %>
+                  <div class="lp-media">
+                    <% if (thumb) { %>
+                      <img class="lp-img" src="<%= thumb %>" alt="" loading="lazy" decoding="async">
+                    <% } else { %>
+                      <div class="lp-img lp-img--fallback">🔗</div>
+                    <% } %>
+                  </div>
+                <% } else { %>
+                  <div class="lp-media lp-media--sm">
+                    <% if (thumb) { %>
+                      <img class="lp-img lp-img--sm" src="<%= thumb %>" alt="" loading="lazy" decoding="async">
+                    <% } else { %>
+                      <div class="lp-img lp-img--sm lp-img--fallback">🔗</div>
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <div class="lp-body">
+                  <div class="lp-host">
+                    <span class="lp-fav" aria-hidden="true">🌐</span>
+                    <span class="lp-hostname"><%= host %></span>
+                  </div>
+                  <div class="lp-title"><%= title %></div>
+                  <% if (!isCompact && desc) { %>
+                    <div class="lp-desc"><%= desc %></div>
+                  <% } %>
+                </div>
+              </a>
+            <% } %>
+
+          <% } /* end non-poll */ %>
+        </section>
+
+        <!-- Footer (reaction bar) -->
+        <footer class="xfoot post-footer">
+          <div
+            class="post-reactions reactions"
+            data-react-scope
+            data-target-type="post"
+            data-target-id="<%= post._id %>"
+            onclick="event.stopPropagation()"
+          >
+            <%- include('./_reactions_bar', { company, user, post }) %>
+          </div>
+
+          <% if (!isCompact) { %>
+            <div class="xmetrics" onclick="event.stopPropagation()">
+              <span class="xmetric"><%= __comments %> comments</span>
+              <span class="xdot" aria-hidden="true">·</span>
+              <span class="xmetric"><%= __totalReactions %> reactions</span>
+              <span class="xdot" aria-hidden="true">·</span>
+              <span class="xmetric"><%= __engRate.toFixed(1) %>% eng.</span>
+            </div>
+          <% } %>
+        </footer>
       </div>
-    </footer>
+    </div>
   </article>
-  
-  <script>
-    // Lightweight "time ago" enhancer (kept simple)
-    (function(){
-      var card = document.currentScript.previousElementSibling;
-      if (!card) return;
-      var t = card.querySelector('.post-time time');
-      if (!t) return;
-      // You can plug your relative-time code here later if needed.
-    })();
-  </script>
-  
+
   <script>
     (function(){
       // Card click → open detail (ignore interactive elements & polls)
       document.addEventListener('click', function(e){
         const interactive = e.target.closest(
-          'a, button, input, textarea, select, label, summary, details, .media-thumb, .media-thumb-wrap, .link-preview'
+          'a, button, input, textarea, select, label, summary, details, .media-thumb, .media-thumb-wrap, .link-preview, .reactions'
         );
 
         if (interactive || e.target.closest('.poll-form') || e.target.closest('.poll-result-q')) return;
+
         const card = e.target.closest('.post-card[data-href]');
         if (!card) return;
         const url = card.getAttribute('data-href');
         if (url) window.location.href = url;
-      }, {passive:true});
+      }, { passive: true });
 
-  
       // Carousel (if present in this card)
       const card = document.currentScript.previousElementSibling;
       if (!card) return;
       const root = card.querySelector('.gallery');
       if (!root) return;
-  
+
       const track = root.querySelector('.g-track');
       const slides = Array.from(root.querySelectorAll('.g-slide'));
       const prev = root.querySelector('.g-prev');
       const next = root.querySelector('.g-next');
       if (!track || !slides.length) return;
-  
+
       let i = 0;
       function go(k){
         i = (k + slides.length) % slides.length;
         track.style.transform = 'translateX(' + (-i * 100) + '%)';
       }
-      prev && prev.addEventListener('click', ()=>go(i-1));
-      next && next.addEventListener('click', ()=>go(i+1));
-  
+      prev && prev.addEventListener('click', (ev)=>{ ev.stopPropagation(); go(i-1); });
+      next && next.addEventListener('click', (ev)=>{ ev.stopPropagation(); go(i+1); });
+
       root.tabIndex = 0;
       root.addEventListener('keydown', (e)=>{
         if (e.key === 'ArrowLeft') go(i-1);
         if (e.key === 'ArrowRight') go(i+1);
       });
-  
+
       let sx=0, dx=0;
       root.addEventListener('touchstart', e=>{ sx = e.touches[0].clientX; dx=0; }, {passive:true});
-      root.addEventListener('touchmove', e=>{ dx = e.touches[0].clientX - sx; }, {passive:true});
-      root.addEventListener('touchend', ()=>{ if (Math.abs(dx) > 40) go(i + (dx<0 ? 1 : -1)); });
-  
-      go(0);
+      root.addEventListener('touchmove',  e=>{ dx = e.touches[0].clientX - sx; }, {passive:true});
+      root.addEventListener('touchend',   ()=>{
+        if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
+      }, {passive:true});
     })();
   </script>
-  
-  <% })(); %>
-  
-  <script>
-    (function(){
-      // Linkify plain text nodes inside non-compact .post-content without breaking existing HTML
-      const card = document.currentScript.previousElementSibling;
-      if (!card) return;
-      const content = card.querySelector('.post-content:not(.compact)');
-      if (!content) return;
-    
-      const urlRx = /(https?:\/\/[^\s<]+)/g;
-    
-      function linkifyNode(node){
-        const parts = node.textContent.split(urlRx);
-        if (parts.length === 1) return; // no URLs
-        const frag = document.createDocumentFragment();
-        for (let i=0; i<parts.length; i++){
-          if (i % 2 === 0) {
-            frag.appendChild(document.createTextNode(parts[i]));
-          } else {
-            const a = document.createElement('a');
-            a.href = parts[i];
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            a.className = 'inline-link';
-            a.textContent = parts[i];
-            frag.appendChild(a);
-          }
-        }
-        node.replaceWith(frag);
-      }
-    
-      // Walk text nodes (skip inside existing links)
-      const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, {
-        acceptNode: (n) => n.parentElement && n.parentElement.closest('a') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-      });
-      const texts = [];
-      while (walker.nextNode()) texts.push(walker.currentNode);
-      texts.forEach(linkifyNode);
-    })();
-    </script>
-    
+<% })(); %>
