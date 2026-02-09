@@ -5143,4 +5143,440 @@ textarea {
   border-radius: 0 !important;
 }
 
+/* Make brand name bigger and more prominent */
+.navbar .brand-name {
+  font-size: 20px;      /* try 22px if you want it bolder */
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+/* Optional: slightly align logo + text better */
+.navbar .brand {
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .navbar .brand-name {
+    font-size: 22px;
+  }
+}
+
+/* Make Logout text same visual weight as navbar links */
+.navbar .logout-form .btn {
+  font-size: 16px;     /* bump to 17–18px if you want it louder */
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+@media (min-width: 768px) {
+  .navbar .logout-form .btn {
+    font-size: 17px;
+  }
+}
+
+/* ==============================
+   Composer: smooth, joined controls
+============================== */
+:root{
+  --composer-h: 44px; /* tweak if you want taller */
+}
+
+.composer-row{
+  display:flex;
+  align-items:stretch;
+  gap:0;                 /* ✅ no gaps */
+}
+
+.composer-input{
+  height: var(--composer-h);
+  min-height: var(--composer-h);
+  border-radius: 0;      /* (you asked to remove rounded) */
+  font-size: 16px;       /* larger text */
+  border-right: 0;       /* joins with the button group */
+}
+
+.composer-actions{
+  display:flex;
+  align-items:stretch;
+  gap:0;                 /* ✅ no gaps between buttons */
+}
+
+.composer-icon-btn,
+.composer-draft-btn,
+.composer-post-btn{
+  height: var(--composer-h);
+  border-radius: 0;      /* ✅ no rounded corners */
+  margin: 0;
+}
+
+/* join borders so it looks like one control */
+.composer-actions > *{
+  border-left: 0;
+}
+
+.composer-actions > *:first-child{
+  border-left: 1px solid #e5e7eb;
+}
+
+/* make icon buttons look tighter + same height */
+.composer-icon-btn{
+  padding: 0 12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* draft button: same visual weight, same height */
+.composer-draft-btn{
+  padding: 0 12px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 14px;
+}
+
+/* post button: same height, no tiny circle look */
+.composer-post-btn{
+  width: 52px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.composer-post-icon{
+  font-size: 16px;
+  transform: translateX(1px);
+}
+
+.logout-form button{
+  font-size: 14px;     /* bigger */
+  line-height: 1;
+}
+
+/* Composer top row: input + action buttons */
+.post-form .composer-row,
+.post-composer-row {
+  display: flex;
+  align-items: stretch;       /* key: same height */
+  width: 100%;
+  gap: 0;                     /* no horizontal gap */
+}
+
+/* The textbox */
+.post-form .composer-row input[type="text"],
+.post-composer-row input[type="text"],
+.post-form .composer-row textarea,
+.post-composer-row textarea {
+  flex: 1;
+  height: 44px;               /* same as buttons */
+  padding: 10px 12px;
+  font-size: 16px;            /* larger fonts */
+  border-radius: 0;           /* remove rounding */
+  border-right: 0;            /* seamless join with buttons */
+}
+
+/* Action buttons container */
+.post-form .composer-actions,
+.post-composer-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0;                     /* no gaps between buttons */
+}
+
+/* Icon buttons */
+.post-form .composer-actions button,
+.post-composer-actions button,
+.post-form .composer-actions a,
+.post-composer-actions a {
+  height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 0;           /* remove rounding */
+  margin: 0;
+  border-left: 1px solid #d9d9df; /* divider lines */
+}
+
+/* If you have a "send" button (triangle) - keep it square and strong */
+.post-form .composer-actions .btn-send,
+.post-composer-actions .btn-send {
+  min-width: 52px;
+}
+
+/* Prevent any label/text under buttons from causing wrap */
+.post-form .composer-actions .btn-label,
+.post-composer-actions .btn-label {
+  display: none;              /* use title tooltip instead */
+}
+
+.composer-row {
+  display: flex;
+  align-items: stretch;   /* 🔑 forces same height */
+  gap: 0;                 /* no horizontal gaps */
+}
+
+.composer-input {
+  height: var(--composer-height);
+  line-height: calc(var(--composer-height) - 2px);
+  padding: 0 12px;
+  font-size: 16px;        /* bigger, cleaner */
+  border-radius: 0;
+  flex: 1;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: stretch;
+}
+
+.composer-actions button {
+  height: var(--composer-height);
+  min-height: var(--composer-height);
+  padding: 0 12px;
+  line-height: 1;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.composer-icon-btn {
+  font-size: 18px;
+  width: 44px;
+}
+.composer-draft-btn {
+  font-size: 14px;
+  white-space: nowrap;
+}
+.composer-post-btn {
+  width: 44px;
+  background: #0b1b2b;
+  color: #fff;
+}
+
+/* One height for input + all buttons */
+.composer-row {
+  display: flex;
+  align-items: stretch;  /* important */
+  gap: 0;                /* no gaps */
+}
+
+.composer-input {
+  height: 44px;          /* pick your standard */
+  flex: 1;
+}
+
+/* Make all action buttons match input height */
+.composer-actions > button {
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;      /* since you wanted no rounded corners */
+}
+
+/* Save draft sizing */
+.composer-draft-btn {
+  padding: 0 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Icon buttons uniform width */
+.composer-icon-btn {
+  width: 44px;
+  padding: 0;
+}
+
+/* Post button uniform width */
+.composer-post-btn {
+  width: 44px;
+  padding: 0;
+}
+
+/* Optional: tiny separator line between buttons instead of gaps */
+.composer-actions > button {
+  border-left: 1px solid #e6e6e6;
+}
+.composer-actions > button:first-child {
+  border-left: 0;
+}
+
+/* Make action strip align nicely */
+.composer-actions{
+  display:flex;
+  align-items:stretch;            /* key: same height */
+  gap:0;                          /* no horizontal gap */
+}
+
+/* Unified height */
+:root{ --composer-btn-h: 40px; }  /* tweak if your input is different */
+
+.composer-input{
+  height: var(--composer-btn-h);
+}
+
+/* POST button: subtle bg, darker icon */
+.composer-post-btn{
+  height: var(--composer-btn-h);
+  min-width: var(--composer-btn-h);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border: 1px solid #d9dde3;      /* subtle */
+  background: #eef2f6;            /* subtle bg */
+  border-radius: 0;               /* you asked: no rounded */
+  cursor: pointer;
+  padding: 0 12px;
+}
+
+.composer-post-btn:hover{
+  background: #e6ebf2;
+}
+
+.composer-post-icon{
+  color:#1f2937;                  /* darker icon */
+  font-weight:700;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* SAVE DRAFT: no boundary, same height, looks like text-button */
+.composer-draft-btn{
+  height: var(--composer-btn-h);
+  display:inline-flex;
+  align-items:center;
+  padding: 0 12px;
+  border: none;                   /* no boundary */
+  background: transparent;         /* no fill */
+  color:#4b5563;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.composer-draft-btn:hover{
+  background:#f3f5f8;             /* optional subtle hover */
+}
+
+/* Icon buttons: same height, no gaps, square edges */
+.composer-icon-btn{
+  height: var(--composer-btn-h);
+  width: var(--composer-btn-h);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border: 1px solid #d9dde3;
+  background:#ffffff;
+  border-left: 0;                 /* removes seams between buttons */
+  border-radius: 0;
+  cursor:pointer;
+}
+
+/* Remove border seam between Post and Save draft if you want them "merged" */
+.composer-post-btn + .composer-draft-btn{
+  border-left: 0;
+}
+
+/* Give Save draft a subtle divider (optional). If you want NONE, delete this. */
+.composer-draft-btn{
+  border-right: 1px solid #d9dde3; /* comment out if you want 0 lines */
+}
+
+/* If your first icon button should connect to Save draft without gap */
+.composer-draft-btn + .composer-icon-btn{
+  border-left: 0;
+}
+
+.composer-row {
+  display: flex;
+  align-items: stretch;        /* 👈 critical */
+  gap: 6px;
+}
+
+.composer-input {
+  height: 44px;
+  line-height: 44px;
+  padding: 0 12px;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: stretch;        /* 👈 critical */
+  gap: 6px;
+}
+
+.composer-actions button {
+  height: 44px;                /* 👈 single source of truth */
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.composer-draft-btn {
+  background: transparent;
+  border: none;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #6b7280;              /* subtle */
+  cursor: pointer;
+}
+
+.composer-draft-btn:hover {
+  color: #374151;
+  background: #f1f5f9;
+}
+
+.composer-post-btn {
+  width: 44px;
+  background: #e5e7eb;         /* subtle bg */
+  border: none;
+  cursor: pointer;
+}
+
+.composer-post-btn:hover {
+  background: #d1d5db;
+}
+
+.composer-post-icon {
+  font-size: 18px;
+  color: #111827;              /* darker icon */
+}
+
+.composer-icon-btn {
+  width: 44px;
+  background: #f8fafc;
+  border: none;
+  font-size: 16px;
+}
+
+.composer-icon-btn:hover {
+  background: #e5e7eb;
+}
+
+/* Make internal-links wrapper transparent */
+.il-grid {
+  background: transparent;
+}
+
+.il-grid .card,
+.card:has(.il-grid) {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.il-tile {
+  background: transparent;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.il-tile:hover {
+  background: rgba(0, 0, 0, 0.04); /* or use theme color */
+}
+
 

@@ -39,30 +39,38 @@
 
 
   <div class="composer-row">
-    <div id="plainComposerWrap">
-      <textarea
-        name="content"
-        id="composerTextarea"
-        rows="1"
-        class="composer-input js-mention"
-        data-mention-source="/<%= company.slug %>/posts/mentions"
-        placeholder="Write something… (paste a link to show a preview)"
-      ><%- existing %></textarea>
-    </div>
+    <input
+      id="post-text"
+      class="composer-input"
+      type="text"
+      name="text"
+      placeholder="Write something... (paste a link to show a preview)"
+      autocomplete="off"
+    />
   
-    <div class="composer-toolbar composer-toolbar--clean">
-      <div class="composer-toolbar-left">
-        <button type="button" class="composer-icon-btn tsel" data-type="IMAGE">🖼️</button>
-        <button type="button" class="composer-icon-btn tsel" data-type="POLL">📊</button>
-        <button type="button" class="composer-icon-btn tsel" data-type="ANNOUNCEMENT">📢</button>
-      </div>
-  
-      <div class="composer-toolbar-right">
-        <button type="button" class="btn btn-ghost" id="draftBtn">Save draft</button>
-        <button class="composer-post-btn" type="submit" id="postBtn">➤</button>
-      </div>
+    <div class="composer-actions" role="group" aria-label="Post actions">
+
+      <!-- POST FIRST -->
+      <button class="composer-post-btn" type="submit" title="Post">
+        <span class="composer-post-icon">➤</span>
+      </button>
+    
+      <!-- SAVE DRAFT SECOND -->
+      <button id="draftBtn" class="composer-draft-btn" type="button">
+        Save draft
+      </button>
+    
+      <!-- ICON BUTTONS AFTER -->
+      <button class="composer-icon-btn" type="button" title="Image" data-type="IMAGE">🖼️</button>
+      <button class="composer-icon-btn" type="button" title="Poll" data-type="POLL">📊</button>
+      <button class="composer-icon-btn" type="button" title="Announcement" data-type="ANNOUNCEMENT">📢</button>
+    
     </div>
+    
+    
+  
   </div>
+  
   
 
     <!-- IMAGE upload (required for IMAGE button) -->
@@ -211,7 +219,7 @@
   textarea?.addEventListener('input', () => { autoGrow(textarea); enableIfHasContent(); });
 
   // Type icon clicks
-  form.querySelectorAll('.tsel').forEach(btn => {
+  form.querySelectorAll('.composer-icon-btn[data-type]').forEach(btn => {
     btn.addEventListener('click', () => {
       const t = btn.getAttribute('data-type');
       setType(t);

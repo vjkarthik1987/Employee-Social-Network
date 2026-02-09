@@ -483,35 +483,261 @@ exports.groupFeed = async (req, res, next) => {
 
 // POST /:org/posts
 // fields: content, type (TEXT|LINK|IMAGE), image (multer), groupId?, imageAlt?
+// exports.create = async (req, res, next) => {
+//   try {
+//     const companyId = cid(req);
+//     const saveAsDraft = String(req.body.saveAsDraft || '0') === '1';
+
+//     const mode = (req.company?.policies?.postingMode || 'OPEN');
+//     let status = 'PUBLISHED';
+//     if (mode === 'MODERATED') status = 'QUEUED';
+//     if (saveAsDraft) status = 'DRAFT';
+
+//     const type = (req.body.type || 'TEXT').toUpperCase();
+//     const groupId = req.body.groupId && isObjId(req.body.groupId) ? req.body.groupId : null;
+//     const richText = (req.body.content || '').toString().slice(0, 10000);
+
+//     const isAnnouncement = type === 'ANNOUNCEMENT';
+//     const isPoll = type === 'POLL';
+//     const canPin = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
+//     const wantPinned = String(req.body.isPinned) === 'true' || req.body.isPinned === '1';
+
+//     // 🔹 NEW: title for announcements (short heading)
+//     const rawTitle = (req.body.title || '').toString().slice(0, 200).trim();
+//     const title = rawTitle || null;
+
+//     // 🔹 NEW: expiry date (from <input type="date">, e.g. '2025-12-31')
+//     let expiresAt = null;
+//     if (req.body.expiresAt) {
+//       const d = new Date(req.body.expiresAt);
+//       if (!Number.isNaN(d.getTime())) {
+//         // treat as "visible until end of that day"
+//         d.setHours(23, 59, 59, 999);
+//         expiresAt = d;
+//       }
+//     }
+
+//     // --- normalize poll payload BEFORE create ---
+//     let pollDoc = undefined;
+//     if (isPoll) {
+//       const raw = req.body.poll || {};
+//       // questions may be Array or {"0":{...},"1":{...}}
+//       let questions = raw.questions;
+//       if (questions && !Array.isArray(questions) && typeof questions === 'object') {
+//         questions = Object.values(questions);
+//       }
+//       if (!Array.isArray(questions)) questions = [];
+//       if (questions.length < 1 || questions.length > 10) {
+//         throw new Error('POLL_QUESTION_COUNT');
+//       }
+
+//       const normQs = questions.map((q, qi) => {
+//         // options may be Array or object
+//         let opts = q?.options;
+//         if (opts && !Array.isArray(opts) && typeof opts === 'object') {
+//           opts = Object.values(opts);
+//         }
+//         if (!Array.isArray(opts)) opts = [];
+//         if (opts.length < 2 || opts.length > 10) {
+//           throw new Error('POLL_OPTION_COUNT');
+//         }
+//         const qid = String(q?.qid || (qi + 1).toString(36));
+//         const normOpts = opts.map((o, oi) => {
+//           // support both {label:"..."} and "..."
+//           const label = (typeof o === 'object' ? String(o.label || '') : String(o || '')).trim();
+//           const oid = String(
+//             (typeof o === 'object' ? (o.oid || (oi + 1).toString(36)) : (oi + 1).toString(36))
+//           );
+//           return { oid, label, votesCount: 0 };
+//         });
+//         return {
+//           qid,
+//           text: String(q?.text || '').trim(),
+//           options: normOpts,
+//           multiSelect: !!q?.multiSelect
+//         };
+//       });
+
+//       pollDoc = {
+//         title: String(raw.title || '').trim(),
+//         questions: normQs,
+//         totalParticipants: 0,
+//         voterIds: [],
+//         isClosed: false,
+//         closesAt: raw.closesAt ? new Date(raw.closesAt) : null
+//       };
+//     }
+
+//     // 🔹 Build base post doc
+//     const postDoc = {
+//       companyId,
+//       authorId: req.user._id,
+//       groupId,
+//       type,
+//       richText,
+//       status,
+//       isPinned: isAnnouncement ? !!(canPin && wantPinned) : false,
+//       publishedAt: status === 'PUBLISHED' ? new Date() : null,
+//       poll: pollDoc
+//     };
+
+//     // 🔹 Only announcements use title + expiresAt
+//     if (isAnnouncement) {
+//       if (title) {
+//         postDoc.title = title;
+//       }
+//       postDoc.expiresAt = expiresAt;
+//     }
+
+
+//     const post = await Post.create(postDoc);
+//     if (status === 'PUBLISHED') {
+//       await pointsService.award({
+//         company: req.company,
+//         companyId,
+//         userId: req.user._id,
+//         actorUserId: req.user._id,
+//         action: 'POST_CREATED',
+//         targetType: 'post',
+//         targetId: post._id,
+//         meta: { type: post.type }
+//       }).catch(() => {});
+//     }
+    
+    
+
+//     // Multi-image support
+//     const files = Array.isArray(req.files) ? req.files : [];
+//     if (files.length) {
+//       const rows = files.map(f => ({
+//         companyId,
+//         ownerUserId: req.user._id,
+//         targetType: 'post',
+//         targetId: post._id,
+//         storageUrl: (f.path && f.path.startsWith('http'))
+//           ? f.path
+//           : (f.location || f.secure_url || `/uploads/${f.filename}`),
+//         mimeType: f.mimetype || null,
+//         sizeBytes: f.size || null,
+//       }));
+
+//       if (rows.length) {
+//         await Attachment.insertMany(rows);
+
+//         // 🔹 For normal posts, keep old behavior: convert to IMAGE if not already
+//         //    For ANNOUNCEMENT, keep type = 'ANNOUNCEMENT' but set coverImageUrl from first attachment
+//         const update = {
+//           $inc: { attachmentsCount: rows.length }
+//         };
+
+//         if (!isAnnouncement && post.type !== 'IMAGE') {
+//           update.$set = { ...(update.$set || {}), type: 'IMAGE' };
+//         }
+
+//         if (isAnnouncement && rows[0]?.storageUrl) {
+//           update.$set = { ...(update.$set || {}), coverImageUrl: rows[0].storageUrl };
+//         }
+
+//         await Post.updateOne({ _id: post._id }, update);
+//       }
+//     }
+
+//     audit.record({
+//       companyId,
+//       actorUserId: req.user._id,
+//       action: 'POST_CREATED',
+//       targetType: 'post',
+//       targetId: post._id,
+//       metadata: {
+//         type,
+//         status,
+//         hasAttachment: files.length > 0   // 🔹 more accurate than req.file
+//       }
+//     }).catch(() => {});
+
+//     // Invalidate cached feeds
+//     if (status === 'PUBLISHED') {
+//       await microcache.bustTenant(req.company.slug);
+//       if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
+//     }
+    
+
+//     // --- send @mention emails (only if tenant allows) ---
+//     try {
+//       const company = req.company;
+//       if (company?.policies?.notificationsEnabled) {
+//         const { handles, emails } = extractMentionsFromHtml(post.richText);
+//         if (handles.length || emails.length) {
+//           const usersByHandle = handles.length
+//             ? await User.find({ companyId, handle: { $in: handles } }).lean()
+//             : [];
+//           const usersByEmail = emails.length
+//             ? await User.find({ companyId, email: { $in: emails } }).lean()
+//             : [];
+
+//           const targets = [...usersByHandle, ...usersByEmail]
+//             .filter(u => String(u._id) !== String(req.user._id))   // avoid emailing self
+//             .filter(u => !!u.email);
+
+//           if (targets.length) {
+//             const snippet = makeSnippet(post.richText);
+//             const link = `${process.env.APP_BASE_URL}/${company.slug}/p/${post._id}`;
+//             const html = renderMentionEmail({ company, actor: req.user, snippet, link });
+
+//             await Promise.allSettled(
+//               targets.map(u =>
+//                 sendMail({ to: u.email, subject: `You were mentioned on ${company.name}`, html })
+//               )
+//             );
+//           }
+//         }
+//       }
+//     } catch (e) {
+//       req.logger && req.logger.warn('[post mention mail] failed', e);
+//     }
+
+//     req.flash('success', status === 'DRAFT'
+//       ? 'Draft saved.'
+//       : (status === 'PUBLISHED' ? 'Posted.' : 'Submitted for review.')
+//     );
+
+//     return res.redirect(`/${req.params.org}/feed?tab=${status === 'DRAFT' ? 'DRAFTS' : 'REGULAR'}`);
+
+//   } catch (e) { next(e); }
+// };
+
+// POST /:org/posts
 exports.create = async (req, res, next) => {
   try {
     const companyId = cid(req);
+
     const saveAsDraft = String(req.body.saveAsDraft || '0') === '1';
 
-    const mode = (req.company?.policies?.postingMode || 'OPEN').toUpperCase();
-    let status = 'PUBLISHED';
-    if (mode === 'MODERATED') status = 'QUEUED';
-    if (saveAsDraft) status = 'DRAFT';
+    // normalize type safely
+    const rawType = req.body.type;
+    const type = (typeof rawType === 'string' ? rawType : 'TEXT').toUpperCase();
 
-    const type = (req.body.type || 'TEXT').toUpperCase();
-    const groupId = req.body.groupId && isObjId(req.body.groupId) ? req.body.groupId : null;
-    const richText = (req.body.content || '').toString().slice(0, 10000);
+    const groupId = (req.body.groupId && isObjId(req.body.groupId)) ? req.body.groupId : null;
+
+    // ✅ your form uses name="text" (not "content") for normal posts
+    const richText = (req.body.content || req.body.text || '')
+      .toString()
+      .slice(0, 10000);
 
     const isAnnouncement = type === 'ANNOUNCEMENT';
     const isPoll = type === 'POLL';
-    const canPin = ['MODERATOR','ORG_ADMIN'].includes(req.user.role);
+
+    const canPin = ['MODERATOR', 'ORG_ADMIN'].includes(req.user.role);
     const wantPinned = String(req.body.isPinned) === 'true' || req.body.isPinned === '1';
 
-    // 🔹 NEW: title for announcements (short heading)
+    // Announcement extras
     const rawTitle = (req.body.title || '').toString().slice(0, 200).trim();
     const title = rawTitle || null;
 
-    // 🔹 NEW: expiry date (from <input type="date">, e.g. '2025-12-31')
     let expiresAt = null;
     if (req.body.expiresAt) {
       const d = new Date(req.body.expiresAt);
       if (!Number.isNaN(d.getTime())) {
-        // treat as "visible until end of that day"
         d.setHours(23, 59, 59, 999);
         expiresAt = d;
       }
@@ -521,35 +747,31 @@ exports.create = async (req, res, next) => {
     let pollDoc = undefined;
     if (isPoll) {
       const raw = req.body.poll || {};
-      // questions may be Array or {"0":{...},"1":{...}}
       let questions = raw.questions;
+
       if (questions && !Array.isArray(questions) && typeof questions === 'object') {
         questions = Object.values(questions);
       }
       if (!Array.isArray(questions)) questions = [];
-      if (questions.length < 1 || questions.length > 10) {
-        throw new Error('POLL_QUESTION_COUNT');
-      }
+
+      if (questions.length < 1 || questions.length > 10) throw new Error('POLL_QUESTION_COUNT');
 
       const normQs = questions.map((q, qi) => {
-        // options may be Array or object
         let opts = q?.options;
-        if (opts && !Array.isArray(opts) && typeof opts === 'object') {
-          opts = Object.values(opts);
-        }
+        if (opts && !Array.isArray(opts) && typeof opts === 'object') opts = Object.values(opts);
         if (!Array.isArray(opts)) opts = [];
-        if (opts.length < 2 || opts.length > 10) {
-          throw new Error('POLL_OPTION_COUNT');
-        }
+
+        if (opts.length < 2 || opts.length > 10) throw new Error('POLL_OPTION_COUNT');
+
         const qid = String(q?.qid || (qi + 1).toString(36));
         const normOpts = opts.map((o, oi) => {
-          // support both {label:"..."} and "..."
           const label = (typeof o === 'object' ? String(o.label || '') : String(o || '')).trim();
           const oid = String(
             (typeof o === 'object' ? (o.oid || (oi + 1).toString(36)) : (oi + 1).toString(36))
           );
           return { oid, label, votesCount: 0 };
         });
+
         return {
           qid,
           text: String(q?.text || '').trim(),
@@ -568,7 +790,36 @@ exports.create = async (req, res, next) => {
       };
     }
 
-    // 🔹 Build base post doc
+    /* =====================================================
+       ✅ MODERATION / BLOCKED WORDS (FIX)
+    ===================================================== */
+
+    const blocked = Array.isArray(req.company?.policies?.blockedWords)
+      ? req.company.policies.blockedWords
+      : [];
+
+    const haystack = [
+      req.body.text || '',
+      req.body.content || '',
+      req.body.title || ''
+    ].join(' ').toLowerCase();
+
+    const hit = blocked.find(w => {
+      const ww = String(w || '').trim().toLowerCase();
+      return ww && haystack.includes(ww);
+    });
+
+    const moderationMode = String(req.company?.policies?.postingMode || 'OPEN').toUpperCase() === 'MODERATED';
+    const mustQueue = !!hit || moderationMode;
+
+    // ✅ decide final status ONCE (draft overrides everything)
+    let status;
+    if (saveAsDraft) status = 'DRAFT';
+    else if (mustQueue) status = 'QUEUED';
+    else status = 'PUBLISHED';
+
+    /* ===================================================== */
+
     const postDoc = {
       companyId,
       authorId: req.user._id,
@@ -576,20 +827,20 @@ exports.create = async (req, res, next) => {
       type,
       richText,
       status,
-      isPinned: isAnnouncement ? !!(canPin && wantPinned) : false,
       publishedAt: status === 'PUBLISHED' ? new Date() : null,
+      isPinned: (isAnnouncement && status === 'PUBLISHED') ? !!(canPin && wantPinned) : false,
       poll: pollDoc
     };
 
-    // 🔹 Only announcements use title + expiresAt
     if (isAnnouncement) {
-      if (title) {
-        postDoc.title = title;
-      }
+      if (title) postDoc.title = title;
       postDoc.expiresAt = expiresAt;
     }
 
+    // create post
     const post = await Post.create(postDoc);
+
+    // award points only if published
     if (status === 'PUBLISHED') {
       await pointsService.award({
         company: req.company,
@@ -602,8 +853,6 @@ exports.create = async (req, res, next) => {
         meta: { type: post.type }
       }).catch(() => {});
     }
-    
-    
 
     // Multi-image support
     const files = Array.isArray(req.files) ? req.files : [];
@@ -623,16 +872,11 @@ exports.create = async (req, res, next) => {
       if (rows.length) {
         await Attachment.insertMany(rows);
 
-        // 🔹 For normal posts, keep old behavior: convert to IMAGE if not already
-        //    For ANNOUNCEMENT, keep type = 'ANNOUNCEMENT' but set coverImageUrl from first attachment
-        const update = {
-          $inc: { attachmentsCount: rows.length }
-        };
+        const update = { $inc: { attachmentsCount: rows.length } };
 
         if (!isAnnouncement && post.type !== 'IMAGE') {
           update.$set = { ...(update.$set || {}), type: 'IMAGE' };
         }
-
         if (isAnnouncement && rows[0]?.storageUrl) {
           update.$set = { ...(update.$set || {}), coverImageUrl: rows[0].storageUrl };
         }
@@ -650,60 +894,33 @@ exports.create = async (req, res, next) => {
       metadata: {
         type,
         status,
-        hasAttachment: files.length > 0   // 🔹 more accurate than req.file
+        moderationMode,
+        blockedWordHit: hit ? String(hit) : null,
+        hasAttachment: files.length > 0
       }
     }).catch(() => {});
 
-    // Invalidate cached feeds
+    // Bust caches only when visible in feed
     if (status === 'PUBLISHED') {
       await microcache.bustTenant(req.company.slug);
       if (post.groupId) await microcache.bustGroup(req.company.slug, post.groupId);
     }
-    
 
-    // --- send @mention emails (only if tenant allows) ---
-    try {
-      const company = req.company;
-      if (company?.policies?.notificationsEnabled) {
-        const { handles, emails } = extractMentionsFromHtml(post.richText);
-        if (handles.length || emails.length) {
-          const usersByHandle = handles.length
-            ? await User.find({ companyId, handle: { $in: handles } }).lean()
-            : [];
-          const usersByEmail = emails.length
-            ? await User.find({ companyId, email: { $in: emails } }).lean()
-            : [];
-
-          const targets = [...usersByHandle, ...usersByEmail]
-            .filter(u => String(u._id) !== String(req.user._id))   // avoid emailing self
-            .filter(u => !!u.email);
-
-          if (targets.length) {
-            const snippet = makeSnippet(post.richText);
-            const link = `${process.env.APP_BASE_URL}/${company.slug}/p/${post._id}`;
-            const html = renderMentionEmail({ company, actor: req.user, snippet, link });
-
-            await Promise.allSettled(
-              targets.map(u =>
-                sendMail({ to: u.email, subject: `You were mentioned on ${company.name}`, html })
-              )
-            );
-          }
-        }
-      }
-    } catch (e) {
-      req.logger && req.logger.warn('[post mention mail] failed', e);
-    }
-
-    req.flash('success', status === 'DRAFT'
-      ? 'Draft saved.'
-      : (status === 'PUBLISHED' ? 'Posted.' : 'Submitted for review.')
+    req.flash(
+      'success',
+      status === 'DRAFT' ? 'Draft saved.' :
+      status === 'PUBLISHED' ? 'Posted.' :
+      (hit ? `Submitted for review (blocked word: "${hit}")` : 'Submitted for review.')
     );
 
-    return res.redirect(`/${req.params.org}/feed?tab=${status === 'DRAFT' ? 'DRAFTS' : 'REGULAR'}`);
-
-  } catch (e) { next(e); }
+    return res.redirect(
+      `/${req.params.org}/feed?tab=${status === 'DRAFT' ? 'DRAFTS' : 'REGULAR'}`
+    );
+  } catch (e) {
+    next(e);
+  }
 };
+
 
 // GET /:org/posts/:postId
 exports.getPost = async (req, res, next) => {
