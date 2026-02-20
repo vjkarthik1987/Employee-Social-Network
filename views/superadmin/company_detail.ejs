@@ -161,6 +161,40 @@
         </p>
       </div>
 
+      <div class="card" style="margin-top:16px;">
+        <div class="admin-card-head">
+          <h3>Plan & License (Super Admin)</h3>
+          <p>Set plan expiry and seats for this company.</p>
+        </div>
+      
+        <form method="POST" action="/super-admin/companies/<%= company._id %>/license" style="display:grid;gap:10px;">
+          <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      
+          <label class="admin-field">
+            <div class="admin-label">Seats</div>
+            <input class="input" type="number" name="seats" min="1" value="<%= company.license?.seats || 25 %>">
+          </label>
+      
+          <label class="admin-field">
+            <div class="admin-label">Plan expiry date</div>
+            <input
+              class="input"
+              type="date"
+              name="validTill"
+              value="<%= company.license?.validTill ? new Date(company.license.validTill).toISOString().slice(0,10) : '' %>"
+              required
+            >
+          </label>
+      
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-primary" type="submit">Save</button>
+            <div class="sub" style="margin:0;">
+              Current: <strong><%= company.license?.validTill ? new Date(company.license.validTill).toDateString() : '-' %></strong>
+            </div>
+          </div>
+        </form>
+      </div>
+
       <!-- Storage -->
       <div class="card">
         <h3 style="margin:0 0 4px;font-size:16px;color:var(--ink-900);">

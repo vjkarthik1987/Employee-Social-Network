@@ -1,0 +1,127 @@
+<% layout('layouts/_layout') %>
+
+<div class="page">
+  <div class="page-head" style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+    <div>
+      <h1>Request License Upgrade</h1>
+      <p class="muted">Submit a request for more seats and/or validity extension.</p>
+    </div>
+    <a class="btn btn-light" href="/<%= company.slug %>/admin/settings">← Back to Settings</a>
+  </div>
+
+  <div class="card" style="margin-top:12px;padding:14px;">
+    <h3 style="margin-top:0;">Current plan snapshot</h3>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">
+      <div><div class="muted">Company</div><div><%= company.name %> (<%= company.slug %>)</div></div>
+      <div><div class="muted">Plan state</div><div><%= company.planState || '-' %></div></div>
+      <div><div class="muted">Seats</div><div><%= company.license?.used ?? 0 %> / <%= company.license?.seats ?? 0 %></div></div>
+      <div><div class="muted">Valid till</div><div><%= company.license?.validTill ? new Date(company.license.validTill).toDateString() : '-' %></div></div>
+      <div><div class="muted">Trial ends</div><div><%= company.trialEndsAt ? new Date(company.trialEndsAt).toDateString() : '-' %></div></div>
+      <div><div class="muted">Posting mode</div><div><%= company.policies?.postingMode || 'OPEN' %></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;padding:14px;">
+    <h3 style="margin-top:0;">Upgrade request</h3>
+
+    <form method="POST" action="/<%= company.slug %>/admin/support/upgrade">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+        <div>
+          <label class="muted">Upgrade type</label>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;">
+            <label><input type="radio" name="upgradeType" value="SEATS" checked> Increase seats</label>
+            <label><input type="radio" name="upgradeType" value="VALIDITY"> Extend validity</label>
+            <label><input type="radio" name="upgradeType" value="BOTH"> Both</label>
+            <label><input type="radio" name="upgradeType" value="MOVE_TO_PAID"> Move to paid plan</label>
+          </div>
+        </div>
+
+        <div>
+          <label class="muted">Urgency</label>
+          <select name="urgency" style="width:100%;margin-top:6px;">
+            <option value="NORMAL">Normal</option>
+            <option value="URGENT">Urgent (project at risk)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="muted">Seats requested</label>
+          <input name="seatsRequested" type="number" min="1" placeholder="e.g., 50" style="width:100%;margin-top:6px;">
+          <div class="muted" style="font-size:12px;">Current seats: <%= company.license?.seats ?? 0 %></div>
+        </div>
+
+        <div>
+          <label class="muted">Validity requested till</label>
+          <input name="validTillRequested" type="date" min="<%= today %>" style="width:100%;margin-top:6px;">
+        </div>
+
+        <div>
+          <label class="muted">Expected cost</label>
+          <input name="expectedCost" type="number" min="0" step="1" placeholder="e.g., 120000" style="width:100%;margin-top:6px;">
+        </div>
+
+        <div>
+          <label class="muted">Currency</label>
+          <select name="currency" style="width:100%;margin-top:6px;">
+            <option value="INR">INR</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="muted">Need by (optional)</label>
+          <input name="needBy" type="date" min="<%= today %>" style="width:100%;margin-top:6px;">
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label class="muted">Reason / justification</label>
+        <textarea name="reason" rows="5" required style="width:100%;margin-top:6px;"
+          placeholder="Why do you need this upgrade? Which team/project? Any deadline?"></textarea>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:10px;">
+        <button class="btn btn-primary" type="submit">Submit request</button>
+        <a class="btn btn-light" href="/<%= company.slug %>/admin/settings">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="card" style="margin-top:12px;padding:14px;">
+    <h3 style="margin-top:0;">Recent requests</h3>
+
+    <% if (!recent || !recent.length) { %>
+      <p class="muted">No requests yet.</p>
+    <% } else { %>
+      <div style="overflow:auto;">
+        <table class="table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Seats</th>
+              <th>Valid till</th>
+              <th>Cost</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recent.forEach(r => { %>
+              <tr>
+                <td><%= new Date(r.createdAt).toLocaleString() %></td>
+                <td><%= r.upgradeType %></td>
+                <td><%= r.seatsRequested ?? '-' %></td>
+                <td><%= r.validTillRequested ? new Date(r.validTillRequested).toDateString() : '-' %></td>
+                <td><%= r.expectedCost ?? '-' %> <%= r.currency || '' %></td>
+                <td><%= r.status %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>

@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 
+
 const Company = require('../models/Company');
 const User = require('../models/User');
 
@@ -15,8 +16,10 @@ const Comment = require('../models/Comment');
 const Attachment = require('../models/Attachment');
 const PollResponse = require('../models/PollResponse');
 const InternalLink = require('../models/InternalLink');
+const UpgradeRequest = require('../models/UpgradeRequest');
 
 const { sendOrgVerificationEmail } = require('../services/mailer');
+const { sendMail } = require('../services/mailer');
 const APP_BASE = process.env.APP_BASE_URL || 'http://localhost:3000';
 
 
@@ -90,8 +93,12 @@ router.get('/login', aw(async (req, res) => {
     return res.redirect('/super-admin/home');
   }
 
+  // return res.render('superadmin/login', {
+  //   title: 'Super Admin Login'
+  // });
   return res.render('superadmin/login', {
-    title: 'Super Admin Login'
+    title: 'Super Admin Login',
+    csrfToken: req.csrfToken?.() || ''
   });
 }));
 
@@ -158,7 +165,6 @@ router.post('/logout', requireSuperAdmin, (req, res, next) => {
 });
 
 
-// GET /super-admin/companies
 // GET /super-admin/companies  - with search + filters + sort
 router.get('/companies', requireSuperAdmin, aw(async (req, res) => {
   const {
@@ -170,6 +176,7 @@ router.get('/companies', requireSuperAdmin, aw(async (req, res) => {
     trialWindow,
     sort,
   } = req.query || {};
+  
 
   const filter = {};
   const now = new Date();
@@ -227,7 +234,7 @@ router.get('/companies', requireSuperAdmin, aw(async (req, res) => {
 
   const companies = await Company.find(
     filter,
-    'name slug status planState dataRegion createdAt trialEndsAt verifiedAt'
+    'name slug status planState dataRegion createdAt trialEndsAt verifiedAt license.validTill'
   )
     .sort(sortOption)
     .lean();
@@ -362,6 +369,212 @@ router.post('/companies', requireSuperAdmin, async (req, res) => {
     return res.redirect('/super-admin/companies/new');
   }
 });
+
+// ===============================
+// Upgrade Requests (Option B)
+// ===============================
+
+// GET /super-admin/upgrade-requests
+router.get('/upgrade-requests', requireSuperAdmin, aw(async (req, res) => {
+  const status = String(req.query.status || 'SUBMITTED').toUpperCase();
+
+  const filter = {};
+  if (status !== 'ALL') filter.status = status;
+
+  const items = await UpgradeRequest.find(filter)
+    .sort({ createdAt: -1 })
+    .limit(200)
+    .lean();
+
+  const companyIds = [...new Set(items.map(i => String(i.companyId)))];
+
+  const companies = await Company.find(
+    { _id: { $in: companyIds } },
+    'name slug status planState license trialEndsAt'
+  ).lean();
+
+  const cmap = new Map(companies.map(c => [String(c._id), c]));
+  const rows = items.map(i => ({ ...i, company: cmap.get(String(i.companyId)) || null }));
+
+  return res.render('superadmin/upgrade_requests', {
+    title: 'Upgrade Requests',
+    rows,
+    status,
+    superAdminEmail: req.session.superAdmin?.email || null,
+  });
+}));
+
+// POST /super-admin/companies/:id/license
+router.post('/companies/:id/license', requireSuperAdmin, aw(async (req, res) => {
+  const companyId = req.params.id;
+  const { seats, validTill } = req.body || {};
+
+  const company = await Company.findById(companyId);
+  if (!company) return res.status(404).render('errors/404', { title: 'Company not found' });
+
+  // seats optional
+  if (seats !== undefined && seats !== null && String(seats).trim() !== '') {
+    const n = Math.max(1, Number(seats));
+    company.license = company.license || {};
+    company.license.seats = n;
+  }
+
+  // validTill required for “plan expiry”
+  if (validTill && String(validTill).trim()) {
+    const dt = new Date(validTill);
+    if (Number.isNaN(dt.valueOf())) {
+      return res.redirect(`/super-admin/companies/${companyId}?msg=Invalid%20expiry%20date`);
+    }
+
+    company.license = company.license || {};
+    company.license.validTill = dt;
+
+    const now = new Date();
+    if (dt > now) {
+      company.planState = 'ACTIVE';
+      company.trialEndsAt = null; // prevent the old bug ever resurfacing
+    } else {
+      company.planState = 'EXPIRED';
+    }
+  }
+
+  await company.save();
+  // Email notify (best-effort)
+try {
+  const supportTo = process.env.UPGRADE_REQUEST_TO || process.env.SUPPORT_EMAIL || '';
+
+  const orgAdmins = await User.find(
+    { companyId: company._id, role: 'ORG_ADMIN', status: { $ne: 'suspended' } },
+    'email fullName'
+  ).lean();
+
+  const adminEmails = orgAdmins.map(u => u.email).filter(Boolean);
+  const toList = [
+    ...new Set([supportTo, ...adminEmails].filter(Boolean))
+  ];
+
+  if (toList.length) {
+    const subject = `[License Updated] ${company.name} (${company.slug})`;
+
+    const validTill = company.license?.validTill
+      ? new Date(company.license.validTill).toDateString()
+      : '-';
+
+    const seats = company.license?.seats ?? '-';
+
+    const html = `
+      <div style="font-family:system-ui,Segoe UI,Arial;color:#111">
+        <h2>License updated</h2>
+        <p><b>Company:</b> ${company.name} (${company.slug})</p>
+        <p><b>Seats:</b> ${seats}</p>
+        <p><b>Plan expiry:</b> ${validTill}</p>
+        <p><b>Plan state:</b> ${company.planState || '-'}</p>
+        <hr/>
+        <p><b>Updated by:</b> ${req.session?.superAdmin?.email || 'Super Admin'}</p>
+        <p><b>When:</b> ${new Date().toLocaleString()}</p>
+      </div>
+    `;
+
+    const text = [
+      `License updated`,
+      `Company: ${company.name} (${company.slug})`,
+      `Seats: ${seats}`,
+      `Plan expiry: ${validTill}`,
+      `Plan state: ${company.planState || '-'}`,
+      ``,
+      `Updated by: ${req.session?.superAdmin?.email || 'Super Admin'}`,
+      `When: ${new Date().toISOString()}`
+    ].join('\n');
+
+    await sendMail({ to: toList.join(','), subject, html, text });
+  }
+} catch (e) {
+  console.warn('[super-admin] license update email failed:', e.message);
+}
+  return res.redirect(`/super-admin/companies/${companyId}?msg=License%20updated`);
+}));
+
+// POST /super-admin/upgrade-requests/:id/review
+router.post('/upgrade-requests/:id/review', requireSuperAdmin, aw(async (req, res) => {
+  await UpgradeRequest.updateOne(
+    { _id: req.params.id },
+    { $set: { status: 'IN_REVIEW' } }
+  );
+  return res.redirect('/super-admin/upgrade-requests');
+}));
+
+// POST /super-admin/upgrade-requests/:id/reject
+router.post('/upgrade-requests/:id/reject', requireSuperAdmin, aw(async (req, res) => {
+  const note = String(req.body.adminNotes || '').trim() || null;
+
+  const r = await UpgradeRequest.findById(req.params.id);
+  if (!r) return res.status(404).render('errors/404', { title: 'Not found' });
+
+  r.status = 'REJECTED';
+  r.adminNotes = note;
+  r.handledAt = new Date();
+  await r.save();
+
+  await logSuperAdminAction({
+    companyId: r.companyId,
+    action: 'UPGRADE_REQUEST_REJECTED',
+    meta: { requestId: String(r._id), adminNotes: note },
+    req
+  });
+
+  return res.redirect('/super-admin/upgrade-requests');
+}));
+
+// POST /super-admin/upgrade-requests/:id/approve
+router.post('/upgrade-requests/:id/approve', requireSuperAdmin, aw(async (req, res) => {
+  const note = String(req.body.adminNotes || '').trim() || null;
+
+  const r = await UpgradeRequest.findById(req.params.id);
+  if (!r) return res.status(404).render('errors/404', { title: 'Not found' });
+
+  const company = await Company.findById(r.companyId);
+  if (!company) return res.status(404).render('errors/404', { title: 'Company not found' });
+
+  company.license = company.license || {};
+
+  // Apply seats
+  if ((r.upgradeType === 'SEATS' || r.upgradeType === 'BOTH') && typeof r.seatsRequested === 'number') {
+    company.license.seats = r.seatsRequested;
+  }
+
+  // Apply validity
+  if ((r.upgradeType === 'VALIDITY' || r.upgradeType === 'BOTH') && r.validTillRequested) {
+    company.license.validTill = r.validTillRequested;
+
+    // Keeping trialEndsAt in sync with validTill is consistent with your codebase
+    company.trialEndsAt = r.validTillRequested;
+  }
+
+  // Force ACTIVE + active
+  company.planState = 'ACTIVE';
+  company.status = 'active';
+
+  await company.save();
+
+  r.status = 'APPROVED';
+  r.adminNotes = note;
+  r.handledAt = new Date();
+  await r.save();
+
+  await logSuperAdminAction({
+    companyId: r.companyId,
+    action: 'UPGRADE_REQUEST_APPROVED',
+    meta: {
+      requestId: String(r._id),
+      appliedSeats: company.license.seats,
+      appliedValidTill: company.license.validTill || null,
+      adminNotes: note
+    },
+    req
+  });
+
+  return res.redirect('/super-admin/upgrade-requests');
+}));
 
 
 // GET /super-admin/companies/pending
@@ -593,6 +806,57 @@ router.post('/companies/:id/activate', requireSuperAdmin, aw(async (req, res) =>
 
 
   return res.redirect(`/super-admin/companies/${companyId}?msg=Company%20activated`);
+}));
+
+// POST /super-admin/companies/:id/license
+router.post('/companies/:id/license', requireSuperAdmin, aw(async (req, res) => {
+  const companyId = req.params.id;
+  const { seats, validTill } = req.body || {};
+
+  const company = await Company.findById(companyId);
+  if (!company) return res.status(404).render('errors/404', { title: 'Company not found' });
+
+  company.license = company.license || {};
+
+  // Update seats (optional)
+  if (String(seats || '').trim()) {
+    const nSeats = Math.max(1, Number(seats));
+    company.license.seats = nSeats;
+  }
+
+  // Update expiry date (required for plan expiry)
+  if (String(validTill || '').trim()) {
+    // interpret as date-only; keep it end-of-day for safety
+    const dt = new Date(`${validTill}T23:59:59.999Z`);
+    if (Number.isNaN(dt.valueOf())) {
+      return res.redirect(`/super-admin/companies/${companyId}?msg=Invalid%20plan%20expiry%20date`);
+    }
+
+    company.license.validTill = dt;
+
+    const now = new Date();
+    if (dt > now) {
+      company.planState = 'ACTIVE';
+      company.status = 'active';
+      company.trialEndsAt = null; // IMPORTANT: prevent “trial ended” mis-blocks
+    } else {
+      company.planState = 'EXPIRED';
+    }
+  }
+
+  await company.save();
+
+  await logSuperAdminAction({
+    companyId,
+    action: 'LICENSE_UPDATED',
+    meta: {
+      seats: company.license.seats,
+      validTill: company.license.validTill || null
+    },
+    req
+  });
+
+  return res.redirect(`/super-admin/companies/${companyId}?msg=License%20updated`);
 }));
 
 // POST /super-admin/companies/:id/extend-trial

@@ -44,10 +44,22 @@
         </div>
       </div>
 
-      <!-- Optional: link back to main site -->
-      <a href="/" style="font-size:13px;color:var(--ink-500);text-decoration:none;">
-        ← Back to main site
-      </a>
+      <div style="display:flex;align-items:center;gap:14px;">
+
+        <form method="POST" action="/super-admin/logout" style="display:inline;margin:0;">
+          <button type="submit" style="
+            font-size:13px;
+            color:var(--ink-500);
+            background:transparent;
+            border:none;
+            padding:0;
+            cursor:pointer;
+          ">
+            Logout
+          </button>
+        </form>
+
+      </div>
     </div>
   </header>
 

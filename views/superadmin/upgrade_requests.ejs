@@ -1,0 +1,135 @@
+<% layout('layouts/_superadmin') %>
+
+<div class="superadmin-shell">
+    <%- include('../partials/_superadmin_sidebar', { currentSection: 'upgradeRequests' }) %>
+    <div class="wrap" style="margin:0;">
+        <div style="max-width:1120px;margin:32px auto;">
+                <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px;">
+                <div>
+                    <h1 class="h2" style="margin:0;">Upgrade Requests</h1>
+                    <p class="sub" style="margin:6px 0 0 0;">
+                    Review and approve seat/validity upgrades requested by org admins.
+                    </p>
+                </div>
+
+                <form method="GET" action="/super-admin/upgrade-requests" style="display:flex;gap:10px;align-items:center;">
+                    <label class="sub" style="margin:0;">Status</label>
+                    <select name="status" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.12);background:var(--paper-2);">
+                    <option value="SUBMITTED" <%= status==='SUBMITTED'?'selected':'' %>>SUBMITTED</option>
+                    <option value="IN_REVIEW" <%= status==='IN_REVIEW'?'selected':'' %>>IN_REVIEW</option>
+                    <option value="APPROVED" <%= status==='APPROVED'?'selected':'' %>>APPROVED</option>
+                    <option value="REJECTED" <%= status==='REJECTED'?'selected':'' %>>REJECTED</option>
+                    <option value="ALL" <%= status==='ALL'?'selected':'' %>>ALL</option>
+                    </select>
+                    <button class="btn btn-light" type="submit">Filter</button>
+                </form>
+                </div>
+
+                <% if (!rows || !rows.length) { %>
+                <div class="card" style="padding:14px;">
+                    <p class="sub" style="margin:0;">No upgrade requests found.</p>
+                </div>
+                <% } else { %>
+
+                <div class="card" style="padding:0;overflow:hidden;">
+                    <div style="overflow:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                        <tr style="background:var(--paper-2);text-align:left;">
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Date</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Company</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Type</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Seats</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Valid till</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Cost</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Urgency</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);">Status</th>
+                            <th style="padding:12px;border-bottom:1px solid rgba(0,0,0,.08);min-width:240px;">Actions</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <% rows.forEach(r => { %>
+                            <tr>
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);white-space:nowrap;">
+                                <%= new Date(r.createdAt).toLocaleString() %>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);">
+                                <div style="font-weight:700;"><%= r.company?.name || 'Unknown' %></div>
+                                <div class="sub"><%= r.company?.slug || '' %></div>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);">
+                                <%= r.upgradeType %>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);">
+                                <%= r.seatsRequested ?? '-' %>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);">
+                                <%= r.validTillRequested ? new Date(r.validTillRequested).toDateString() : '-' %>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);white-space:nowrap;">
+                                <%= r.expectedCost ?? '-' %> <%= r.currency || '' %>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);">
+                                <% if (r.urgency === 'URGENT') { %>
+                                <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(249,115,115,.18);color:#b91c1c;font-weight:700;">
+                                    URGENT
+                                </span>
+                                <% } else { %>
+                                <span class="sub">NORMAL</span>
+                                <% } %>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);">
+                                <span style="display:inline-block;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.06);">
+                                <%= r.status %>
+                                </span>
+                            </td>
+
+                            <td style="padding:12px;border-bottom:1px solid rgba(0,0,0,.06);">
+                                <% if (r.status === 'SUBMITTED') { %>
+                                <form method="POST" action="/super-admin/upgrade-requests/<%= r._id %>/review" style="display:inline;">
+                                    <button class="btn btn-light" type="submit">Mark In Review</button>
+                                </form>
+                                <% } %>
+
+                                <% if (r.status === 'SUBMITTED' || r.status === 'IN_REVIEW') { %>
+                                <form method="POST" action="/super-admin/upgrade-requests/<%= r._id %>/approve" style="display:inline;">
+                                    <button class="btn btn-primary" type="submit">Approve</button>
+                                </form>
+
+                                <form method="POST" action="/super-admin/upgrade-requests/<%= r._id %>/reject" style="display:inline;">
+                                    <button class="btn" style="background:#ef4444;color:white;" type="submit">Reject</button>
+                                </form>
+                                <% } %>
+                            </td>
+                            </tr>
+
+                            <tr>
+                            <td></td>
+                            <td colspan="8" style="padding:12px;border-bottom:1px solid rgba(0,0,0,.10);">
+                                <div class="sub" style="margin-bottom:4px;">Reason</div>
+                                <div style="margin-bottom:6px;"><%= r.reason %></div>
+                                <div class="sub">
+                                Requested by: <%= r.requestedByName %> &lt;<%= r.requestedByEmail %>&gt;
+                                <% if (r.needBy) { %> · Need by: <%= new Date(r.needBy).toDateString() %><% } %>
+                                <% if (r.adminNotes) { %> · Admin notes: <%= r.adminNotes %><% } %>
+                                </div>
+                            </td>
+                            </tr>
+                        <% }) %>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <% } %>
+        </div>
+    </div>
+</div>

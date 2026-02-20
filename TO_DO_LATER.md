@@ -54,9 +54,9 @@
 - Admin page
     - ~~Admin page should be better~~
     - Dashboard showing daily posts
-    - Request for new user/license etc.
+    - ~~Request for new user/license etc~~
     - Stop/start subscription
-    - Make sure blocked page concepts works
+    - ~~Make sure blocked page concepts works~~
     - Have a back page to admin 
     - Better way to save/place it properly
 - Work on user restriction

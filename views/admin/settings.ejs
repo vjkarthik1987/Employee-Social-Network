@@ -286,23 +286,35 @@
           <strong><%= company.license?.seats || 25 %></strong>
         </div>
 
-        <% if (company.license?.validTill) { %>
-          <div class="admin-kv-row">
-            <span class="admin-muted">Valid till</span>
-            <strong><%= new Date(company.license.validTill).toDateString() %></strong>
-          </div>
-        <% } %>
+        <%
+  const now = new Date();
+  const planExpiry = company.license?.validTill ? new Date(company.license.validTill) : null;
+  const hasPlanExpiry = planExpiry && !Number.isNaN(planExpiry.valueOf());
+  const daysLeft = hasPlanExpiry ? Math.ceil((planExpiry - now) / (1000*60*60*24)) : null;
+%>
+
+<div class="admin-kv-row">
+  <span class="admin-muted">Plan expiry date</span>
+  <strong><%= hasPlanExpiry ? planExpiry.toDateString() : '-' %></strong>
+  <% if (daysLeft !== null) { %>
+    <span class="admin-muted" style="margin-left:8px;">
+      (<%= daysLeft %> day(s) left)
+    </span>
+  <% } %>
+</div>
+
+<% if (hasPlanExpiry && daysLeft < 0) { %>
+  <div class="admin-kv-row">
+    <span></span>
+    <strong style="color:#b91c1c;">Plan expired — contact support to renew.</strong>
+  </div>
+<% } %>
       </div>
 
       <div class="admin-actions admin-actions-left">
-        <button
-          class="btn"
-          type="submit"
-          formaction="/<%= company.slug %>/admin/support/upgrade"
-          formmethod="POST"
-        >
+        <a class="btn btn-primary" href="/<%= company.slug %>/admin/support/upgrade">
           Request upgrade
-        </button>
+        </a>
       </div>
     </div>
 

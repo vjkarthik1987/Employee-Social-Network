@@ -15,18 +15,28 @@ const profile = require('../controllers/profileController');
 async function checkLicenseGuard(req) {
   const company = req.company || await Company.findById(req.companyId).lean();
   const now = new Date();
-  const expired = (company.planState === 'EXPIRED') ||
-                  (company.license?.validTill && new Date(company.license.validTill) < now) ||
-                  (company.trialEndsAt && new Date(company.trialEndsAt) < now);
 
-  if (expired) {
-    return { ok: false, reason: 'expired' };
-  }
+  const trialExpired =
+    (company.planState === 'FREE_TRIAL') &&
+    company.trialEndsAt &&
+    new Date(company.trialEndsAt) < now;
+
+  const licenseExpired =
+    company.license?.validTill &&
+    new Date(company.license.validTill) < now;
+
+  const expired =
+    (company.planState === 'EXPIRED') ||
+    trialExpired ||
+    licenseExpired;
+
+  if (expired) return { ok: false, reason: 'expired' };
+
   const used = company.license?.used || 0;
   const seats = company.license?.seats ?? 25;
-  if (used >= seats) {
-    return { ok: false, reason: 'limit' };
-  }
+
+  if (used >= seats) return { ok: false, reason: 'limit' };
+
   return { ok: true };
 }
 

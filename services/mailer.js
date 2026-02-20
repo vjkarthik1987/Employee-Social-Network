@@ -27,7 +27,7 @@ async function getTransport() {
         fromEmail: cfg.fromEmail,
         fromName: cfg.fromName || 'EngageHQ'
       };
-      return cached;Of
+      return cached;
     }
   
     // 2️⃣ Fallback to .env if DB config not found or disabled
@@ -62,19 +62,23 @@ async function getTransport() {
 }
   
 
-async function sendMail({ to, subject, html }) {
+async function sendMail({ to, subject, html, text }) {
   const t = await getTransport();
   if (!t.enabled) {
     console.warn('[mailer] central SMTP disabled; suppressing email:', { to, subject });
     return { ok: false, suppressed: true };
   }
+
   await t.transporter.sendMail({
     from: `"${t.fromName}" <${t.fromEmail}>`,
-    to, subject, html
+    to,
+    subject,
+    html,
+    text
   });
+
   return { ok: true };
 }
-
 // Minimal templates (inline for MVP; you can move to EJS later)
 function renderApprovalEmail({ company, post, decision, note }) {
   const brandName = company?.name || 'Your Company';
